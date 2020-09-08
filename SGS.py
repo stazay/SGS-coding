@@ -6,7 +6,6 @@ from examples import custom_style_2
 
 
 # Loose functions
-# Getting options for selecting a single card at a time
 def get_playing_card_options(self):
     options = []
     for card in self.list_cards():
@@ -41,6 +40,14 @@ def ability_formatting(self):
         return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4}"
     else:
         return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4} \n   - {self.character_ability5}"
+
+
+def check_allegiances_in_play():
+    allegiances = []
+    for player in players:
+        allegiances.append(player.allegiance)
+    allegiances = set(allegiances)
+    return len(allegiances)
 
 
 # A class for handling individual characters
@@ -297,7 +304,7 @@ hero_characters = [
     Character("Pang De", "Heroes", 4, "Male",
               "Horsemanship: You will always be -1 distance in any range calculations.",
               "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)."),
-    Character("Yan Liang and Wen Chou", "Hero", 4, "Male",
+    Character("Yan Liang and Wen Chou", "Heroes", 4, "Male",
               "Dual Heroes: At the beginning of your turn, you can choose to forgo your drawing phase and instead flip a judgement. Unlike usual judgement cards, this card will be added to your hand. Note the colour of the suit of this judgement card. For the rest of your action phase, you can choose to use any on-hand card with a different colour suit from this judgement card as a DUEL."),
     Character("Yuan Shu", "Heroes", 4, "Male",
               "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them.",
@@ -411,7 +418,7 @@ class Hand(Deck):
         self.contents = []
         self.contents = hand_cards
 
-    def prompt_for_discard(self):
+    def prompt_for_discard_from_hand(self):
         question = [
             {
                 'type': 'list',
@@ -428,10 +435,104 @@ class Hand(Deck):
     def discard_from_hand(self, num=1):
         print(f'{num} card(s) to be discarded:')
         while num > 0:
-            card_index, card = self.prompt_for_discard().get('Discarded')
+            card_index, card = self.prompt_for_discard_from_hand().get('Discarded')
             self.contents.pop(card_index)
             discard_deck.add_to_top(card)
             num -= 1
+
+    def discard_from_equip_or_hand(self, num=1):
+        global activated_mediocrity
+        if activated_mediocrity:
+            print(
+                f"  >> Character Ability: Mediocrity; {players[0].character} discards at least {check_allegiances_in_play()} cards, one for every allegiance in play, and then down to their health-level ({players[0].current_health}/{players[0].max_health} HP remaining).")
+        while num > 0:
+            options_str = []
+            options = []
+            options_str.append(
+                Separator("-----------------Hand-Cards!-----------------"))
+            options.append('BLANK')
+            playing_card_options = get_playing_card_options(self)
+            for card in playing_card_options:
+                options_str.append(card)
+            for card in self.contents:
+                options.append(card)
+            options_str.append(
+                Separator("---------------Equipped-Cards!---------------"))
+            options.append('BLANK')
+            if len(players[0].equipment_weapon) > 0:
+                options_str.append(str(players[0].equipment_weapon[0]))
+                options.append(players[0].equipment_weapon[0])
+            else:
+                options_str.append(
+                    Separator("--------------Empty Weapon Slot--------------"))
+                options.append('BLANK')
+            if len(players[0].equipment_armor) > 0:
+                options_str.append(str(players[0].equipment_armor[0]))
+                options.append(players[0].equipment_armor[0])
+            else:
+                options_str.append(
+                    Separator("--------------Empty Armor Slot!--------------"))
+                options.append('BLANK')
+            if len(players[0].equipment_offensive_horse) > 0:
+                options_str.append(
+                    str(players[0].equipment_offensive_horse[0]))
+                options.append(players[0].equipment_offensive_horse[0])
+            else:
+                options_str.append(
+                    Separator("--------------Empty Horse Slot!--------------"))
+                options.append('BLANK')
+            if len(players[0].equipment_defensive_horse) > 0:
+                options_str.append(
+                    str(players[0].equipment_defensive_horse[0]))
+                options.append(players[0].equipment_defensive_horse[0])
+            else:
+                options_str.append(
+                    Separator("--------------Empty Horse Slot!--------------"))
+                options.append('BLANK')
+
+            message = f'{players[0].character}: Please select a card to discard; from your hand or your equipment area.'
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Discarded',
+                    'message': message,
+                    'choices': options_str,
+                    'filter': lambda card: options_str.index(card)
+                }
+            ]
+
+            answer = prompt(question, style=custom_style_2)
+            discarded_index = answer.get('Discarded')
+
+            # Check if hand-card
+            if discarded_index <= len(self.contents):
+                card = self.contents.pop(discarded_index - 1)
+                discard_deck.add_to_top(card)
+
+            # Check if equipment-card
+            else:
+                if discarded_index == (len(self.contents) + 2):
+                    card = players[0].equipment_weapon.pop()
+                    discard_deck.add_to_top(card)
+                    print(
+                        f"{players[0].character} has discarded {card} from their weapon-slot.")
+                if discarded_index == (len(self.contents) + 3):
+                    card = players[0].equipment_armor.pop()
+                    discard_deck.add_to_top(card)
+                    print(
+                        f"{players[0].character} has discarded {card} from their armor-slot.")
+                if discarded_index == (len(self.contents) + 4):
+                    card = players[0].equipment_offensive_horse.pop()
+                    discard_deck.add_to_top(card)
+                    print(
+                        f"{players[0].character} has discarded {card} from their horse-slot.")
+                if discarded_index == (len(self.contents) + 5):
+                    card = players[0].equipment_defensive_horse.pop()
+                    discard_deck.add_to_top(card)
+                    print(
+                        f"{players[0].character} has discarded {card} from their horse-slot.")
+            num -= 1
+        activated_mediocrity = False
 
     def view_hand(self):
         if self.contents == []:
@@ -463,8 +564,9 @@ class Hand(Deck):
                 f"  >> Character Ability: Envy of Heaven; The top judgement card has been added to {players[player_index].character}'s hand before it takes effect.")
         if activated_mediocrity:
             print(
-                f"  >> Character Ability: Mediocrity; {players[0].character} draws extra cards for every allegiance still in play.")
-            num += (players[0].check_allegiances_in_play())
+                f"  >> Character Ability: Mediocrity; {players[0].character} draws {check_allegiances_in_play()} extra card(s) for every allegiance still in play.")
+            num += (check_allegiances_in_play())
+            activated_mediocrity = False
         if activated_unnatural_death:
             print(
                 f"  >> Character Ability: Unnatural Death; All discarded hands are added to the hand of {players[player_index].character}.")
@@ -1318,7 +1420,7 @@ class Player(Character):
         if self.max_health == 0:
             print(
                 f"{self.character} - Your maximum health has reached 0 and therefore you are dead! - {self.character}'s role was {self.role}!")
-            self.discard_all_cards()
+            self.discard_all_cards_upon_death()
             roles_dictionary[self.role] -= 1
             players.pop(dying_player_index)
             check_win_conditions()
@@ -1345,7 +1447,7 @@ class Player(Character):
             if self.current_health < 1:
                 print(
                     f"{self.character} wasn't saved from the brink of death! - {self.character}'s role was {self.role}!")
-                self.discard_all_cards()
+                self.discard_all_cards_upon_death()
                 roles_dictionary[self.role] -= 1
                 players.pop(dying_player_index)
                 check_win_conditions()
@@ -1353,35 +1455,6 @@ class Player(Character):
             else:
                 print(
                     f"{players[dying_player_index].character} has been successfully healed back to {players[dying_player_index].current_health}/{players[dying_player_index].max_health}.")
-
-    def calculate_targets_in_physical_range(self, player_index):
-        output = []
-        for (target_index, target) in enumerate(players):
-            if target_index != player_index:
-                distance = abs(target_index - player_index)
-                if distance > len(players) / 2:
-                    distance = len(players) - distance
-                if distance - (self.check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
-                    output.append(target_index)
-        return output
-
-    def calculate_targets_in_weapon_range(self, player_index):
-        output = []
-        for (target_index, target) in enumerate(players):
-            if target_index != player_index:
-                distance = abs(target_index - player_index)
-                if distance > len(players) / 2:
-                    distance = len(players) - distance
-                if distance - (self.check_horsemanship() + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
-                    output.append(target_index)
-        return output
-
-    def check_allegiances_in_play(self):
-        allegiances = []
-        for player in players:
-            allegiances.append(player.allegiance)
-        allegiances = set(allegiances)
-        return len(allegiances)
 
     def check_pending_judgements(self):
         if self.pending_judgements == []:
@@ -1460,15 +1533,52 @@ class Player(Character):
                     pending_judgement.effect_2 = None
                     discard_deck.add_to_top(pending_judgement)
 
+    def calculate_targets_in_physical_range(self, player_index):
+        output = []
+        for (target_index, target) in enumerate(players):
+            if target_index != player_index:
+                distance = abs(target_index - player_index)
+                if distance > len(players) / 2:
+                    distance = len(players) - distance
+                if distance - (self.check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
+                    output.append(target_index)
+        return output
+
+    def calculate_targets_in_weapon_range(self, player_index):
+        output = []
+        for (target_index, target) in enumerate(players):
+            if target_index != player_index:
+                distance = abs(target_index - player_index)
+                if distance > len(players) / 2:
+                    distance = len(players) - distance
+                if distance - (self.check_horsemanship() + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
+                    output.append(target_index)
+        return output
+
     def discard_all_cards(self):
-        cards_discarded = (len(self.hand_cards.contents) + len(self.pending_judgements) + len(self.equipment_weapon) +
-                           len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        cards_discarded = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        if activated_mediocrity:
+            print(
+                f"ALL ({cards_discarded}) card(s) have been discarded due to {self.character}'s character ability: Mediocrity.")
+        while len(self.hand_cards.contents) > 0:
+            discard_deck.add_to_top(self.hand_cards.contents.pop())
+        if len(self.equipment_weapon) == 1:
+            discard_deck.add_to_top(self.equipment_weapon.pop())
+        if len(self.equipment_armor) == 1:
+            discard_deck.add_to_top(self.equipment_armor.pop())
+        if len(self.equipment_offensive_horse) == 1:
+            discard_deck.add_to_top(self.equipment_offensive_horse.pop())
+        if len(self.equipment_defensive_horse) == 1:
+            discard_deck.add_to_top(self.equipment_defensive_horse.pop())
+
+    def discard_all_cards_upon_death(self):
+        cards_discarded = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         print(
             f"{cards_discarded} card(s) have been discarded upon {self.character}'s death.")
         while len(self.hand_cards.contents) > 0:
             discard_deck.add_to_top(self.hand_cards.contents.pop())
-        while len(self.pending_judgements) > 0:
-            discard_deck.add_to_top(self.pending_judgements.pop())
         if len(self.equipment_weapon) == 1:
             discard_deck.add_to_top(self.equipment_weapon.pop())
         if len(self.equipment_armor) == 1:
@@ -1479,12 +1589,16 @@ class Player(Character):
             discard_deck.add_to_top(self.equipment_defensive_horse.pop())
         for player_index, player in enumerate(players):
             player.check_unnatural_death(cards_discarded, player_index)
+        while len(self.pending_judgements) > 0:
+            discard_deck.add_to_top(self.pending_judgements.pop())
 
 # Ability checks
     def check_dashing_hero(self):
         global activated_dashing_hero
         if (self.character_ability1 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability2 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability3 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability4 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability5 == "Dashing Hero: Draw an extra card at the start of your turn."):
             activated_dashing_hero = True
+        else:
+            activated_dashing_hero = False
 
     def check_eclipse_the_moon(self):
         global activated_eclipse_the_moon
@@ -1492,12 +1606,16 @@ class Player(Character):
             activated_eclipse_the_moon = True
             self.hand_cards.draw(main_deck, 1)
             activated_eclipse_the_moon = False
+        else:
+            activated_eclipse_the_moon = False
 
     def check_envy_of_heaven(self):
         global activated_envy_of_heaven
         if (self.character_ability1 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability2 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability3 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability4 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability5 == "Envy of Heaven: You can obtain any judgement card that you flip over."):
             activated_envy_of_heaven = True
             self.hand_cards.draw(discard_deck, 1)
+            activated_envy_of_heaven = False
+        else:
             activated_envy_of_heaven = False
 
     def check_horsemanship(self):
@@ -1510,6 +1628,8 @@ class Player(Character):
         global activated_mediocrity
         if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
             activated_mediocrity = True
+        else:
+            activated_mediocrity = False
 
     def check_unnatural_death(self, cards_discarded, player_index):
         global activated_unnatural_death
@@ -1517,14 +1637,12 @@ class Player(Character):
             activated_unnatural_death = True
             return self.hand_cards.draw(discard_deck, cards_discarded, player_index)
         else:
-            pass
+            activated_unnatural_death = False
 
 # Game-state
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
-        global activated_mediocrity
-        activated_mediocrity = False
         # Check for Zuo Ci; Shapeshift
         # Check for Awakening Abilities (Liu Shan; Eiron // Sun Ce; Divinity // Jiang Wei; Recommence the Legacy // Deng Ai; Conduit // Zhong Hui; Insurrection)
         # Check for Yuan Shu; False Ruler (Taking Liu Shan; Eiron)
@@ -1559,7 +1677,6 @@ class Player(Character):
     def start_drawing_phase(self):
         print(" ")
         # Checks for Lu Su; Altruism
-        # Checks for Yuan Shu; Mediocrity
         self.check_dashing_hero()
         self.check_mediocrity()
         # Checks for Sun Ce; Dashing Hero
@@ -1628,11 +1745,23 @@ class Player(Character):
         self.acedia_active = False
         self.rations_depleted_active = False
         print(" ")
-        # Check for Yuan Shu; Mediocrity
-        if len(self.hand_cards.list_cards()) > self.current_health:
-            difference = (
-                len(self.hand_cards.list_cards())) - (self.current_health)
-            self.hand_cards.discard_from_hand(difference)
+        self.check_mediocrity()
+        if activated_mediocrity:
+            if check_allegiances_in_play() >= (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse)):
+                self.discard_all_cards()
+            else:
+                self.hand_cards.discard_from_equip_or_hand(
+                    check_allegiances_in_play())
+                if len(self.hand_cards.list_cards()) > self.current_health:
+                    difference = (
+                        len(self.hand_cards.list_cards())) - (self.current_health)
+                    self.hand_cards.discard_from_equip_or_hand(
+                        difference)
+        else:
+            if len(self.hand_cards.list_cards()) > self.current_health:
+                difference = (
+                    len(self.hand_cards.list_cards())) - (self.current_health)
+                self.hand_cards.discard_from_hand(difference)
         self.start_end_phase()
 
 # End Phase
@@ -1641,7 +1770,7 @@ class Player(Character):
         self.check_eclipse_the_moon()
         # Checks for Zuo Ci; Shapeshift
         # Cycles to next player
-        players.append(players.pop(0))
+        # players.append(players.pop(0))
         # NEEDED FOR LATER to make infinite loop, commenting out for now!
         # players[0].start_beginning_phase()
 
