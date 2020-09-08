@@ -373,7 +373,7 @@ class Deck:
         return [str(card) for card in self.contents]
 
     def shuffle(self):
-        random.shuffle(main_deck.contents)
+        random.shuffle(self.contents)
 
     def check_if_empty(self, main_deck, discard_deck):
         if len(main_deck.contents) <= 0:
@@ -692,7 +692,6 @@ class Hand(Deck):
                         ]
                         answer = prompt(question, style=custom_style_2)
                         selected_player = answer.get('Selected')
-                        choices[selected_player]
 
                         message = f'{players[0].character}: Please confirm you would like to use {card} against {choices[selected_player]}?'
                         print(f"{card} - {card.flavour_text}")
@@ -801,7 +800,46 @@ class Hand(Deck):
                 pass
         if card.type == 'Delay-Tool':
             if card.effect == 'Acedia':
-                pass
+                choices = []
+                for player in players[1:]:
+                    choices.append(str(player))
+                message = f'Please select a player to target with {card}.'
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': message,
+                        'choices': choices,
+                        'filter': lambda player: choices.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected_player = ((answer.get('Selected')) + 1)
+
+                message = f'{players[0].character}: Please confirm you would like to use {card} against {players[selected_player].character}?'
+                print(f"{card} - {card.flavour_text}")
+                question_2 = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': message,
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer_2 = prompt(question_2, style=custom_style_2)
+                if answer_2.get('Selected') == 'Yes':
+                    for possible_acedia in players[selected_player].pending_judgements:
+                        if possible_acedia.effect_2 == 'Acedia':
+                            print(
+                                f"{players[0].character}: {players[selected_player].character} cannot be targeted by ACEDIA as they already have one pending.")
+                    else:
+                        card_used = players[0].hand_cards.contents.pop(
+                            card_index)
+                        card_used.effect_2 = 'Acedia'
+                        players[selected_player].pending_judgements.append(
+                            card_used)
+                        print(
+                            f"{players[0].character}: {players[selected_player].character} will face judgement by {card_used} on their next turn.")
             if card.effect == 'Lightning':
                 for possible_lightning in players[0].pending_judgements:
                     if possible_lightning.effect_2 == 'Lightning':
@@ -1659,6 +1697,8 @@ class Player(Character):
         # Check for Sima Yi; Devil // Zhang Jiao; Dark Sorcery - these to be incorporated within below command!
         if self.check_pending_judgements() == "Break":
             return players[0].start_beginning_phase()
+        else:
+            self.check_pending_judgements()
         if self.acedia_active and self.rations_depleted_active:
             self.start_discard_phase()
         elif self.rations_depleted_active:
@@ -1770,7 +1810,7 @@ class Player(Character):
         self.check_eclipse_the_moon()
         # Checks for Zuo Ci; Shapeshift
         # Cycles to next player
-        # players.append(players.pop(0))
+        players.append(players.pop(0))
         # NEEDED FOR LATER to make infinite loop, commenting out for now!
         # players[0].start_beginning_phase()
 
@@ -2064,11 +2104,11 @@ game_started = True
 
 # Gameplay
 print(' ')
-# players[0].hand_cards.draw(main_deck, 2)
+# players[0].hand_cards.draw(main_deck, 30)
 # players[0].hand_cards.use_primary_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
-
 # players[1].current_health = 1
+
 players[0].start_beginning_phase()
