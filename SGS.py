@@ -449,7 +449,7 @@ class Hand(Deck):
             options_str = []
             options = []
             options_str.append(
-                Separator("-----------------Hand-Cards!-----------------"))
+                Separator("-----------------HAND-CARDS!-----------------"))
             options.append('BLANK')
             playing_card_options = get_playing_card_options(self)
             for card in playing_card_options:
@@ -457,21 +457,21 @@ class Hand(Deck):
             for card in self.contents:
                 options.append(card)
             options_str.append(
-                Separator("---------------Equipped-Cards!---------------"))
+                Separator("---------------EQUIPPED--CARDS---------------"))
             options.append('BLANK')
             if len(players[0].equipment_weapon) > 0:
                 options_str.append(str(players[0].equipment_weapon[0]))
                 options.append(players[0].equipment_weapon[0])
             else:
                 options_str.append(
-                    Separator("--------------Empty Weapon Slot--------------"))
+                    Separator("-------------<Empty Weapon Slot>-------------"))
                 options.append('BLANK')
             if len(players[0].equipment_armor) > 0:
                 options_str.append(str(players[0].equipment_armor[0]))
                 options.append(players[0].equipment_armor[0])
             else:
                 options_str.append(
-                    Separator("--------------Empty Armor Slot!--------------"))
+                    Separator("-------------<Empty Armor Slot!>-------------"))
                 options.append('BLANK')
             if len(players[0].equipment_offensive_horse) > 0:
                 options_str.append(
@@ -479,7 +479,7 @@ class Hand(Deck):
                 options.append(players[0].equipment_offensive_horse[0])
             else:
                 options_str.append(
-                    Separator("--------------Empty Horse Slot!--------------"))
+                    Separator("-------------<Empty Horse Slot!>-------------"))
                 options.append('BLANK')
             if len(players[0].equipment_defensive_horse) > 0:
                 options_str.append(
@@ -487,7 +487,7 @@ class Hand(Deck):
                 options.append(players[0].equipment_defensive_horse[0])
             else:
                 options_str.append(
-                    Separator("--------------Empty Horse Slot!--------------"))
+                    Separator("-------------<Empty Horse Slot!>-------------"))
                 options.append('BLANK')
 
             message = f'{players[0].character}: Please select a card to discard; from your hand or your equipment area.'
@@ -568,9 +568,18 @@ class Hand(Deck):
             num += (check_allegiances_in_play())
             activated_mediocrity = False
         if activated_unnatural_death:
+            if players[player_index].current_health == 0:
+                return (' ')
             print(
                 f"  >> Character Ability: Unnatural Death; All discarded hands are added to the hand of {players[player_index].character}.")
             activated_unnatural_death = False
+            while num > 0:
+                if deck_drawn == main_deck:
+                    main_deck.check_if_empty(main_deck, discard_deck)
+                card = deck_drawn.remove_from_top()
+                players[player_index].hand_cards.add_to_top(card)
+                num -= 1
+            return (' ')
         if game_started:
             if num == 1:
                 print(
@@ -613,6 +622,7 @@ class Hand(Deck):
         output_value = 0
 
         while reactions_possible:
+            print(" ")
             if isinstance(card_played, str):
                 choices_str = self.list_cards()
                 choices_str.append(
@@ -670,6 +680,7 @@ class Hand(Deck):
                     return(discarded)
 
     def use_primary_effect(self, card_index, card):
+        print(" ")
         popping = False
         if card.type == 'Basic':
             if card.effect == 'Attack':
@@ -727,7 +738,7 @@ class Hand(Deck):
                                 for player_index, player in enumerate(players):
                                     if player.current_health < 1:
                                         players[player_index].check_brink_of_death_loop(
-                                            player_index)
+                                            player_index, 0)
                             card.effect_2 = None
                     else:
                         print(
@@ -815,7 +826,10 @@ class Hand(Deck):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected_player = ((answer.get('Selected')) + 1)
-
+                if players[selected_player].check_humility():
+                    print(
+                        f"  >> Character Ability: Humility; {players[selected_player].character} cannot be targeted by STEAL or ACEDIA.")
+                    return (' ')
                 message = f'{players[0].character}: Please confirm you would like to use {card} against {players[selected_player].character}?'
                 print(f"{card} - {card.flavour_text}")
                 question_2 = [
@@ -1095,7 +1109,7 @@ all_cards = [
          'When equipped, this horse places you further away from players in distance calculations by +1.'),
     Card(6, 'Six', 'Clubs', 'Basic', 'Attack',
          'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
-    Card(6, 'Six', 'Clubs', 'Tool', 'Acedia',
+    Card(6, 'Six', 'Clubs', 'Delay-Tool', 'Acedia',
          'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.'),
     Card(7, 'Seven', 'Clubs', 'Basic', 'Attack',
          'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
@@ -1452,13 +1466,21 @@ class Player(Character):
         else:
             return False
 
-    def check_brink_of_death_loop(self, dying_player_index=0):
+    def check_brink_of_death_loop(self, dying_player_index=0, source_player_index=0):
         if dying_player_index == None:
             dying_player_index = 0
+        if source_player_index == None:
+            source_player_index = 0
         if self.max_health == 0:
             print(
                 f"{self.character} - Your maximum health has reached 0 and therefore you are dead! - {self.character}'s role was {self.role}!")
             self.discard_all_cards_upon_death()
+            if self.role == 'Rebel':
+                players[source_player_index].hand_cards.draw(main_deck, 3)
+            if self.role == 'Advisor' and players[source_player_index].role == 'Emperor':
+                print(
+                    f"{players[source_player_index].character} loses all their cards for killing their Advisor.")
+                players[source_player_index].discard_all_cards()
             roles_dictionary[self.role] -= 1
             players.pop(dying_player_index)
             check_win_conditions()
@@ -1486,6 +1508,12 @@ class Player(Character):
                 print(
                     f"{self.character} wasn't saved from the brink of death! - {self.character}'s role was {self.role}!")
                 self.discard_all_cards_upon_death()
+                if self.role == 'Rebel':
+                    players[source_player_index].hand_cards.draw(main_deck, 3)
+                if self.role == 'Advisor' and players[source_player_index].role == 'Emperor':
+                    print(
+                        f"{players[source_player_index].character} loses all their cards for killing their Advisor.")
+                    players[source_player_index].discard_all_cards()
                 roles_dictionary[self.role] -= 1
                 players.pop(dying_player_index)
                 check_win_conditions()
@@ -1532,7 +1560,7 @@ class Player(Character):
                             f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
                         self.current_health -= 3
                         if self.current_health < 1:
-                            if self.check_brink_of_death_loop() == "Break":
+                            if self.check_brink_of_death_loop(0, "None") == "Break":
                                 return "Break"
                         pending_judgement.effect_2 = None
                         discard_deck.add_to_top(pending_judgement)
@@ -1578,7 +1606,7 @@ class Player(Character):
                 distance = abs(target_index - player_index)
                 if distance > len(players) / 2:
                     distance = len(players) - distance
-                if distance - (self.check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
+                if distance - (players[player_index].check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
                     output.append(target_index)
         return output
 
@@ -1589,7 +1617,7 @@ class Player(Character):
                 distance = abs(target_index - player_index)
                 if distance > len(players) / 2:
                     distance = len(players) - distance
-                if distance - (self.check_horsemanship() + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
+                if distance - (players[player_index].check_horsemanship() + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
                     output.append(target_index)
         return output
 
@@ -1614,7 +1642,7 @@ class Player(Character):
         cards_discarded = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
             self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         print(
-            f"{cards_discarded} card(s) have been discarded upon {self.character}'s death.")
+            f"{self.character} discarded {cards_discarded} card(s) upon their death.")
         while len(self.hand_cards.contents) > 0:
             discard_deck.add_to_top(self.hand_cards.contents.pop())
         if len(self.equipment_weapon) == 1:
@@ -1631,6 +1659,19 @@ class Player(Character):
             discard_deck.add_to_top(self.pending_judgements.pop())
 
 # Ability checks
+    def check_bloodline(self):
+        if self.role == 'Emperor':
+            if (self.character_ability1 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability2 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability3 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability4 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability5 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."):
+                heroes = []
+                for player in players:
+                    if player.allegiance == 'Heroes':
+                        heroes.append("1")
+                limit_increase = ((len(heroes)-1)*2)
+                if limit_increase > 0:
+                    print(
+                        f"  >> Character Ability: Bloodline (Ruler Ability); {self.character}'s hand limit is increased by {limit_increase} (two for every other HERO character still alive).")
+                return limit_increase
+
     def check_dashing_hero(self):
         global activated_dashing_hero
         if (self.character_ability1 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability2 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability3 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability4 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability5 == "Dashing Hero: Draw an extra card at the start of your turn."):
@@ -1662,6 +1703,12 @@ class Player(Character):
         else:
             return(0)
 
+    def check_humility(self):
+        if (self.character_ability1 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability2 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability3 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability4 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability5 == "Humility: You cannot become the target of STEAL or ACEDIA."):
+            return True
+        else:
+            return False
+
     def check_mediocrity(self):
         global activated_mediocrity
         if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
@@ -1671,6 +1718,10 @@ class Player(Character):
 
     def check_unnatural_death(self, cards_discarded, player_index):
         global activated_unnatural_death
+        if cards_discarded == None:
+            cards_discarded = 0
+        if player_index == None:
+            player_index = 0
         if (self.character_ability1 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability2 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability3 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability4 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability5 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies."):
             activated_unnatural_death = True
             return self.hand_cards.draw(discard_deck, cards_discarded, player_index)
@@ -1730,10 +1781,10 @@ class Player(Character):
 
 # Action Phase
     def start_action_phase(self):
-        print(' ')
         action_phase_active = True
         self.attacks_this_turn = 0
         while action_phase_active:
+            print(' ')
             options = []
             options.append(
                 Separator("--------------------Cards--------------------"))
@@ -1785,6 +1836,9 @@ class Player(Character):
         self.acedia_active = False
         self.rations_depleted_active = False
         print(" ")
+        limit_increase = self.check_bloodline()
+        if limit_increase == None:
+            limit_increase = 0
         self.check_mediocrity()
         if activated_mediocrity:
             if check_allegiances_in_play() >= (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse)):
@@ -1792,13 +1846,13 @@ class Player(Character):
             else:
                 self.hand_cards.discard_from_equip_or_hand(
                     check_allegiances_in_play())
-                if len(self.hand_cards.list_cards()) > self.current_health:
+                if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
                     difference = (
                         len(self.hand_cards.list_cards())) - (self.current_health)
                     self.hand_cards.discard_from_equip_or_hand(
                         difference)
         else:
-            if len(self.hand_cards.list_cards()) > self.current_health:
+            if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
                 difference = (
                     len(self.hand_cards.list_cards())) - (self.current_health)
                 self.hand_cards.discard_from_hand(difference)
@@ -2104,11 +2158,11 @@ game_started = True
 
 # Gameplay
 print(' ')
-# players[0].hand_cards.draw(main_deck, 30)
+# players[0].hand_cards.draw(main_deck, 50)
 # players[0].hand_cards.use_primary_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
-# players[1].current_health = 1
 
+players[1].current_health = 1
 players[0].start_beginning_phase()
