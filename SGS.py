@@ -1167,7 +1167,7 @@ class Player(Character):
         self.pending_judgements = []
         self.acedia_active = False
         self.rations_depleted_active = False
-        self.counters = 0
+        self.counters = []
 
     def __repr__(self):
         character_details = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining"
@@ -1614,23 +1614,68 @@ class Player(Character):
                         f"  >> Character Ability: Bloodline (Ruler Ability); {self.character}'s hand limit is increased by {limit_increase} (two for every other HERO character still alive).")
                 return limit_increase
 
+    def check_conduit(self):
+        if self.character_ability2 == "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'.":
+            if len(self.counters) >= 3:
+                print(
+                    f"  >> Character Ability: Conduit (Awakening Ability): {self.character} has awakened, losing one maximum health. They permanently gain the ability 'Blitz'.")
+                if self.max_health == self.current_health:
+                    self.max_health -= 1
+                    self.current_health -= 1
+                else:
+                    self.max_health -= 1
+                self.character_ability2 = "Conduit (INACTIVE Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'."
+                self.character_ability3 = "Blitz: In your action phase, you can use any of your TERRAINS as STEAL."
+                if self.max_health == 0:
+                    self.check_brink_of_death_loop()
+
     def check_dashing_hero(self):
         if (self.character_ability1 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability2 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability3 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability4 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability5 == "Dashing Hero: Draw an extra card at the start of your turn."):
             print(
                 f"  >> Character Ability: Dashing Hero; {players[0].character} draws an extra card from the deck in their drawing phase.")
             return True
 
+    def check_divinity(self):
+        if self.character_ability2 == "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'.":
+            if self.current_health == 1:
+                print(
+                    f"  >> Character Ability: Divinity (Awakening Ability): {self.character} has awakened, losing one maximum health. They permanently gain the abilities 'Dashing Hero' and 'Brave Gesture'.")
+                self.max_health -= 1
+                self.character_ability2 = "Divinity (INACTIVE Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'."
+                self.character_ability3 = "Dashing Hero: Draw an extra card at the start of your turn."
+                self.character_ability4 = "Lingering Spirit: If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum."
+                if self.max_health == 0:
+                    self.check_brink_of_death_loop()
+
     def check_eclipse_the_moon(self):
         if (self.character_ability2 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck." or self.character_ability3 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck." or self.character_ability4 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck." or self.character_ability5 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck."):
             print(
                 f"  >> Character Ability: Eclipse the Moon; {players[0].character} draws an extra card from the deck in their end-phase.")
-            return True
+            self.hand_cards.draw(main_deck, 1, False)
 
     def check_envy_of_heaven(self):
         if (self.character_ability1 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability2 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability3 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability4 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability5 == "Envy of Heaven: You can obtain any judgement card that you flip over."):
             print(
                 f"  >> Character Ability: Envy of Heaven; The top judgement card has been added to {self.character}'s hand before it takes effect.")
             self.hand_cards.draw(discard_deck, 1, False)
+
+    def check_eiron(self):
+        if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor."):
+            if self.character_ability3 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.":
+                for player in players:
+                    if self.current_health > player.current_health:
+                        return(' ')
+                else:
+                    print(
+                        f"  >> Character Ability: Eiron (Awakening/Ruler Ability): {self.character} has awakened, gaining one health and maximum health. They also permanently gain the ability 'Rouse'.")
+                    self.current_health += 1
+                    self.max_health += 1
+                    if self.character_ability3 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.":
+                        self.character_ability3 = "Eiron (INACTIVE Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+                        self.character_ability4 = "Rouse: If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
+                    if self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor." and self.character_ability3 == self.character_ability2 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.":
+                        self.character_ability3 = "Eiron (INACTIVE Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+                        self.character_ability4 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
 
     def check_false_ruler(self):
         if (self.character_ability1 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability3 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability4 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability5 == "False Ruler: You possess the same ruler ability as the current emperor."):
@@ -1665,6 +1710,40 @@ class Player(Character):
         if (self.character_ability1 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability2 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability3 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability4 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability5 == "Humility: You cannot become the target of STEAL or ACEDIA."):
             return True
 
+    def check_insurrection(self):
+        if self.character_ability2 == "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'.":
+            if len(self.counters) >= 3:
+                if self.current_health >= self.max_health:
+                    choices = ["Draw two cards"]
+                else:
+                    choices = ["Regain one health", "Draw two cards"]
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': 'Please select an option:',
+                        'choices': choices
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == "Regain one health":
+                    self.current_health += 1
+                    print(
+                        f"  >> Character Ability: Insurrection (Awakening Ability): {self.character} has awakened, regaining one health. They permanently gain the ability 'Rejection'.")
+                if answer.get('Selected') == 'Draw two cards':
+                    self.hand_cards.draw(main_deck, 2, False)
+                    print(
+                        f"  >> Character Ability: Insurrection (Awakening Ability): {self.character} has awakened, drawing two cards. They permanently gain the ability 'Rejection'.")
+                    if self.max_health == self.current_health:
+                        self.max_health -= 1
+                        self.current_health -= 1
+                    else:
+                        self.max_health -= 1
+                self.character_ability2 = "Insurrection (INACTIVE Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'."
+                self.character_ability3 = "Rejection: Once per turn, you can discard one RITE and force any character to draw two cards. If after, that character has more hand-cards than you, you then deal one damage to them."
+                if self.max_health == 0:
+                    self.check_brink_of_death_loop()
+
     def check_mediocrity_draw(self):
         if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
             print(
@@ -1698,9 +1777,43 @@ class Player(Character):
                     self.hand_cards.discard_from_equip_or_hand(
                         difference)
 
+    def check_recommence_the_legacy(self):
+        if self.character_ability2 == "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'.":
+            if len(self.hand_cards.contents) == 0:
+                if self.current_health >= self.max_health:
+                    choices = ["Draw two cards"]
+                else:
+                    choices = ["Regain one health", "Draw two cards"]
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': 'Please select an option:',
+                        'choices': choices
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == "Regain one health":
+                    self.current_health += 1
+                    print(
+                        f"  >> Character Ability: Recommence the Legacy (Awakening Ability): {self.character} has awakened; gaining one health and losing one maximum health. They also permanently gain the ability 'Astrology'.")
+                if answer.get('Selected') == 'Draw two cards':
+                    self.hand_cards.draw(main_deck, 2, False)
+                    print(
+                        f"  >> Character Ability: Recommence the Legacy (Awakening Ability): {self.character} has awakened; drawing two cards and losing one maximum health. They also permanently gain the ability 'Astrology'.")
+                if self.max_health == self.current_health:
+                    self.max_health -= 1
+                    self.current_health -= 1
+                else:
+                    self.max_health -= 1
+                self.character_ability2 = "Recommence the Legacy (INACTIVE Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'."
+                self.character_ability3 = "Astrology: Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck."
+                if self.max_health == 0:
+                    self.check_brink_of_death_loop()
+
     def check_unnatural_death(self, cards_discarded):
         if cards_discarded == None:
-            cards_discarded = 0
+            return (' ')
         if self.current_health == 0:
             return (' ')
         if (self.character_ability1 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability2 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability3 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability4 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability5 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies."):
@@ -1712,10 +1825,12 @@ class Player(Character):
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
-        self.check_false_ruler()
         # Check for Zuo Ci; Shapeshift
-        # Check for Awakening Abilities (Liu Shan; Eiron // Sun Ce; Divinity // Jiang Wei; Recommence the Legacy // Deng Ai; Conduit // Zhong Hui; Insurrection)
-        # Check for Yuan Shu; False Ruler (Taking Liu Shan; Eiron)
+        self.check_conduit()
+        self.check_divinity()
+        self.check_eiron()
+        self.check_insurrection()
+        self.check_recommence_the_legacy()
         # Check for Jiang Wei/Zhuge Liang; Astrology
         # Check for Zhang He; Flexibility
         # Check for Zhen Ji; Goddess Luo
@@ -1836,8 +1951,7 @@ class Player(Character):
 # End Phase
     def start_end_phase(self):
         print(" ")
-        if self.check_eclipse_the_moon():
-            self.hand_cards.draw(main_deck, 1, False)
+        self.check_eclipse_the_moon()
         # Checks for Zuo Ci; Shapeshift
         # Cycles to next player
         players.append(players.pop(0))
@@ -2107,6 +2221,8 @@ print("The deck has been shuffled!")
 for player in players:
     player.hand_cards.draw(main_deck, 4)
 print("All players have been dealt 4 cards!")
+for player in players:
+    player.check_false_ruler()
 game_started = True
 
 
