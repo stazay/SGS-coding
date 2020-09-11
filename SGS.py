@@ -538,7 +538,7 @@ class Hand(Deck):
         pass
 
     def draw(self, deck_drawn, num=1, message=True):
-        if game_started and message == True:
+        if message == True:
             if num == 1:
                 print(
                     f"{num} card has been added to {players[0].character}'s hand.")
@@ -648,7 +648,7 @@ class Hand(Deck):
         popping = False
         if card.type == 'Basic':
             if card.effect == 'Attack':
-                if (players[0].attacks_this_turn == 0) or (len(players[0].equipment_weapon) > 0 and players[0].equipment_weapon[0].effect == 'Zhuge Crossbow'):
+                if (players[0].attacks_this_turn == 0) or (players[0].check_berserk()) or (len(players[0].equipment_weapon) > 0 and players[0].equipment_weapon[0].effect == 'Zhuge Crossbow'):
                     choices_index = players[0].calculate_targets_in_weapon_range(
                         0)
                     if len(choices_index) > 0:
@@ -686,6 +686,9 @@ class Hand(Deck):
                                 card_index)
                             players[0].check_one_after_another()
                             discard_deck.add_to_top(discarded)
+                            if players[0].check_fearsome_archer(discarded, choices, selected_player):
+                                card.effect_2 = None
+                                return(' ')
                             attack_defended = choices[selected_player].hand_cards.play_reaction_effect(
                                 card, 0, selected_player, choices)
                             if type(attack_defended) == Card:
@@ -771,6 +774,7 @@ class Hand(Deck):
                 if answer.get('Selected') == 'Yes':
                     discarded = players[0].hand_cards.contents.pop(card_index)
                     players[0].check_one_after_another()
+                    players[0].check_wisdom()
                     discard_deck.add_to_top(discarded)
                     players[0].hand_cards.draw(main_deck, 2)
                     print(f"{players[0].character} has played {card}.")
@@ -1182,7 +1186,9 @@ class Player(Character):
         self.pending_judgements = []
         self.acedia_active = False
         self.rations_depleted_active = False
+        self.awakened = False
         self.counters = []
+        self.previous_turn_health = None
 
     def __repr__(self):
         character_details = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining"
@@ -1618,8 +1624,14 @@ class Player(Character):
                 discard_deck.add_to_top(self.pending_judgements.pop())
 
 # Ability checks
+    def check_berserk(self):
+        if (self.character_ability1 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability2 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability3 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability4 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability5 == "Berserk: There is no limit on how many times you can ATTACK during your turn."):
+            print(
+                f"  >> Character Ability: Berserk; {self.character} has no limit to the amount of attacks they can play.")
+            return True
+
     def check_bloodline(self):
-        if self.role == 'Emperor':
+        if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor."):
             if (self.character_ability1 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability2 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability3 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability4 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability5 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."):
                 heroes = []
                 for player in players:
@@ -1634,13 +1646,12 @@ class Player(Character):
     def check_conduit(self):
         if self.character_ability2 == "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'.":
             if len(self.counters) >= 3:
+                self.awakened = True
                 print(
                     f"  >> Character Ability: Conduit (Awakening Ability): {self.character} has awakened, losing one maximum health. They permanently gain the ability 'Blitz'.")
-                if self.max_health == self.current_health:
-                    self.max_health -= 1
+                self.max_health -= 1
+                if self.current_health > self.max_health:
                     self.current_health -= 1
-                else:
-                    self.max_health -= 1
                 self.character_ability2 = "Conduit (INACTIVE Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'."
                 self.character_ability3 = "Blitz: In your action phase, you can use any of your TERRAINS as STEAL."
                 if self.max_health == 0:
@@ -1655,6 +1666,7 @@ class Player(Character):
     def check_divinity(self):
         if self.character_ability2 == "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'.":
             if self.current_health == 1:
+                self.awakened = True
                 print(
                     f"  >> Character Ability: Divinity (Awakening Ability): {self.character} has awakened, losing one maximum health. They permanently gain the abilities 'Dashing Hero' and 'Brave Gesture'.")
                 self.max_health -= 1
@@ -1670,12 +1682,6 @@ class Player(Character):
                 f"  >> Character Ability: Eclipse the Moon; {players[0].character} draws an extra card from the deck in their end-phase.")
             self.hand_cards.draw(main_deck, 1, False)
 
-    def check_envy_of_heaven(self):
-        if (self.character_ability1 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability2 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability3 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability4 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability5 == "Envy of Heaven: You can obtain any judgement card that you flip over."):
-            print(
-                f"  >> Character Ability: Envy of Heaven; The top judgement card has been added to {self.character}'s hand before it takes effect.")
-            self.hand_cards.draw(discard_deck, 1, False)
-
     def check_eiron(self):
         if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor."):
             if self.character_ability3 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.":
@@ -1683,25 +1689,39 @@ class Player(Character):
                     if self.current_health > player.current_health:
                         return(' ')
                 else:
+                    self.awakened = True
                     print(
                         f"  >> Character Ability: Eiron (Awakening/Ruler Ability): {self.character} has awakened, gaining one health and maximum health. They also permanently gain the ability 'Rouse'.")
                     self.current_health += 1
                     self.max_health += 1
                     if self.character_ability3 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.":
                         self.character_ability3 = "Eiron (INACTIVE Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
-                        self.character_ability4 = "Rouse: If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
+                        self.character_ability4 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
                     if self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor." and self.character_ability3 == self.character_ability2 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.":
                         self.character_ability3 = "Eiron (INACTIVE Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
                         self.character_ability4 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
 
+    def check_envy_of_heaven(self):
+        if (self.character_ability1 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability2 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability3 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability4 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability5 == "Envy of Heaven: You can obtain any judgement card that you flip over."):
+            print(
+                f"  >> Character Ability: Envy of Heaven; The top judgement card has been added to {self.character}'s hand before it takes effect.")
+            self.hand_cards.draw(discard_deck, 1, False)
+
+    def check_eye_for_an_eye(self, source_player_index):
+        if (self.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
+            pass
+
     def check_false_ruler(self):
-        if (self.character_ability1 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability3 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability4 == "False Ruler: You possess the same ruler ability as the current emperor." or self.character_ability5 == "False Ruler: You possess the same ruler ability as the current emperor."):
+        if self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor.":
             for player in players:
                 if player.role == 'Emperor':
                     if player.character == 'Liu Bei':
                         self.character_ability3 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
-                    if player.character == 'Liu Shan':
+                    if (player.character == 'Liu Shan') and (not self.awakened):
                         self.character_ability3 = "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+                    elif (player.character == 'Liu Shan') and (self.awakened):
+                        self.character_ability3 = "Eiron (INACTIVE Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+                        self.character_ability4 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
                     if player.character == 'Cao Cao':
                         self.character_ability3 = "Escort (Ruler Ability): If you need to use a DEFEND, you can ask any member of Wei to play it on your behalf."
                     if player.character == 'Cao Pi':
@@ -1716,6 +1736,55 @@ class Player(Character):
                         self.character_ability3 = "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."
                     if player.character == 'Zhang Jiao':
                         self.character_ability3 = "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."
+        elif self.character_ability3 == "False Ruler: You possess the same ruler ability as the current emperor.":
+            for player in players:
+                if player.role == 'Emperor':
+                    if player.character == 'Liu Bei':
+                        self.character_ability4 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
+                    if (player.character == 'Liu Shan') and (not self.awakened):
+                        self.character_ability4 = "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+                    elif (player.character == 'Liu Shan') and (self.awakened):
+                        self.character_ability4 = "Eiron (INACTIVE Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+                        self.character_ability5 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
+                    if player.character == 'Cao Cao':
+                        self.character_ability4 = "Escort (Ruler Ability): If you need to use a DEFEND, you can ask any member of Wei to play it on your behalf."
+                    if player.character == 'Cao Pi':
+                        self.character_ability4 = "Exalt (Ruler Ability): Whenever any Wei character (other than yourself) makes a judgement, if the judgement card that takes effect is either CLUBS or SPADES, that character can choose to let you draw one card from the deck."
+                    if player.character == 'Sun Ce':
+                        self.character_ability4 = "Hegemony (Ruler Ability): During the action phase of any other Wu characters, they can choose to COMPETE against you; you both show a card simultaneously, and whoever has the higher value wins. If they do not win, you can take both cards used. After your awakening ability activates, you are able to refuse COMPETE effects."
+                    if player.character == 'Sun Quan':
+                        self.character_ability4 = "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health."
+                    if player.character == 'Dong Zhuo':
+                        self.character_ability4 = "Tyrant (Ruler Ability): Whenever another Hero character causes damage to any other player, you can flip a judgement card. If the judgement card is of the suit SPADES, you can regain one unit of health."
+                    if player.character == 'Yuan Shao':
+                        self.character_ability4 = "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."
+                    if player.character == 'Zhang Jiao':
+                        self.character_ability4 = "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."
+
+    def check_fearsome_archer(self, discarded, choices=[], selected_player_index=0):
+        if selected_player_index == None:
+            selected_player_index = 0
+        if (self.character_ability1 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability2 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability3 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability4 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability5 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining."):
+            if (len(choices[selected_player_index].hand_cards.contents) <= self.weapon_range) or (len(choices[selected_player_index].hand_cards.contents) >= self.current_health):
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Fearsome Archer against, and make your attack impossible to dodge?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    damage_dealt = 1
+                    choices[selected_player_index].current_health -= damage_dealt
+                    print(
+                        f"  >> Character Ability: Fearsome Archer; {players[0].character} attacked {choices[selected_player_index].character} with an undodgable {discarded}, dealing {damage_dealt} damage. ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining)")
+                    for player_index, player in enumerate(players):
+                        if player.current_health < 1:
+                            players[player_index].check_brink_of_death_loop(
+                                player_index, 0)
+                    return True
 
     def check_goddess_luo(self):
         if (self.character_ability1 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability2 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability3 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability4 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability5 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."):
@@ -1765,6 +1834,7 @@ class Player(Character):
     def check_insurrection(self):
         if self.character_ability2 == "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'.":
             if len(self.counters) >= 3:
+                self.awakened = True
                 if self.current_health >= self.max_health:
                     choices = ["Draw two cards"]
                 else:
@@ -1786,52 +1856,52 @@ class Player(Character):
                     self.hand_cards.draw(main_deck, 2, False)
                     print(
                         f"  >> Character Ability: Insurrection (Awakening Ability): {self.character} has awakened, drawing two cards. They permanently gain the ability 'Rejection'.")
-                    if self.max_health == self.current_health:
-                        self.max_health -= 1
-                        self.current_health -= 1
-                    else:
-                        self.max_health -= 1
+                self.max_health -= 1
+                if self.current_health > self.max_health:
+                    self.current_health -= 1
                 self.character_ability2 = "Insurrection (INACTIVE Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'."
                 self.character_ability3 = "Rejection: Once per turn, you can discard one RITE and force any character to draw two cards. If after, that character has more hand-cards than you, you then deal one damage to them."
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
 
-    def check_mediocrity_draw(self):
+    def check_mediocrity(self, phase):
         if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
-            print(
-                f"  >> Character Ability: Mediocrity; {players[0].character} draws {check_allegiances_in_play()} extra card(s) for every allegiance still in play.")
-            return True
-
-    def check_mediocrity_discard(self):
-        if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
-            if check_allegiances_in_play() >= (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse)):
+            if phase == "draw":
                 print(
-                    f"  >> Character Ability: Mediocrity; {self.character} discards at least {check_allegiances_in_play()} cards, one for every allegiance in play - they have no cards remaining.")
-                self.discard_all_cards()
-            else:
-                print(
-                    f"  >> Character Ability: Mediocrity; {self.character} discards at least {check_allegiances_in_play()} cards, one for every allegiance in play, and then down to their health-level ({players[0].current_health}/{players[0].max_health} HP remaining).")
-                self.hand_cards.discard_from_equip_or_hand(
-                    check_allegiances_in_play())
-                limit_increase = 0
-                if self.character_ability3 == 'Bloodline':
-                    heroes = []
-                    for player in players:
-                        if player.allegiance == 'Heroes':
-                            heroes.append("1")
-                    limit_increase = ((len(heroes)-1)*2)
-                    if limit_increase > 0:
-                        print(
-                            f"  >> Character Ability: Bloodline (False Ruler Ability); {self.character}'s hand limit is increased by {limit_increase} (two for every other HERO character still alive).")
-                if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
-                    difference = (
-                        len(self.hand_cards.list_cards()) - (self.current_health + limit_increase))
+                    f"  >> Character Ability: Mediocrity; {players[0].character} draws {check_allegiances_in_play()} extra card(s) for every allegiance still in play.")
+                return True
+            if phase == "discard":
+                if check_allegiances_in_play() >= (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse)):
+                    print(
+                        f"  >> Character Ability: Mediocrity; {self.character} discards at least {check_allegiances_in_play()} cards, one for every allegiance in play - they have no cards remaining.")
+                    self.discard_all_cards()
+                    return True
+                else:
+                    print(
+                        f"  >> Character Ability: Mediocrity; {self.character} discards at least {check_allegiances_in_play()} cards, one for every allegiance in play, and then down to their health-level ({players[0].current_health}/{players[0].max_health} HP remaining).")
                     self.hand_cards.discard_from_equip_or_hand(
-                        difference)
+                        check_allegiances_in_play())
+                    limit_increase = 0
+                    if self.character_ability3 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive.":
+                        heroes = []
+                        for player in players:
+                            if player.allegiance == 'Heroes':
+                                heroes.append("1")
+                        limit_increase = ((len(heroes)-1)*2)
+                        if limit_increase > 0:
+                            print(
+                                f"  >> Character Ability: Bloodline (False Ruler Ability); {self.character}'s hand limit is increased by {limit_increase} (two for every other HERO character still alive).")
+                    if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
+                        difference = (
+                            len(self.hand_cards.list_cards()) - (self.current_health + limit_increase))
+                        self.hand_cards.discard_from_equip_or_hand(
+                            difference)
+                    return True
 
     def check_recommence_the_legacy(self):
         if self.character_ability2 == "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'.":
             if len(self.hand_cards.contents) == 0:
+                self.awakened = True
                 if self.current_health >= self.max_health:
                     choices = ["Draw two cards"]
                 else:
@@ -1853,11 +1923,9 @@ class Player(Character):
                     self.hand_cards.draw(main_deck, 2, False)
                     print(
                         f"  >> Character Ability: Recommence the Legacy (Awakening Ability): {self.character} has awakened; drawing two cards and losing one maximum health. They also permanently gain the ability 'Astrology'.")
-                if self.max_health == self.current_health:
-                    self.max_health -= 1
+                self.max_health -= 1
+                if self.current_health > self.max_health:
                     self.current_health -= 1
-                else:
-                    self.max_health -= 1
                 self.character_ability2 = "Recommence the Legacy (INACTIVE Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'."
                 self.character_ability3 = "Astrology: Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck."
                 if self.max_health == 0:
@@ -1866,7 +1934,7 @@ class Player(Character):
     def check_rescued(self, reacting_player_index):
         if reacting_player_index == None:
             reacting_player_index = 0
-        if self.role == 'Emperor':
+        if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor."):
             if (self.character_ability1 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability2 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability3 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability4 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability5 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health."):
                 if players[reacting_player_index].character != self.character:
                     if players[reacting_player_index].allegiance == "Wu":
@@ -1890,6 +1958,36 @@ class Player(Character):
                     f"  >> Character Ability: One After Another; {self.character} can draw a card whenever they use or lose their last on-hand card.")
                 self.hand_cards.draw(main_deck, 1, False)
 
+    def check_second_wind(self):
+        if (self.character_ability2 == "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes."):
+            if self.previous_turn_health != None:
+                if not self.awakened:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Choose to activate Second Wind (Single-Use Ability), returning your health to what what it was at the end of your previous turn, and drawing a card for each unit changed.',
+                            'choices': ['Yes', 'No'],
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    if answer.get('Selected') == 'Yes':
+                        self.awakened = True
+                        difference = abs(
+                            self.previous_turn_health - self.current_health)
+                        self.current_health += difference
+                        print(
+                            f"  >> Character Ability; Second Wind (Single-Use Ability): {self.character} has gone from {self.current_health} to {self.previous_turn_health} health points, and drawn {difference} cards.")
+                        print("This ability cannot be used again!")
+                        self.hand_cards.draw(main_deck, difference, False)
+                        if self.current_health > self.max_health:
+                            self.current_health = self.max_health
+                        self.character_ability2 = "Second Wind (INACTIVE Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes."
+
+    def check_second_wind_health(self):
+        if (self.character_ability2 == "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes."):
+            self.previous_turn_health = self.current_health
+
     def check_unnatural_death(self, cards_discarded):
         if cards_discarded == None:
             return (' ')
@@ -1900,16 +1998,24 @@ class Player(Character):
                 f"  >> Character Ability: Unnatural Death; All discarded hands are added to the hand of {self.character}.")
             self.hand_cards.draw(discard_deck, cards_discarded, False)
 
+    def check_wisdom(self):
+        if (self.character_ability1 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability2 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability3 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability4 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability5 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck."):
+            print(
+                f"  >> Character Ability: Wisdom; {self.character} immediately draws a card from the deck after using a non-delay tool card.")
+            self.hand_cards.draw(main_deck, 1, False)
+
 # Game-state
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
         # Check for Zuo Ci; Shapeshift
+        self.check_false_ruler()
         self.check_conduit()
         self.check_divinity()
         self.check_eiron()
         self.check_insurrection()
         self.check_recommence_the_legacy()
+        self.check_second_wind()
         # Check for Jiang Wei/Zhuge Liang; Astrology
         # Check for Zhang He; Flexibility
         self.check_goddess_luo()
@@ -1948,7 +2054,7 @@ class Player(Character):
         if self.check_dashing_hero():
             cards_drawn += 1
             message = False
-        if self.check_mediocrity_draw():
+        if self.check_mediocrity("draw"):
             cards_drawn += check_allegiances_in_play()
             message = False
         # Checks for Sun Ce; Dashing Hero
@@ -2020,12 +2126,12 @@ class Player(Character):
         self.rations_depleted_active = False
         print(" ")
         # Check for characters that have increased hand-card limits at end of their turn.
-        limit_increase = self.check_bloodline()
-        if limit_increase == None:
-            limit_increase = 0
-        if self.check_mediocrity_discard():
+        if self.check_mediocrity("discard"):
             pass
         else:
+            limit_increase = self.check_bloodline()
+            if limit_increase == None:
+                limit_increase = 0
             if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
                 difference = (len(self.hand_cards.list_cards()) -
                               (self.current_health + limit_increase))
@@ -2036,6 +2142,7 @@ class Player(Character):
     def start_end_phase(self):
         print(" ")
         self.check_eclipse_the_moon()
+        self.check_second_wind_health()
         # Checks for Zuo Ci; Shapeshift
         # Cycles to next player
         players.append(players.pop(0))
@@ -2303,10 +2410,8 @@ discard_deck = Deck([])
 main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
-    player.hand_cards.draw(main_deck, 4)
+    player.hand_cards.draw(main_deck, 4, False)
 print("All players have been dealt 4 cards!")
-for player in players:
-    player.check_false_ruler()
 game_started = True
 
 
@@ -2326,14 +2431,14 @@ game_started = True
 
 # Gameplay
 print(' ')
-players[1].hand_cards.draw(main_deck, 10)
+# players[0].hand_cards.draw(main_deck, 10)
 # players[0].hand_cards.use_primary_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
 
-players[0].current_health = 1
+# players[0].current_health = 1
 # players[1].role = 'Advisor'
 players[0].start_beginning_phase()
-players[0].start_beginning_phase()
+# players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
