@@ -551,22 +551,6 @@ class Hand(Deck):
             self.add_to_top(card)
             num -= 1
 
-#    def draw_from_player(self, player_number_1=None, player_number_2=None):
-#        if activated_flexibility and player_number_2 == None:
-#            print(
-#                f"  >> Character Ability: Flexibility; {players[0].character} has drawn one card from the hand of {players[player_number_1].character}.")
-#        elif activated_flexibility:
-#            print(
-#                f"  >> Character Ability: Flexibility; {players[0].character} has drawn one card from each of the hands of {players[player_number_1].character} and {players[player_number_2].character}.")
-#        if activated_raid and player_number_2 == None:
-#            print(
-#                f"  >> Character Ability: Raid; {players[0].character} has drawn one card from the hand of {players[player_number_1].character}.")
-#        elif activated_raid:
-#            print(
-#                f"  >> Character Ability: Raid; {players[0].character} has drawn one card from each of the hands of {players[player_number_1].character} and {players[player_number_2].character}.")
-#        activated_flexibility = False
-#        activated_raid = False
-
     def give_to_player(self, card):
         pass
 
@@ -1109,7 +1093,7 @@ class Hand(Deck):
                         if card_stolen_index <= len(choices[selected_player].hand_cards.contents):
                             card_stolen = choices[selected_player].hand_cards.contents.pop(
                                 card_stolen_index - 1)
-                            players[0].hand_cards.add_to_top(card_stolen)
+                            self.add_to_top(card_stolen)
                             print(
                                 f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s hand by using {card}.")
                             choices[selected_player].check_one_after_another()
@@ -1119,28 +1103,28 @@ class Hand(Deck):
                             if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 2):
                                 card_stolen = choices[selected_player].equipment_weapon.pop(
                                 )
-                                players[0].hand_cards.add_to_top(card_stolen)
+                                self.add_to_top(card_stolen)
                                 print(
                                     f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s weapon-slot by using {card}.")
 
                             elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 3):
                                 card_stolen = choices[selected_player].equipment_armor.pop(
                                 )
-                                players[0].hand_cards.add_to_top(card_stolen)
+                                self.add_to_top(card_stolen)
                                 print(
                                     f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s armor-slot by using {card}.")
 
                             elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 4):
                                 card_stolen = choices[selected_player].equipment_offensive_horse.pop(
                                 )
-                                players[0].hand_cards.add_to_top(card_stolen)
+                                self.add_to_top(card_stolen)
                                 print(
                                     f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
 
                             elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 5):
                                 card_stolen = choices[selected_player].equipment_defensive_horse.pop(
                                 )
-                                players[0].hand_cards.add_to_top(card_stolen)
+                                self.add_to_top(card_stolen)
                                 print(
                                     f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
 
@@ -1148,22 +1132,19 @@ class Hand(Deck):
                             else:
                                 if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 7):
                                     card_stolen = choices[selected_player].pending_judgements[0]
-                                    players[0].hand_cards.add_to_top(
-                                        card_stolen)
+                                    self.add_to_top(card_stolen)
                                     print(
                                         f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
 
                                 if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 8):
                                     card_stolen = choices[selected_player].pending_judgements[1]
-                                    players[0].hand_cards.add_to_top(
-                                        card_stolen)
+                                    self.add_to_top(card_stolen)
                                     print(
                                         f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
 
                                 if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 9):
                                     card_stolen = choices[selected_player].pending_judgements[2]
-                                    players[0].hand_cards.add_to_top(
-                                        card_stolen)
+                                    self.add_to_top(card_stolen)
                                     print(
                                         f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
                     card.effect_2 = None
@@ -2454,7 +2435,7 @@ class Player(Character):
                     if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
                         difference = (
                             len(self.hand_cards.list_cards()) - (self.current_health + limit_increase))
-                        self.hand_cards.discard_from_equip_or_hand(
+                        self.hand_cards.discard_from_hand(
                             difference)
                     return True
 
@@ -2517,6 +2498,152 @@ class Player(Character):
                 print(
                     f"  >> Character Ability: One After Another; {self.character} can draw a card whenever they use or lose their last on-hand card.")
                 self.hand_cards.draw(main_deck, 1, False)
+
+    def check_raid(self):
+        if (self.character_ability1 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability2 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability3 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability4 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability5 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players."):
+            activated_raid = True
+            while activated_raid:
+                print(' ')
+                question_1 = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Raid, and draw one hand-card from other player(s) instead of drawing from the deck?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+
+                answer_1 = prompt(question_1, style=custom_style_2)
+                if answer_1.get('Selected') == 'No':
+                    activated_raid = False
+                if answer_1.get('Selected') == 'Yes':
+
+                    targets_str = []
+                    targets = []
+                    targets_str.append(Separator(
+                        f"--{players[0].character} (Can't target yourself!)--"))
+                    targets.append("Blank")
+                    for player in players[1:]:
+                        if len(player.hand_cards.contents) > 0:
+                            targets_str.append(str(player))
+                            targets.append(player)
+                        else:
+                            targets_str.append(
+                                Separator(f"--{player.character} (0 cards - cannot be targeted)--"))
+                            targets.append("Blank")
+                    targets_str.append(
+                        Separator("-------------OTHER-OPTIONS-------------"))
+                    targets_str.append("Cancel")
+                    targets.append(Separator())
+                    targets.append("Cancel")
+
+                    question_2 = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a character to target with Raid:',
+                            'choices': targets_str,
+                            'filter': lambda player: targets_str.index(player)
+                        },
+                    ]
+
+                    answer_2 = prompt(question_2, style=custom_style_2)
+                    target_1_index = answer_2.get('Selected')
+
+                    if target_1_index == (len(players) + 1):
+                        return self.check_raid()
+
+                    targets_str.pop(target_1_index)
+                    targets_str.insert(target_1_index, Separator(
+                        f"--{players[target_1_index].character} (Already selected)--"))
+                    target_1 = targets[target_1_index]
+                    targets_str.insert(-1, "Target noone else")
+                    targets.insert(-1, "Target noone else")
+
+                    question_3 = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a character to target with Raid:',
+                            'choices': targets_str,
+                            'filter': lambda player: targets_str.index(player)
+                        },
+                    ]
+
+                    answer_3 = prompt(question_3, style=custom_style_2)
+                    target_2_index = answer_3.get('Selected')
+                    target_2 = targets[target_2_index]
+
+                    if target_2 == "Cancel":
+                        return self.check_raid()
+                    else:
+                        print(' ')
+                        options_str = []
+                        options = []
+                        options_str.append(
+                            Separator("-----------------HAND--CARDS-----------------"))
+                        options.append('BLANK')
+                        i = 1
+                        for card in target_1.hand_cards.contents:
+                            options_str.append(f"Hand-Card {i}")
+                            options.append(card)
+                            i += 1
+
+                        question_4 = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f"{self.character}: Please select which card you would like to take from {target_1.character}'s hand:",
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer_4 = prompt(question_4, style=custom_style_2)
+                        card_stolen_index = answer_4.get('Selected')
+
+                        if card_stolen_index <= len(target_1.hand_cards.contents):
+                            card_stolen = target_1.hand_cards.contents.pop(
+                                card_stolen_index - 1)
+                            self.hand_cards.add_to_top(card_stolen)
+                            print(
+                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target_1.character}'s hand.")
+                            target_1.check_one_after_another()
+                            activated_raid = False
+
+                    if target_2 != "Target noone else":
+                        print(' ')
+                        options_str = []
+                        options = []
+                        options_str.append(
+                            Separator("-----------------HAND--CARDS-----------------"))
+                        options.append('BLANK')
+                        i = 1
+                        for card in target_2.hand_cards.contents:
+                            options_str.append(f"Hand-Card {i}")
+                            options.append(card)
+                            i += 1
+
+                        question_5 = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f"{self.character}: Please select which card you would like to take from {target_2.character}'s hand:",
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer_5 = prompt(question_5, style=custom_style_2)
+                        card_stolen_index = answer_5.get('Selected')
+
+                        if card_stolen_index <= len(target_2.hand_cards.contents):
+                            card_stolen = target_2.hand_cards.contents.pop(
+                                card_stolen_index - 1)
+                            self.hand_cards.add_to_top(card_stolen)
+                            print(
+                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target_2.character}'s hand.")
+                            target_2.check_one_after_another()
+                            activated_raid = False
+                    return True
 
     def check_retaliation(self, damage_dealt, source_player_index=0):
         if source_player_index == None:
@@ -2720,17 +2847,19 @@ class Player(Character):
         else:
             self.check_pending_judgements()
         if self.acedia_active and self.rations_depleted_active:
-            self.start_discard_phase()
+            return self.start_discard_phase()
         elif self.rations_depleted_active:
-            self.start_action_phase()
+            return self.start_action_phase()
         elif self.acedia_active:
-            # Check for Zhang Liao; Raid
-            self.start_drawing_phase()
+            if self.check_raid():
+                return self.start_action_phase()
+            return self.start_drawing_phase()
         else:
             # Check for Yan Liang & Wen Chou; Dual Heroes
             # Check for Xu Chu; Bare the Chest
             # Check for Zhang He; Flexibility
-            # Check for Zhang Liao; Raid
+            if self.check_raid():
+                return self.start_action_phase()
             self.start_drawing_phase()
 
 # Drawing Phase
@@ -3121,13 +3250,13 @@ game_started = True
 
 # Gameplay
 print(' ')
-players[0].hand_cards.draw(main_deck, 25)
+# players[0].hand_cards.draw(main_deck, 25)
 # players[0].hand_cards.use_primary_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
 
-players[0].current_health = 6
+# players[0].current_health = 6
 # players[1].role = 'Rebel'
 players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
