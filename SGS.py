@@ -718,6 +718,9 @@ class Hand(Deck):
                                     if player.current_health < 1:
                                         if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                             return "Break"
+                                if choices[selected_player].check_eye_for_an_eye(
+                                        source_player_index=0, mode="Activate") == "Break":
+                                    return(' ')
                                 choices[selected_player].check_retaliation(
                                     damage_dealt, 0)
                     else:
@@ -1466,8 +1469,6 @@ class Player(Character):
             print(
                 f"{self.character} - Your maximum health has reached 0 and therefore you are dead! - {self.character}'s role was {self.role}!")
             self.discard_all_cards(death=True)
-            if self.role == 'Rebel':
-                players[source_player_index].hand_cards.draw(main_deck, 3)
             if self.role == 'Advisor' and players[source_player_index].role == 'Emperor':
                 print(
                     f"{players[source_player_index].character} loses all their cards for killing their Advisor.")
@@ -1500,7 +1501,10 @@ class Player(Character):
                     f"{self.character} wasn't saved from the brink of death! - {self.character}'s role was {self.role}!")
                 self.discard_all_cards(death=True)
                 if self.role == 'Rebel':
-                    players[source_player_index].hand_cards.draw(main_deck, 3)
+                    players[source_player_index].hand_cards.draw(
+                        main_deck, 3, False)
+                    print(
+                        f"{players[source_player_index].character} draws three cards for killing a rebel!")
                 if self.role == 'Advisor' and players[source_player_index].role == 'Emperor':
                     print(
                         f"{players[source_player_index].character} loses all their cards for killing their Advisor.")
@@ -1776,6 +1780,71 @@ class Player(Character):
                 f"  >> Character Ability: Envy of Heaven; The top judgement card has been added to {self.character}'s hand before it takes effect.")
             self.hand_cards.draw(discard_deck, 1, False)
 
+    def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
+        if source_player_index == None:
+            source_player_index = 0
+        for player_index, player in enumerate(players):
+            if (player.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
+                retaliator_index = player_index
+        if (self.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
+            if mode == "Activate":
+                print(' ')
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Eye for an Eye, and and force {players[source_player_index].character} to either take one damage or discard two hand-cards?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    print(
+                        f"  >> Character Ability: Eye for an Eye; {self.character} is forcing a judgement card to be flipped. If not HEARTS, {players[source_player_index].character} must either take one damage or discard two hand-cards.")
+                main_deck.check_if_empty(main_deck, discard_deck)
+                main_deck.discard_from_deck()
+                judgement_card = discard_deck.contents[0]
+                print(f"{self.character} flipped a {judgement_card}.")
+                # Add checks for Sima Yi and Zhang Jiao
+                if judgement_card.suit != "Hearts":
+                    print(
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {players[source_player_index].character} must suffer one damage or discard two hand-cards.")
+                    players[source_player_index].check_eye_for_an_eye(
+                        retaliator_index, "Reaction")
+                if judgement_card.suit == "Hearts":
+                    print(
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore has no effect.")
+                    return (' ')
+
+        if mode == "Reaction":
+            print(' ')
+            choices = ['Suffer one damage.']
+            if len(self.hand_cards.contents) > 1:
+                choices.append('Discard two cards.')
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Please select an option:',
+                    'choices': choices,
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Suffer one damage.':
+                self.current_health -= 1
+                print(
+                    f"{self.character} suffered one damage from {players[retaliator_index].character}'s an Eye for an Eye ({self.current_health}/{self.max_health} HP remaining).")
+                for player_index, player in enumerate(players):
+                    if player.current_health < 1:
+                        if players[player_index].check_brink_of_death_loop(player_index, retaliator_index) == "Break":
+                            return "Break"
+                self.check_retaliation(1, retaliator_index)
+            if answer.get('Selected') == 'Discard two cards.':
+                self.hand_cards.discard_from_hand(2)
+                print(
+                    f"{self.character} discarded two hand-cards due to {players[retaliator_index].character}'s an Eye for an Eye.")
+                self.check_one_after_another()
+
     def check_false_ruler(self):
         if self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor.":
             for player in players:
@@ -1857,6 +1926,7 @@ class Player(Character):
                 f"  >> Character Ability: Goddess Luo; {self.character} can flip judgement cards until one is red. All black cards are added to their hand.")
             activated_goddess_luo = True
             cards_drawn = []
+            print(' ')
             while activated_goddess_luo:
                 question = [
                     {
@@ -2076,12 +2146,13 @@ class Player(Character):
             cards_discardable = (len(players[source_player_index].hand_cards.contents) + len(players[source_player_index].equipment_weapon) + len(
                 players[source_player_index].equipment_armor) + len(players[source_player_index].equipment_offensive_horse) + len(players[source_player_index].equipment_defensive_horse))
             while damage_dealt > 0:
+                print(' ')
                 if cards_discardable > 0:
                     question_1 = [
                         {
                             'type': 'list',
                             'name': 'Selected',
-                            'message': f'{self.character}: Choose to activate Retaliation, and take a card (on-hand or equipped) from {players[source_player_index]}?',
+                            'message': f'{self.character}: Choose to activate Retaliation, and take a card (on-hand or equipped) from {players[source_player_index].character}?',
                             'choices': ['Yes', 'No'],
                         },
                     ]
@@ -2163,7 +2234,6 @@ class Player(Character):
                         # Check if equipment-card
                         else:
                             if card_stolen_index == (len(players[source_player_index].hand_cards.contents) + 2):
-                                print("weapon")
                                 card_stolen = players[source_player_index].equipment_weapon.pop(
                                 )
                                 self.hand_cards.add_to_top(card_stolen)
@@ -2171,7 +2241,6 @@ class Player(Character):
                                     f"  >> Character Ability: Retaliation {self.character} has taken {card_stolen} from {players[source_player_index].character}'s weapon-slot.")
 
                             elif card_stolen_index == (len(players[source_player_index].hand_cards.contents) + 3):
-                                print("armor")
                                 card_stolen = players[source_player_index].equipment_armor.pop(
                                 )
                                 self.hand_cards.add_to_top(card_stolen)
@@ -2179,7 +2248,6 @@ class Player(Character):
                                     f"  >> Character Ability: Retaliation {self.character} has taken {card_stolen} from {players[source_player_index].character}'s armor-slot.")
 
                             elif card_stolen_index == (len(players[source_player_index].hand_cards.contents) + 4):
-                                print("off horse")
                                 card_stolen = players[source_player_index].equipment_offensive_horse.pop(
                                 )
                                 self.hand_cards.add_to_top(card_stolen)
@@ -2187,7 +2255,6 @@ class Player(Character):
                                     f"  >> Character Ability: Retaliation {self.character} has taken {card_stolen} from {players[source_player_index].character}'s horse-slot.")
 
                             elif card_stolen_index == (len(players[source_player_index].hand_cards.contents) + 5):
-                                print("def horse")
                                 card_stolen = players[source_player_index].equipment_defensive_horse.pop(
                                 )
                                 self.hand_cards.add_to_top(card_stolen)
@@ -2314,6 +2381,8 @@ class Player(Character):
         action_phase_active = True
         self.attacks_this_turn = 0
         while action_phase_active:
+            if self.current_health == 0:
+                return(self.start_end_phase())
             print(' ')
             options = []
             options.append(
@@ -2674,14 +2743,14 @@ game_started = True
 
 # Gameplay
 print(' ')
-players[0].hand_cards.draw(main_deck, 10)
+players[1].hand_cards.draw(main_deck, 10)
 # players[0].hand_cards.use_primary_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
 
-# players[1].current_health = 3
-# players[1].role = 'Advisor'
+players[1].current_health = 1
+players[1].role = 'Rebel'
 players[0].start_beginning_phase()
-# players[0].start_beginning_phase()
+players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
