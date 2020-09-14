@@ -672,6 +672,9 @@ class Hand(Deck):
                                 card_index)
                             players[0].check_one_after_another()
                             discard_deck.add_to_top(discarded)
+                            if choices[selected_player].check_relish(source_player_index=0, mode="Activate"):
+                                card.effect_2 = None
+                                return(' ')
                             if players[0].check_fearsome_archer(discarded, choices, selected_player):
                                 card.effect_2 = None
                                 return(' ')
@@ -686,8 +689,7 @@ class Hand(Deck):
                                         f"{choices[selected_player].character} successfully defended the attack with {attack_defended}.")
                                     players[0].check_fearsome_advance(
                                         discarded, choices, selected_player)
-                                    choices[selected_player].check_lightning_strike(
-                                        selected_player)
+                                    choices[selected_player].check_lightning_strike()
                                 elif attack_defended.effect == 0:
                                     pass
                             else:
@@ -2669,9 +2671,7 @@ class Player(Character):
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
 
-    def check_lightning_strike(self, dodging_player_index=0):
-        if dodging_player_index == None:
-            dodging_player_index = 0
+    def check_lightning_strike(self):
         if (self.character_ability1 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability2 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability3 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability4 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability5 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
             question_1 = [
                 {
@@ -2684,7 +2684,7 @@ class Player(Character):
             answer_1 = prompt(question_1, style=custom_style_2)
 
             if answer_1.get('Selected') == 'Yes':
-                choices = players[dodging_player_index:]
+                choices = players
                 choices_str = list_character_options(players)
                 question_2 = [
                     {
@@ -2698,7 +2698,7 @@ class Player(Character):
                 answer_2 = prompt(question_2, style=custom_style_2)
                 selected_player_index = answer_2.get('Selected')
                 print(
-                    f"  >> Character Ability: Lightning Strike; {self.character} will force {choices[selected_player_index].character} to flip a judgement. If SPADES, they take two Lightning damage")
+                    f"  >> Character Ability: Lightning Strike; {self.character} will force {choices[selected_player_index].character} to flip a judgement. If SPADES, they take two lightning damage.")
 
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
@@ -2710,7 +2710,10 @@ class Player(Character):
                     damage_dealt = 2
                     choices[selected_player_index].current_health -= damage_dealt
                     print(
-                        f"  >> Character Ability: Lightning Strike; {choices[selected_player_index].character}'s judgement card is a {judgement_card} and therefore they take two Lightning damage ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining).")
+                        f"  >> Character Ability: Lightning Strike; {choices[selected_player_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining).")
+                    for player_index, player in enumerate(players):
+                        if (player.character_ability1 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
+                            dodging_player_index = player_index
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
@@ -2995,6 +2998,58 @@ class Player(Character):
                 self.character_ability3 = "Astrology: Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck."
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
+
+    def check_relish(self, source_player_index=0, mode="Activate"):
+        if source_player_index == None:
+            source_player_index = 0
+        if mode == "Activate":
+            if (self.character_ability1 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability2 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability3 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability4 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability5 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."):
+                cards_discardable = len(
+                    players[source_player_index].hand_cards.contents)
+                if cards_discardable > 0:
+                    players[source_player_index].check_relish(0, "Reaction")
+                else:
+                    print(
+                        f"  >> Character Ability: Relish; {players[source_player_index.character]} didn't discard a basic card! {self.character} is unaffected.")
+                    return False
+
+        if mode == "Reaction":
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability2 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability3 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability4 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability5 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."):
+                    relish_player_index = player_index
+
+            choices_str = self.hand_cards.list_cards()
+            choices_str.append(
+                Separator("--------------------Other--------------------"))
+            choices_str.append("Do nothing.")
+
+            question_1 = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character} - You cannot affect {players[relish_player_index].character} with an ATTACK unless you discard another basic card.',
+                    'choices': choices_str,
+                    'filter': lambda card: choices_str.index(card)
+                },
+            ]
+            answer_1 = prompt(question_1, style=custom_style_2)
+            card_index = answer_1.get('Selected')
+            if choices_str[card_index] == "Do nothing.":
+                print(
+                    f"  >> Character Ability: Relish; {self.character} didn't discard a basic card! {players[relish_player_index].character} is unaffected.")
+                return False
+            card = self.hand_cards.contents.pop(card_index)
+            main_deck.add_to_top(card)
+
+            if card.type == "Basic":
+                print(
+                    f"  >> Character Ability: Relish; {self.character} has discarded a basic card! {players[relish_player_index].character} must DEFEND as normal.")
+                self.check_one_after_another()
+                return True
+            else:
+                print(
+                    f"  >> Character Ability: Relish; {self.character} didn't discard a basic card! {players[relish_player_index].character} is unaffected.")
+                return False
 
     def check_rescued(self, reacting_player_index):
         if reacting_player_index == None:
