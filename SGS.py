@@ -686,6 +686,8 @@ class Hand(Deck):
                                         f"{choices[selected_player].character} successfully defended the attack with {attack_defended}.")
                                     players[0].check_fearsome_advance(
                                         discarded, choices, selected_player)
+                                    choices[selected_player].check_lightning_strike(
+                                        selected_player)
                                 elif attack_defended.effect == 0:
                                     pass
                             else:
@@ -1368,21 +1370,21 @@ all_cards = [
     Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel',
          'When equipped, the wielder ignores any armor of their targets.', 2),
     Card(7, 'Seven', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(7, 'Seven', 'Spades', 'Tool', 'Barbarians',
          'All other players must play an ATTACK or else suffer one damage.'),
     Card(8, 'Eight', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(8, 'Eight', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(9, 'Nine', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(9, 'Nine', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(10, 'Ten', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(10, 'Ten', 'Spades', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(11, 'Jack', 'Spades', 'Tool', 'Negate',
          'Any player may play this card in response to a tool card being played. This prevents that tool card from working.'),
     Card(11, 'Jack', 'Spades', 'Tool', 'Steal',
@@ -1429,11 +1431,11 @@ all_cards = [
     Card(9, 'Nine', 'Hearts', 'Tool', 'Greed',
          'Use this card to draw two cards from the deck.'),
     Card(10, 'Ten', 'Hearts', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(10, 'Ten', 'Hearts', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(11, 'Jack', 'Hearts', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(11, 'Jack', 'Hearts', 'Tool', 'Greed',
          'Use this card to draw two cards from the deck.'),
     Card(12, 'Queen', 'Hearts', 'Basic', 'Peach',
@@ -1450,47 +1452,47 @@ all_cards = [
     Card(1, 'Ace', 'Clubs', 'Weapon', 'Zhuge Crossbow',
          'When equipped, the wielder has no limit to the number of ATTACKs they can play in their turn.', 1),
     Card(2, 'Two', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(2, 'Two', 'Clubs', 'Armor', 'Black Shield',
          'When equipped, black ATTACK cards cannot affect the wearer.'),
     Card(2, 'Two', 'Clubs', 'Armor', 'Eight-Trigrams',
          'When equipped: whenever a DEFEND is needed, the wearer can perform a judgement. If it is red, the DEFEND is considered to be played.'),
     Card(3, 'Three', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(3, 'Three', 'Clubs', 'Tool', 'Dismantle',
          'You can target any player and discard one of their cards, on-hand or equipped.'),
     Card(4, 'Four', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(4, 'Four', 'Clubs', 'Tool', 'Dismantle',
          'You can target any player and discard one of their cards, on-hand or equipped.'),
     Card(5, 'Five', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(5, 'Five', 'Clubs', '+1 Horse', 'Di Lu; +1 Horse',
          'When equipped, this horse places you further away from players in distance calculations by +1.'),
     Card(6, 'Six', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(6, 'Six', 'Clubs', 'Delay-Tool', 'Acedia',
          'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.'),
     Card(7, 'Seven', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(7, 'Seven', 'Clubs', 'Tool', 'Barbarians',
          'All other players must play an ATTACK or else suffer one damage.'),
     Card(8, 'Eight', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(8, 'Eight', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(9, 'Nine', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(9, 'Nine', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(10, 'Ten', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(10, 'Ten', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(11, 'Jack', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(11, 'Jack', 'Clubs', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(12, 'Queen', 'Clubs', 'Tool', 'Coerce', 'Use this card to target any other player that possesses a weapon. Afterwards, you can then select any target within their attacking range. Your target can then ATTACK the victim. If they do not, you will take their weapon and add it to your hand.'),
     Card(12, 'Queen', 'Clubs', 'Tool', 'Negate',
          'Any player may play this card in response to a tool card being played. This prevents that tool card from working.'),
@@ -1517,23 +1519,23 @@ all_cards = [
     Card(5, 'Five', 'Diamonds', 'Weapon', 'Axe',
          'When equipped, and the target of the wielder DEFENDs against the ATTACK of the wielder, they can discard two cards to force the damage.', 3),
     Card(6, 'Six', 'Diamonds', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(6, 'Six', 'Diamonds', 'Basic', 'Defend',
          'When targeted by an ATTACK, you can play this card to avoid taking damage.'),
     Card(7, 'Seven', 'Diamonds', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(7, 'Seven', 'Diamonds', 'Basic', 'Defend',
          'When targeted by an ATTACK, you can play this card to avoid taking damage.'),
     Card(8, 'Eight', 'Diamonds', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(8, 'Eight', 'Diamonds', 'Basic', 'Defend',
          'When targeted by an ATTACK, you can play this card to avoid taking damage.'),
     Card(9, 'Nine', 'Diamonds', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(9, 'Nine', 'Diamonds', 'Basic', 'Defend',
          'When targeted by an ATTACK, you can play this card to avoid taking damage.'),
     Card(10, 'Ten', 'Diamonds', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(10, 'Ten', 'Diamonds', 'Basic', 'Defend',
          'When targeted by an ATTACK, you can play this card to avoid taking damage.'),
     Card(11, 'Jack', 'Diamonds', 'Basic', 'Defend',
@@ -1547,7 +1549,7 @@ all_cards = [
     Card(12, 'Queen', 'Diamonds', 'Weapon', "Lu Bu's Halberd",
          'When equipped and using the last on-hand card to ATTACK, the ATTACK can target an additional two players.', 4),
     Card(13, 'King', 'Diamonds', 'Basic', 'Attack',
-         'Once per turn, you can use this card to attack any player within your attacking range. They must place a DEFEND or else suffer one damage.'),
+         'Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.'),
     Card(13, 'King', 'Diamonds', '-1 Horse', 'Hua Liu; -1 Horse',
          'When equipped, this horse places other players closer to you in distance calculations by -1.')
 ]
@@ -2667,6 +2669,64 @@ class Player(Character):
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
 
+    def check_lightning_strike(self, dodging_player_index=0):
+        if dodging_player_index == None:
+            dodging_player_index = 0
+        if (self.character_ability1 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability2 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability3 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability4 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability5 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
+            question_1 = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Choose to activate Lightning Strike, make someone flip a judgement card; if SPADES, you deal two points of Lightning damage?',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer_1 = prompt(question_1, style=custom_style_2)
+
+            if answer_1.get('Selected') == 'Yes':
+                choices = players[dodging_player_index:]
+                choices_str = list_character_options(players)
+                question_2 = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to target with Lightning Strike.',
+                        'choices': choices_str,
+                        'filter': lambda player: choices_str.index(player)
+                    },
+                ]
+                answer_2 = prompt(question_2, style=custom_style_2)
+                selected_player_index = answer_2.get('Selected')
+                print(
+                    f"  >> Character Ability: Lightning Strike; {self.character} will force {choices[selected_player_index].character} to flip a judgement. If SPADES, they take two Lightning damage")
+
+                main_deck.discard_from_deck()
+                judgement_card = discard_deck.contents[0]
+                print(
+                    f"{choices[selected_player_index].character} flipped a {judgement_card}.")
+                # Add checks for Sima Yi and Zhang Jiao
+                choices[selected_player_index].check_envy_of_heaven()
+                if judgement_card.suit == "Spades":
+                    damage_dealt = 2
+                    choices[selected_player_index].current_health -= damage_dealt
+                    print(
+                        f"  >> Character Ability: Lightning Strike; {choices[selected_player_index].character}'s judgement card is a {judgement_card} and therefore they take two Lightning damage ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining).")
+                    for player_index, player in enumerate(players):
+                        if player.current_health < 1:
+                            players[player_index].check_brink_of_death_loop(
+                                player_index, dodging_player_index)
+                    choices[selected_player_index].check_eternal_loyalty(
+                        damage_dealt)
+                    choices[selected_player_index].check_eye_for_an_eye(
+                        dodging_player_index, "Activate")
+                    choices[selected_player_index].check_plotting_for_power(
+                        damage_dealt, "Reaction")
+                    choices[selected_player_index].check_retaliation(
+                        dodging_player_index, damage_dealt)
+                else:
+                    print(
+                        f"  >> Character Ability: Lightning Strike; {choices[selected_player_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
+
     def check_mediocrity(self, phase="Draw"):
         if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
             if phase == "Draw":
@@ -3256,17 +3316,15 @@ class Player(Character):
 
 # Discard Phase
     def start_discard_phase(self):
-        self.acedia_active = False
-        self.rations_depleted_active = False
         print(" ")
         if self.check_mediocrity("Discard"):
             pass
         else:
             # Check for characters that have increased hand-card limits at end of their turn
             limit_increase_1 = self.check_bloodline()
+            limit_increase_2 = self.check_plotting_for_power(0, "Discard")
             if limit_increase_1 == None:
                 limit_increase_1 = 0
-            limit_increase_2 = self.check_plotting_for_power(0, "Discard")
             if limit_increase_2 == None:
                 limit_increase_2 = 0
             limit_increase = limit_increase_1 + limit_increase_2
@@ -3281,6 +3339,8 @@ class Player(Character):
 # End Phase
     def start_end_phase(self):
         print(" ")
+        self.acedia_active = False
+        self.rations_depleted_active = False
         self.check_disintegrate()
         self.check_eclipse_the_moon()
         self.check_second_wind("End")
@@ -3581,5 +3641,5 @@ print(' ')
 # players[1].current_health = 1
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
-players[0].start_beginning_phase()
+# players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
