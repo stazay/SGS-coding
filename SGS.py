@@ -526,6 +526,8 @@ class Hand(Deck):
                 choices_str = self.list_cards()
                 choices_str.append(
                     Separator("--------------------Other--------------------"))
+                if players[reacting_player_index].activate_first_aid(player_index, "Check"):
+                    choices_str.append("  >> Character Ability: First Aid")
                 choices_str.append("Do nothing.")
                 message = f"{players[reacting_player_index].character}: {players[player_index].character} is on the brink of death; please choose a response (a PEACH card or do nothing)!"
 
@@ -543,9 +545,21 @@ class Hand(Deck):
                 if choices_str[card_index] == "Do nothing.":
                     reactions_possible = False
                     return(output_value)
+                elif choices_str[card_index] == "  >> Character Ability: First Aid":
+                    if (players[reacting_player_index].activate_first_aid(player_index, "Activate")):
+                        players[reacting_player_index].check_one_after_another()
+                        output_value += 1
+                        bonus_output = players[player_index].check_rescued(
+                            reacting_player_index)
+                        if bonus_output == 1:
+                            output_value += bonus_output
+                        if players[player_index].check_break_brink_loop(output_value):
+                            reactions_possible = False
+                            return(output_value)
+
                 elif self.contents[card_index].effect == 'Peach':
                     discarded = self.contents.pop(card_index)
-                    players[0].check_one_after_another()
+                    players[reacting_player_index].check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     output_value += 1
                     bonus_output = players[player_index].check_rescued(
@@ -1105,6 +1119,62 @@ class Hand(Deck):
                     players[0].check_one_after_another()
                     players[0].pending_judgements.append(card)
                     print(f"{players[0].character} has called {card}.")
+
+        if card.effect2 == 'Rations Depleted':
+            choices_index = players[0].calculate_targets_in_extended_physical_range(
+                0)
+            if players[0].check_talent():
+                choices = players[1:]
+                choices_str = list_character_options(players[1:])
+                blockade_possible = True
+
+            elif len(choices_index) > 0:
+                choices = []
+                for player_index in choices_index:
+                    choices.append(players[player_index])
+                choices_str = list_character_options(choices)
+                blockade_possible = True
+
+            if blockade_possible:
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{players[0]}: Please select a player to target with {card} as RATIONS DEPLETED.',
+                        'choices': choices_str,
+                        'filter': lambda player: choices_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected_player = (answer.get('Selected'))
+
+                print(f"{card} >> RATIONS DEPLETED - You can place Delay-Tool on any other player in physical range. The target must perform a judgement for this card. If it is not CLUBS, they forfeit their draw-phase.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{players[0].character}: Please confirm you would like to use {card} against {choices[selected_player].character}?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'No':
+                    return False
+                if answer.get('Selected') == 'Yes':
+                    for possible_rations_depleted in choices[selected_player].pending_judgements:
+                        if possible_rations_depleted.effect2 == 'Rations Depleted':
+                            print(
+                                f"{players[0].character}: {choices[selected_player].character} cannot be targeted by RATIONS DEPLETED as they already have one pending.")
+                        return False
+                    else:
+                        if card_index == "Special":
+                            card_used = card
+                        players[0].check_one_after_another()
+                        players[selected_player].pending_judgements.append(
+                            card_used)
+                        print(
+                            f"{players[0].character}: {choices[selected_player].character} will face judgement by {card_used} for RATIONS DEPLETED on their next turn.")
+                        return True
 
         # card.type == 'Equipment'
         if card.type == 'Weapon' or card.type == 'Armor' or card.type == '+1 Horse' or card.type == '-1 Horse':
@@ -1713,6 +1783,17 @@ class Player(Character):
                     output.append(target_index)
         return output
 
+    def calculate_targets_in_extended_physical_range(self, player_index):
+        output = []
+        for (target_index, target) in enumerate(players):
+            if target_index != player_index:
+                distance = abs(target_index - player_index)
+                if distance > len(players) / 2:
+                    distance = len(players) - distance
+                if distance - (players[player_index].check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 2)) + (len(target.equipment_defensive_horse)) <= 0:
+                    output.append(target_index)
+        return output
+
     def calculate_targets_in_weapon_range(self, player_index):
         output = []
         for (target_index, target) in enumerate(players):
@@ -1788,7 +1869,7 @@ class Player(Character):
                 return "Break"
             else:
                 print(
-                    f"{players[dying_player_index].character} has been successfully healed back to {players[dying_player_index].current_health}/{players[dying_player_index].max_health}.")
+                    f"{players[dying_player_index].character} has been successfully healed back to {players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP.")
 
     def check_pending_judgements(self):
         if self.pending_judgements == []:
@@ -3159,6 +3240,216 @@ class Player(Character):
             self.hand_cards.draw(main_deck, 1, False)
 
 # Activatable abilities (reusable)
+    def activate_blockade(self):
+        if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            if cards_discardable > 0:
+                usable_cards = []
+                for card in self.hand_cards.contents:
+                    if (card.suit == "Spades" or card.suit == "Clubs") and (card.type == "Basic" or card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse"):
+                        usable_cards.append(card)
+                for card in self.equipment_weapon:
+                    if (card.suit == "Spades" or card.suit == "Clubs") and (card.type == "Basic" or card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse"):
+                        usable_cards.append(card)
+                for card in self.equipment_armor:
+                    if (card.suit == "Spades" or card.suit == "Clubs") and (card.type == "Basic" or card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse"):
+                        usable_cards.append(card)
+                for card in self.equipment_offensive_horse:
+                    if (card.suit == "Spades" or card.suit == "Clubs") and (card.type == "Basic" or card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse"):
+                        usable_cards.append(card)
+                for card in self.equipment_defensive_horse:
+                    if (card.suit == "Spades" or card.suit == "Clubs") and (card.type == "Basic" or card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse"):
+                        usable_cards.append(card)
+
+                if len(usable_cards) < 1:
+                    print(
+                        f"{self.character}: You cannot use this ability as you have no black-suited cards.")
+
+                else:
+                    options_str = self.create_str_nonblind_menu()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("Cancel ability.")
+                    options = self.create_actual_menu()
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f"{self.character}: Please select 'black-suited, basic' or 'black-suited, equipment' card to use as RATIONS DEPLETED?",
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    discarded_index = answer.get('Selected')
+                    weapon_popped = False
+                    armor_popped = False
+                    off_horse_popped = False
+                    def_horse_popped = False
+
+                    if discarded_index == (len(self.hand_cards.contents) + 7):
+                        return (' ')
+
+                    if (options[discarded_index].suit == "Spades" or options[discarded_index].suit == "Clubs") and (options[discarded_index].type == "Basic" or options[discarded_index].type == "Weapon" or options[discarded_index].type == "Armor" or options[discarded_index].type == "-1 Horse" or options[discarded_index].type == "+1 Horse"):
+                        # Check if hand-card
+                        if discarded_index <= len(self.hand_cards.contents):
+                            card = self.hand_cards.contents.pop(
+                                discarded_index - 1)
+                            discard_deck.add_to_top(card)
+                            print(
+                                f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their hand to use as RATIONS DEPLETED.")
+
+                        # Check if equipment-card
+                        else:
+                            if discarded_index == (len(self.hand_cards.contents) + 2):
+                                card = self.equipment_weapon.pop()
+                                discard_deck.add_to_top(card)
+                                self.weapon_range = 1
+                                weapon_popped = True
+                                print(
+                                    f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their weapon-slot to use as RATIONS DEPLETED.")
+
+                            if discarded_index == (len(self.hand_cards.contents) + 3):
+                                card = self.equipment_armor.pop()
+                                discard_deck.add_to_top(card)
+                                armor_popped = True
+                                print(
+                                    f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their armor-slot to use as RATIONS DEPLETED.")
+
+                            if discarded_index == (len(self.hand_cards.contents) + 4):
+                                card = self.equipment_offensive_horse.pop()
+                                discard_deck.add_to_top(card)
+                                off_horse_popped = True
+                                print(
+                                    f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their horse-slot to use as RATIONS DEPLETED.")
+
+                            if discarded_index == (len(self.hand_cards.contents) + 5):
+                                card = self.equipment_defensive_horse.pop()
+                                discard_deck.add_to_top(card)
+                                def_horse_popped = True
+                                print(
+                                    f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their horse-slot to use as RATIONS DEPLETED.")
+
+                        card.effect2 = "Rations Depleted"
+                        if not self.hand_cards.use_card_effect("Special", card):
+                            if weapon_popped:
+                                discard_deck.contents.pop()
+                                self.equipment_weapon.append(card)
+                                self.weapon_range = card.weapon_range
+                            if armor_popped:
+                                discard_deck.contents.pop()
+                                self.equipment_armor.append(card)
+                            if off_horse_popped:
+                                discard_deck.contents.pop()
+                                self.equipment_offensive_horse.append(card)
+                            if def_horse_popped:
+                                discard_deck.contents.pop()
+                                self.equipment_defensive_horse.append(card)
+                            else:
+                                self.hand_cards.draw(discard_deck, 1, False)
+                            print(
+                                f"{self.character} cancelled using their effect, and {card} was returned.")
+                    else:
+                        print(
+                            f"{options[discarded_index]} cannot be used as RATIONS DEPLETED as it is not a black-suited basic/equipment card.")
+
+    def activate_first_aid(self, dying_player_index=0, mode="Check"):
+        if (self.character_ability1 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability2 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability3 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability4 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability5 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH."):
+            if mode == "Check":
+                return True
+
+            if mode == "Activate":
+                cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                    self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+                if cards_discardable > 0:
+                    usable_cards = []
+                    for card in self.hand_cards.contents:
+                        if card.suit == "Hearts" or card.suit == "Diamonds":
+                            usable_cards.append(card)
+                    for card in self.equipment_weapon:
+                        if card.suit == "Hearts" or card.suit == "Diamonds":
+                            usable_cards.append(card)
+                    for card in self.equipment_armor:
+                        if card.suit == "Hearts" or card.suit == "Diamonds":
+                            usable_cards.append(card)
+                    for card in self.equipment_offensive_horse:
+                        if card.suit == "Hearts" or card.suit == "Diamonds":
+                            usable_cards.append(card)
+                    for card in self.equipment_defensive_horse:
+                        if card.suit == "Hearts" or card.suit == "Diamonds":
+                            usable_cards.append(card)
+
+                    if len(usable_cards) < 1:
+                        print(
+                            f"{self.character}: You cannot use this ability as you have no red-suited cards.")
+
+                    else:
+                        options_str = self.create_str_nonblind_menu()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel ability.")
+                        options = self.create_actual_menu()
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a card to use as PEACH for {players[dying_player_index].character}?',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+                        if discarded_index == (len(self.hand_cards.contents) + 7):
+                            return (' ')
+
+                        if options[discarded_index].suit == "Hearts" or options[discarded_index].suit == "Diamonds":
+                            # Check if hand-card
+                            if discarded_index <= len(self.hand_cards.contents):
+                                card = self.hand_cards.contents.pop(
+                                    discarded_index - 1)
+                                discard_deck.add_to_top(card)
+                                print(
+                                    f"  >> Character Ability: First Aid; {self.character} has discarded {card} from their hand to use as PEACH.")
+                                return True
+
+                            # Check if equipment-card
+                            else:
+                                if discarded_index == (len(self.hand_cards.contents) + 2):
+                                    card = self.equipment_weapon.pop()
+                                    discard_deck.add_to_top(card)
+                                    self.weapon_range = 1
+                                    print(
+                                        f"  >> Character Ability: First Aid; {self.character} has discarded {card} from their weapon-slot to use as PEACH.")
+                                    return True
+
+                                if discarded_index == (len(self.hand_cards.contents) + 3):
+                                    card = self.equipment_armor.pop()
+                                    discard_deck.add_to_top(card)
+                                    print(
+                                        f"  >> Character Ability: First Aid; {self.character} has discarded {card} from their armor-slot to use as PEACH.")
+                                    return True
+
+                                if discarded_index == (len(self.hand_cards.contents) + 4):
+                                    card = self.equipment_offensive_horse.pop()
+                                    discard_deck.add_to_top(card)
+                                    print(
+                                        f"  >> Character Ability: First Aid; {self.character} has discarded {card} from their horse-slot to use as PEACH.")
+                                    return True
+
+                                if discarded_index == (len(self.hand_cards.contents) + 5):
+                                    card = self.equipment_defensive_horse.pop()
+                                    discard_deck.add_to_top(card)
+                                    print(
+                                        f"  >> Character Ability: First Aid; {self.character} has discarded {card} from their horse-slot to use as PEACH.")
+                                    return True
+                        else:
+                            print(
+                                f"{options[discarded_index]} cannot be used as PEACH as it is red-suited.")
+
     def activate_surprise(self):
         if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
@@ -3256,6 +3547,7 @@ class Player(Character):
                             if weapon_popped:
                                 discard_deck.contents.pop()
                                 self.equipment_weapon.append(card)
+                                self.weapon_range = card.weapon_range
                             if armor_popped:
                                 discard_deck.contents.pop()
                                 self.equipment_armor.append(card)
@@ -3541,7 +3833,7 @@ class Player(Character):
         self.check_second_wind("End")
         # Checks for Zuo Ci; Shapeshift
         # Cycles to next player
-        # players.append(players.pop(0))
+        players.append(players.pop(0))
         # NEEDED FOR LATER to make infinite loop, commenting out for now!
         # players[0].start_beginning_phase()
 
@@ -3837,8 +4129,7 @@ players[0].current_health = 30
 players[1].current_health = 1
 # players[0].role = 'Rebel'
 players[0].reset_once_per_turn()
-players[0].activate_surprise()
 players[0].start_beginning_phase()
-players[0].activate_surprise()
+# players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
