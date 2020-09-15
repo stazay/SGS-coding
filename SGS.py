@@ -337,7 +337,7 @@ def generate_character_decks():
 
 # A class for handling the individual cards in the deck
 class Card:
-    def __init__(self, rank, val, suit, type, effect, flavour_text, weapon_range=None, effect_2=None):
+    def __init__(self, rank, val, suit, type, effect, flavour_text, weapon_range=None, effect2=None):
         self.rank = rank
         self.val = val
         self.suit = suit
@@ -345,7 +345,7 @@ class Card:
         self.effect = effect
         self.flavour_text = flavour_text
         self.weapon_range = weapon_range
-        self.effect_2 = effect_2
+        self.effect2 = effect2
 
     def __str__(self):
         if self.type == "Weapon":
@@ -542,7 +542,7 @@ class Hand(Deck):
     def give_to_player(self, card):
         pass
 
-    def play_reaction_effect(self, card_played, player_index=None, reacting_player_index=None, player_reacting_list=[]):
+    def play_reaction_effect(self, card_played, reaction_required, player_index=None, reacting_player_index=None, player_reacting_list=[]):
         if player_index == None:
             player_index = 0
         if reacting_player_index == None:
@@ -552,7 +552,7 @@ class Hand(Deck):
 
         while reactions_possible:
             print(" ")
-            if isinstance(card_played, str):
+            if reaction_required == "Brink Of Death":
                 choices_str = self.list_cards()
                 choices_str.append(
                     Separator("--------------------Other--------------------"))
@@ -573,8 +573,9 @@ class Hand(Deck):
                 if choices_str[card_index] == "Do nothing.":
                     reactions_possible = False
                     return(output_value)
-                elif self.contents[card_index].effect == 'Peach':
+                elif self.contents[card_index].effect == "Peach":
                     discarded = self.contents.pop(card_index)
+                    discarded.effect2 = "Peach"
                     players[0].check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     output_value += 1
@@ -586,7 +587,7 @@ class Hand(Deck):
                         reactions_possible = False
                         return(output_value)
 
-            elif card_played.effect_2 == 'Attack':
+            elif reaction_required == "Attack":
                 choices_str = self.list_cards()
                 choices_str.append(
                     Separator("--------------------Other--------------------"))
@@ -607,372 +608,35 @@ class Hand(Deck):
                 if choices_str[card_index] == "Do nothing.":
                     reactions_possible = False
                     return(0)
-                elif self.contents[card_index].effect == 'Defend':
+                elif self.contents[card_index].effect == "Defend":
                     discarded = self.contents.pop(card_index)
+                    discarded.effect2 = "Defend"
                     players[0].check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     reactions_possible = False
                     return(discarded)
 
-    def use_primary_effect(self, card_index, card):
+    def use_card_effect(self, card_index, card):
+        if card_index == None:
+            card_index = 0
         print(" ")
         popping = False
-        if card.type == 'Basic':
-            if card.effect == 'Attack':
-                if (players[0].attacks_this_turn == 0) or (players[0].check_berserk()) or (len(players[0].equipment_weapon) > 0 and players[0].equipment_weapon[0].effect == 'Zhuge Crossbow'):
-                    choices_index = players[0].calculate_targets_in_weapon_range(
-                        0)
-                    if len(choices_index) > 0:
-                        choices = []
-                        for player_index in choices_index:
-                            choices.append(players[player_index])
-                        choices_str = list_character_options(choices)
-                        question = [
-                            {
-                                'type': 'list',
-                                'name': 'Selected',
-                                'message': f'{players[0].character}: Please select a character to ATTACK.',
-                                'choices': choices_str,
-                                'filter': lambda player: choices_str.index(player)
-                            },
-                        ]
-                        answer = prompt(question, style=custom_style_2)
-                        selected_player = answer.get('Selected')
-
-                        if choices[selected_player].check_empty_city():
-                            return (' ')
-
-                        message = f'{players[0].character}: Please confirm you would like to use {card} against {choices[selected_player]}?'
-                        print(f"{card} - {card.flavour_text}")
-                        question_2 = [
-                            {
-                                'type': 'list',
-                                'name': 'Selected',
-                                'message': message,
-                                'choices': ['Yes', 'No'],
-                            },
-                        ]
-                        answer_2 = prompt(question_2, style=custom_style_2)
-                        if answer_2.get('Selected') == 'Yes':
-                            players[0].attacks_this_turn += 1
-                            card.effect_2 = 'Attack'
-                            discarded = players[0].hand_cards.contents.pop(
-                                card_index)
-                            players[0].check_one_after_another()
-                            discard_deck.add_to_top(discarded)
-                            if choices[selected_player].check_relish(source_player_index=0, mode="Activate"):
-                                card.effect_2 = None
-                                return(' ')
-                            if players[0].check_fearsome_archer(discarded, choices, selected_player):
-                                card.effect_2 = None
-                                return(' ')
-                            if players[0].check_iron_cavalry(discarded, choices, selected_player):
-                                card.effect_2 = None
-                                return(' ')
-                            attack_defended = choices[selected_player].hand_cards.play_reaction_effect(
-                                card, 0, selected_player, choices)
-                            if type(attack_defended) == Card:
-                                if attack_defended.effect == 'Defend':
-                                    print(
-                                        f"{choices[selected_player].character} successfully defended the attack with {attack_defended}.")
-                                    players[0].check_fearsome_advance(
-                                        discarded, choices, selected_player)
-                                    choices[selected_player].check_lightning_strike()
-                                elif attack_defended.effect == 0:
-                                    pass
-                            else:
-                                if players[0].check_backstab(discarded, choices, selected_player):
-                                    card.effect_2 = None
-                                    return(' ')
-                                if choices[selected_player].check_reckless(discarded, 0):
-                                    card.effect_2 = None
-                                    return(' ')
-                                damage_dealt = 1
-                                choices[selected_player].current_health -= damage_dealt
-                                print(
-                                    f"{players[0].character} attacked {choices[selected_player].character}, dealing {damage_dealt} damage. ({choices[selected_player].current_health}/{choices[selected_player].max_health} HP remaining)")
-                                players[0].check_insanity(
-                                    choices, selected_player)
-                                card.effect_2 = None
-                                for player_index, player in enumerate(players):
-                                    if player.current_health < 1:
-                                        if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                                            return "Break"
-                                choices[selected_player].check_eternal_loyalty(
-                                    damage_dealt)
-                                if choices[selected_player].check_eye_for_an_eye(
-                                        source_player_index=0, mode="Activate") == "Break":
-                                    return(' ')
-                                choices[selected_player].check_plotting_for_power(
-                                    damage_dealt, "Reaction")
-                                choices[selected_player].check_retaliation(
-                                    0, damage_dealt)
-                    else:
-                        print(
-                            f"{players[0].character}: You have insufficient range to reach anyone with {card}.")
-                elif (players[0].attacks_this_turn > 0):
-                    print(
-                        f"{players[0].character}: You can only play one ATTACK card per turn.")
-
-            if card.effect == 'Defend':
-                print(
-                    f"{players[0].character}: {card} can only be played as a reaction.")
-
-            if card.effect == 'Peach':
-                if players[0].max_health > players[0].current_health:
-                    print(f"{card} - {card.flavour_text}")
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{players[0].character}: Please confirm you would like to use the basic card: {card.effect}.',
-                            'choices': ['Yes', 'No'],
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    if answer.get('Selected') == 'Yes':
-                        discarded = players[0].hand_cards.contents.pop(
-                            card_index)
-                        players[0].check_one_after_another()
-                        discard_deck.add_to_top(discarded)
-                        players[0].current_health += 1
-                        print(
-                            f"{players[0].character} has used a PEACH to heal by one from {players[0].current_health -1} to {players[0].current_health}.")
-                else:
-                    print(
-                        f"{players[0].character}: {card} cannot currently be used on yourself as you are at full-health.")
-
-        elif card.type == 'Tool':
-            if card.effect == 'Barbarians':
-                pass
-
-            if card.effect == 'Granary':
-                pass
-
-            if card.effect == 'Peach Gardens':
-                pass
-
-            if card.effect == 'Rain of Arrows':
-                pass
-
-            if card.effect == 'Coerce':
-                pass
-
-            if card.effect == 'Dismantle':
-                choices = players[1:]
-                choices.append(players[0])
-                choices_str = list_character_options(players[1:])
-                choices_str.append(str(players[0]))
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{players[0].character}: Please select a character to target with {card}.',
-                        'choices': choices_str,
-                        'filter': lambda player: choices_str.index(player)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                selected_player = answer.get('Selected')
-
-                if choices[selected_player].check_humility():
-                    return (' ')
-
-                print(f"{card} - {card.flavour_text}")
-                question_2 = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{players[0].character}: Please confirm you would like to use {card} against {choices[selected_player]}?',
-                        'choices': ['Yes', 'No'],
-                    },
-                ]
-                answer_2 = prompt(question_2, style=custom_style_2)
-                if answer_2.get('Selected') == 'Yes':
-                    cards_discardable = (len(choices[selected_player].hand_cards.contents) + len(choices[selected_player].equipment_weapon) + len(
-                        choices[selected_player].equipment_armor) + len(choices[selected_player].equipment_offensive_horse) + len(choices[selected_player].equipment_defensive_horse) + len(choices[selected_player].pending_judgements))
-
-                    if cards_discardable == 0:
-                        print(
-                            f"{choices[selected_player].character} has no cards that can be dismantled.")
-
-                    if cards_discardable > 0:
-                        options_str = []
-                        options_str.append(
-                            Separator("-----------------HAND--CARDS-----------------"))
-                        i = 1
-                        for card in (choices[selected_player].hand_cards.contents):
-                            options_str.append(f"Hand-Card {i}")
-                            i += 1
-                        options_str.append(
-                            Separator("---------------EQUIPPED--CARDS---------------"))
-                        if len(choices[selected_player].equipment_weapon) > 0:
-                            options_str.append(
-                                str(choices[selected_player].equipment_weapon[0]))
-                        else:
-                            options_str.append(
-                                Separator("  -----------<Empty Weapon Slot>-----------  "))
-                        if len(choices[selected_player].equipment_armor) > 0:
-                            options_str.append(
-                                str(choices[selected_player].equipment_armor[0]))
-                        else:
-                            options_str.append(
-                                Separator("  -----------<Empty Armor Slot>------------  "))
-                        if len(choices[selected_player].equipment_offensive_horse) > 0:
-                            options_str.append(
-                                str(choices[selected_player].equipment_offensive_horse[0]))
-                        else:
-                            options_str.append(
-                                Separator("  -----------<Empty Horse Slot>------------  "))
-                        if len(choices[selected_player].equipment_defensive_horse) > 0:
-                            options_str.append(
-                                str(choices[selected_player].equipment_defensive_horse[0]))
-                        else:
-                            options_str.append(
-                                Separator("  -----------<Empty Horse Slot>------------  "))
-                        options_str.append(
-                            Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                        if len(choices[selected_player].pending_judgements) > 0:
-                            for pending_judgement_card in choices[selected_player].pending_judgements:
-                                options_str.append(
-                                    str(pending_judgement_card))
-
-                    question_3 = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{players[0].character}: Please select which card you would like to destroy:',
-                            'choices': options_str,
-                            'filter': lambda card: options_str.index(card)
-                        },
-                    ]
-                    answer_3 = prompt(question_3, style=custom_style_2)
-
-                    card_dismantled_index = answer_3.get('Selected')
-                    card.effect_2 = 'Dismantle'
-                    discarded = players[0].hand_cards.contents.pop(
-                        card_index)
-                    players[0].check_one_after_another()
-                    players[0].check_wisdom()
-                    discard_deck.add_to_top(discarded)
-
-                    # Check if hand-card
-                    if card_dismantled_index <= len(choices[selected_player].hand_cards.contents):
-                        card_dismantled = choices[selected_player].hand_cards.contents.pop(
-                            card_dismantled_index - 1)
-                        discard_deck.add_to_top(card_dismantled)
-                        print(
-                            f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s hand by using {card}.")
-                        choices[selected_player].check_one_after_another()
-
-                    # Check if equipment-card
-                    if card_dismantled_index > len(choices[selected_player].hand_cards.contents):
-                        if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 2):
-                            card_dismantled = choices[selected_player].equipment_weapon.pop(
-                            )
-                            discard_deck.add_to_top(card_dismantled)
-                            choices[selected_player].weapon_range = 1
-                            print(
-                                f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s weapon-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
-
-                        elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 3):
-                            card_dismantled = choices[selected_player].equipment_armor.pop(
-                            )
-                            discard_deck.add_to_top(card_dismantled)
-                            print(
-                                f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s armor-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
-
-                        elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 4):
-                            card_dismantled = choices[selected_player].equipment_offensive_horse.pop(
-                            )
-                            discard_deck.add_to_top(card_dismantled)
-                            print(
-                                f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
-
-                        elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 5):
-                            card_dismantled = choices[selected_player].equipment_defensive_horse.pop(
-                            )
-                            discard_deck.add_to_top(card_dismantled)
-                            print(
-                                f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
-
-                        # Check if pending-time-delay-tool-card
-                        else:
-                            if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 7):
-                                card_dismantled = choices[selected_player].pending_judgements[0]
-                                discard_deck.add_to_top(
-                                    card_dismantled)
-                                print(
-                                    f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
-
-                            if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 8):
-                                card_dismantled = choices[selected_player].pending_judgements[1]
-                                discard_deck.add_to_top(
-                                    card_dismantled)
-                                print(
-                                    f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
-
-                            if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 9):
-                                card_dismantled = choices[selected_player].pending_judgements[2]
-                                discard_deck.add_to_top(
-                                    card_dismantled)
-                                print(
-                                    f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
-                card.effect_2 = None
-                choices[selected_player].check_one_after_another()
-
-            if card.effect == 'Duel':
-                pass
-
-            if card.effect == 'Negate':
-                print(
-                    f"{players[0].character}: {card} can only be played as a reaction.")
-
-            if card.effect == 'Greed':
-                print(f"{card} - {card.flavour_text}")
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{players[0].character}: Please confirm you would like to use the tool card: {card.effect}.',
-                        'choices': ['Yes', 'No'],
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                if answer.get('Selected') == 'Yes':
-                    discarded = players[0].hand_cards.contents.pop(card_index)
-                    players[0].check_one_after_another()
-                    players[0].check_wisdom()
-                    discard_deck.add_to_top(discarded)
-                    players[0].hand_cards.draw(main_deck, 2)
-                    print(f"{players[0].character} has played {card}.")
-                    card.effect_2 = None
-
-            if card.effect_2 == 'Steal':
-                choices_index = players[0].calculate_targets_in_physical_range(
+        # card.type = 'Basic'
+        if card.effect2 == 'Attack':
+            card.effect2 = None
+            if (players[0].attacks_this_turn == 0) or (players[0].check_berserk()) or (len(players[0].equipment_weapon) > 0 and players[0].equipment_weapon[0].effect == 'Zhuge Crossbow'):
+                choices_index = players[0].calculate_targets_in_weapon_range(
                     0)
-                if players[0].check_talent():
-                    choices = players[1:]
-                    choices_str = list_character_options(players[1:])
-                    stealing_possible = True
-
-                elif len(choices_index) > 0:
+                if len(choices_index) > 0:
                     choices = []
                     for player_index in choices_index:
                         choices.append(players[player_index])
                     choices_str = list_character_options(choices)
-                    stealing_possible = True
-
-                if stealing_possible:
                     question = [
                         {
                             'type': 'list',
                             'name': 'Selected',
-                            'message': f'{players[0].character}: Please select a character to use {card} against.',
+                            'message': f'{players[0].character}: Please select a character to ATTACK.',
                             'choices': choices_str,
                             'filter': lambda player: choices_str.index(player)
                         },
@@ -980,10 +644,14 @@ class Hand(Deck):
                     answer = prompt(question, style=custom_style_2)
                     selected_player = answer.get('Selected')
 
-                    if choices[selected_player].check_humility():
+                    if choices[selected_player].check_empty_city():
                         return (' ')
 
-                    print(f"{card} - {card.flavour_text}")
+                    if not isinstance(card_index, str):
+                        print(f"{card} - {card.flavour_text}")
+                    else:
+                        print("This card will behave as an ATTACK.")
+
                     question_2 = [
                         {
                             'type': 'list',
@@ -994,322 +662,121 @@ class Hand(Deck):
                     ]
                     answer_2 = prompt(question_2, style=custom_style_2)
                     if answer_2.get('Selected') == 'Yes':
-                        cards_discardable = (len(choices[selected_player].hand_cards.contents) + len(choices[selected_player].equipment_weapon) + len(
-                            choices[selected_player].equipment_armor) + len(choices[selected_player].equipment_offensive_horse) + len(choices[selected_player].equipment_defensive_horse) + len(choices[selected_player].pending_judgements))
+                        players[0].attacks_this_turn += 1
 
-                        if cards_discardable == 0:
+                        if card_index != "Special":
+                            discarded = players[0].hand_cards.contents.pop(
+                                card_index)
+                            players[0].check_one_after_another()
+                            discard_deck.add_to_top(discarded)
+                        else:
+                            discarded = card
+
+                        if choices[selected_player].check_relish(source_player_index=0, mode="Activate"):
+                            return(' ')
+                        if players[0].check_fearsome_archer(discarded, choices, selected_player):
+                            return(' ')
+                        if players[0].check_iron_cavalry(discarded, choices, selected_player):
+                            return(' ')
+                        attack_defended = choices[selected_player].hand_cards.play_reaction_effect(
+                            card, "Attack", 0, selected_player, choices)
+                        if type(attack_defended) == Card:
+                            if attack_defended.effect == 'Defend':
+                                print(
+                                    f"{choices[selected_player].character} successfully defended the attack with {attack_defended}.")
+                                players[0].check_fearsome_advance(
+                                    discarded, choices, selected_player)
+                                choices[selected_player].check_lightning_strike()
+                            elif attack_defended.effect == 0:
+                                pass
+                        else:
+                            if players[0].check_backstab(discarded, choices, selected_player):
+                                return(' ')
+                            if choices[selected_player].check_reckless(discarded, 0):
+                                return(' ')
+                            damage_dealt = 1
+                            choices[selected_player].current_health -= damage_dealt
                             print(
-                                f"{choices[selected_player].character} has no cards that can be stolen.")
-
-                        if cards_discardable > 0:
-                            options_str = []
-                            options_str.append(
-                                Separator("-----------------HAND--CARDS-----------------"))
-                            i = 1
-                            for card in (choices[selected_player].hand_cards.contents):
-                                options_str.append(f"Hand-Card {i}")
-                                i += 1
-                            options_str.append(
-                                Separator("---------------EQUIPPED--CARDS---------------"))
-                            if len(choices[selected_player].equipment_weapon) > 0:
-                                options_str.append(
-                                    str(choices[selected_player].equipment_weapon[0]))
-                            else:
-                                options_str.append(
-                                    Separator("  -----------<Empty Weapon Slot>-----------  "))
-                            if len(choices[selected_player].equipment_armor) > 0:
-                                options_str.append(
-                                    str(choices[selected_player].equipment_armor[0]))
-                            else:
-                                options_str.append(
-                                    Separator("  -----------<Empty Armor Slot>------------  "))
-                            if len(choices[selected_player].equipment_offensive_horse) > 0:
-                                options_str.append(
-                                    str(choices[selected_player].equipment_offensive_horse[0]))
-                            else:
-                                options_str.append(
-                                    Separator("  -----------<Empty Horse Slot>------------  "))
-                            if len(choices[selected_player].equipment_defensive_horse) > 0:
-                                options_str.append(
-                                    str(choices[selected_player].equipment_defensive_horse[0]))
-                            else:
-                                options_str.append(
-                                    Separator("  -----------<Empty Horse Slot>------------  "))
-                            options_str.append(
-                                Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                            if len(choices[selected_player].pending_judgements) > 0:
-                                for pending_judgement_card in choices[selected_player].pending_judgements:
-                                    options_str.append(
-                                        str(pending_judgement_card))
-
-                        question_3 = [
-                            {
-                                'type': 'list',
-                                'name': 'Selected',
-                                'message': f'{players[0].character}: Please select which card you would like to take:',
-                                'choices': options_str,
-                                'filter': lambda card: options_str.index(card)
-                            },
-                        ]
-                        answer_3 = prompt(question_3, style=custom_style_2)
-
-                        card_stolen_index = answer_3.get('Selected')
-                        card.effect_2 = 'Steal'
-                        discarded = players[0].hand_cards.contents.pop(
-                            card_index)
-                        players[0].check_one_after_another()
-                        players[0].check_wisdom()
-                        discard_deck.add_to_top(discarded)
-
-                        # Check if hand-card
-                        if card_stolen_index <= len(choices[selected_player].hand_cards.contents):
-                            card_stolen = choices[selected_player].hand_cards.contents.pop(
-                                card_stolen_index - 1)
-                            self.add_to_top(card_stolen)
-                            print(
-                                f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s hand by using {card}.")
-                            choices[selected_player].check_one_after_another()
-
-                        # Check if equipment-card
-                        if card_stolen_index > len(choices[selected_player].hand_cards.contents):
-                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 2):
-                                card_stolen = choices[selected_player].equipment_weapon.pop(
-                                )
-                                choices[selected_player].weapon_range = 1
-                                self.add_to_top(card_stolen)
-                                print(
-                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s weapon-slot by using {card}.")
-                                choices[selected_player].check_warrior_woman()
-
-                            elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 3):
-                                card_stolen = choices[selected_player].equipment_armor.pop(
-                                )
-                                self.add_to_top(card_stolen)
-                                print(
-                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s armor-slot by using {card}.")
-                                choices[selected_player].check_warrior_woman()
-
-                            elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 4):
-                                card_stolen = choices[selected_player].equipment_offensive_horse.pop(
-                                )
-                                self.add_to_top(card_stolen)
-                                print(
-                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                                choices[selected_player].check_warrior_woman()
-
-                            elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 5):
-                                card_stolen = choices[selected_player].equipment_defensive_horse.pop(
-                                )
-                                self.add_to_top(card_stolen)
-                                print(
-                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                                choices[selected_player].check_warrior_woman()
-
-                            # Check if pending-time-delay-tool-card
-                            else:
-                                if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 7):
-                                    card_stolen = choices[selected_player].pending_judgements[0]
-                                    self.add_to_top(card_stolen)
-                                    print(
-                                        f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
-
-                                if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 8):
-                                    card_stolen = choices[selected_player].pending_judgements[1]
-                                    self.add_to_top(card_stolen)
-                                    print(
-                                        f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
-
-                                if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 9):
-                                    card_stolen = choices[selected_player].pending_judgements[2]
-                                    self.add_to_top(card_stolen)
-                                    print(
-                                        f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
-                    card.effect_2 = None
-                    choices[selected_player].check_one_after_another()
+                                f"{players[0].character} attacked {choices[selected_player].character}, dealing {damage_dealt} damage. ({choices[selected_player].current_health}/{choices[selected_player].max_health} HP remaining)")
+                            players[0].check_insanity(
+                                choices, selected_player)
+                            for player_index, player in enumerate(players):
+                                if player.current_health < 1:
+                                    if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                                        return "Break"
+                            choices[selected_player].check_eternal_loyalty(
+                                damage_dealt)
+                            if choices[selected_player].check_eye_for_an_eye(
+                                    source_player_index=0, mode="Activate") == "Break":
+                                return(' ')
+                            choices[selected_player].check_plotting_for_power(
+                                damage_dealt, "Reaction")
+                            choices[selected_player].check_retaliation(
+                                0, damage_dealt)
                 else:
                     print(
                         f"{players[0].character}: You have insufficient range to reach anyone with {card}.")
+            elif (players[0].attacks_this_turn > 0):
+                print(
+                    f"{players[0].character}: You can only play one ATTACK card per turn.")
 
-        elif card.type == 'Delay-Tool':
-            if card.effect == 'Acedia':
-                choices = []
-                for player in players[1:]:
-                    choices.append(str(player))
+        if card.effect2 == 'Defend':
+            card.effect2 = None
+            print(
+                f"{players[0].character}: {card} can only be played as a reaction.")
+
+        if card.effect2 == 'Peach':
+            card.effect2 = None
+            if players[0].max_health > players[0].current_health:
+                if not isinstance(card_index, str):
+                    print(f"{card} - {card.flavour_text}")
+                else:
+                    print("This card will behave as a PEACH.")
                 question = [
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{players[0]}: Please select a player to target with {card}.',
-                        'choices': choices,
-                        'filter': lambda player: choices.index(player)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                selected_player = ((answer.get('Selected')) + 1)
-                if players[selected_player].check_humility():
-                    return (' ')
-                print(f"{card} - {card.flavour_text}")
-                question_2 = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{players[0].character}: Please confirm you would like to use {card} against {players[selected_player].character}?',
+                        'message': f'{players[0].character}: Please confirm you would like to use the basic card: {card.effect}.',
                         'choices': ['Yes', 'No'],
                     },
                 ]
-                answer_2 = prompt(question_2, style=custom_style_2)
-                if answer_2.get('Selected') == 'Yes':
-                    for possible_acedia in players[selected_player].pending_judgements:
-                        if possible_acedia.effect_2 == 'Acedia':
-                            print(
-                                f"{players[0].character}: {players[selected_player].character} cannot be targeted by ACEDIA as they already have one pending.")
-                    else:
-                        card_used = players[0].hand_cards.contents.pop(
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    if card_index != "Special":
+                        discarded = players[0].hand_cards.contents.pop(
                             card_index)
                         players[0].check_one_after_another()
-                        card_used.effect_2 = 'Acedia'
-                        players[selected_player].pending_judgements.append(
-                            card_used)
-                        print(
-                            f"{players[0].character}: {players[selected_player].character} will face judgement by {card_used} on their next turn.")
-            if card.effect == 'Lightning':
-                for possible_lightning in players[0].pending_judgements:
-                    if possible_lightning.effect_2 == 'Lightning':
-                        print(
-                            f"{players[0].character}: You cannot play a LIGHTNING when you already have one active on yourself.")
-                else:
+                        discard_deck.add_to_top(discarded)
 
-                    print(f"{card} - {card.flavour_text}")
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{players[0].character}: Please confirm you would like to use the delay-tool card: {card.effect}.',
-                            'choices': ['Yes', 'No'],
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    if answer.get('Selected') == 'Yes':
-                        card.effect_2 = 'Lightning'
-                        players[0].hand_cards.contents.pop(card_index)
-                        players[0].check_one_after_another()
-                        players[0].pending_judgements.append(card)
-                        print(f"{players[0].character} has called {card}.")
-        elif card.type == 'Weapon' or card.type == 'Armor' or card.type == '+1 Horse' or card.type == '-1 Horse':
-            if card.type == 'Weapon':
-                if players[0].equipment_weapon == []:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = False
-                else:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_weapon}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = True
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': message,
-                        'choices': ['Yes', 'No'],
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                if answer.get('Selected') == 'Yes':
-                    if popping:
-                        discarded = players[0].equipment_weapon.pop()
-                        discard_deck.add_to_top(discarded)
-                        players[0].check_warrior_woman()
-                    players[0].hand_cards.contents.pop(card_index)
-                    players[0].equipment_weapon = [card]
-                    players[0].weapon_range = card.weapon_range
-                    players[0].check_one_after_another()
-                    print(f"{players[0].character} has equipped {card}.")
-            if card.type == 'Armor':
-                if players[0].equipment_armor == []:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = False
-                else:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_armor}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = True
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': message,
-                        'choices': ['Yes', 'No'],
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                if answer.get('Selected') == 'Yes':
-                    if popping:
-                        discarded = players[0].equipment_armor.pop()
-                        discard_deck.add_to_top(discarded)
-                        players[0].check_warrior_woman()
-                    players[0].hand_cards.contents.pop(card_index)
-                    players[0].equipment_armor = [card]
-                    players[0].check_one_after_another()
-                    print(f"{players[0].character} has equipped {card}.")
-            if card.type == '+1 Horse':
-                if players[0].equipment_defensive_horse == []:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = False
-                else:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_defensive_horse}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = True
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': message,
-                        'choices': ['Yes', 'No'],
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                if answer.get('Selected') == 'Yes':
-                    if popping:
-                        discarded = players[0].equipment_defensive_horse.pop()
-                        discard_deck.add_to_top(discarded)
-                        players[0].check_warrior_woman()
-                    players[0].hand_cards.contents.pop(card_index)
-                    players[0].equipment_defensive_horse = [card]
-                    players[0].check_one_after_another()
-                    print(f"{players[0].character} has equipped {card}.")
-            if card.type == '-1 Horse':
-                if players[0].equipment_offensive_horse == []:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = False
-                else:
-                    message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_offensive_horse}.'
-                    print(f"{card} - {card.flavour_text}")
-                    popping = True
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': message,
-                        'choices': ['Yes', 'No'],
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                if answer.get('Selected') == 'Yes':
-                    if popping:
-                        discarded = players[0].equipment_offensive_horse.pop()
-                        discard_deck.add_to_top(discarded)
-                        players[0].check_warrior_woman()
-                    players[0].hand_cards.contents.pop(card_index)
-                    players[0].equipment_offensive_horse = [card]
-                    players[0].check_one_after_another()
-                    print(f"{players[0].character} has equipped {card}.")
-            popping = False
+                    players[0].current_health += 1
+                    print(
+                        f"{players[0].character} has used a PEACH to heal by one from {players[0].current_health -1} to {players[0].current_health}.")
+            else:
+                print(
+                    f"{players[0].character}: {card} cannot currently be used on yourself as you are at full-health.")
 
-    def use_secondary_effect(self, card):
-        print(" ")
-        if card.effect_2 == 'Dismantle':
+        # card.type == 'Tool':
+        if card.effect2 == 'Barbarians':
+            card.effect2 = None
+            pass
+
+        if card.effect2 == 'Granary':
+            card.effect2 = None
+            pass
+
+        if card.effect2 == 'Peach Gardens':
+            card.effect2 = None
+            pass
+
+        if card.effect2 == 'Rain of Arrows':
+            card.effect2 = None
+            pass
+
+        if card.effect2 == 'Coerce':
+            card.effect2 = None
+            pass
+
+        if card.effect2 == 'Dismantle':
             choices = players[1:]
             choices.append(players[0])
             choices_str = list_character_options(players[1:])
@@ -1318,7 +785,7 @@ class Hand(Deck):
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{players[0].character}: Please select a character to target with {card} as DISMANTLE.',
+                    'message': f'{players[0].character}: Please select a character to target with {card} as {card.effect2.upper()}.',
                     'choices': choices_str,
                     'filter': lambda player: choices_str.index(player)
                 },
@@ -1326,33 +793,33 @@ class Hand(Deck):
             answer = prompt(question, style=custom_style_2)
             selected_player = answer.get('Selected')
 
-            if choices[selected_player].check_humility():
-                return (' ')
-
-            print(f"{card} - {card.flavour_text}")
+            if not isinstance(card_index, str):
+                print(f"{card} - {card.flavour_text}")
             question_2 = [
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{players[0].character}: Please confirm you would like to use {card} as DISMANTLE against {choices[selected_player]}?',
+                    'message': f'{players[0].character}: Please confirm you would like to use {card} against {choices[selected_player].character} as {card.effect2.upper()}?',
                     'choices': ['Yes', 'No'],
                 },
             ]
             answer_2 = prompt(question_2, style=custom_style_2)
             if answer_2.get('Selected') == 'Yes':
+                card.effect2 = None
                 cards_discardable = (len(choices[selected_player].hand_cards.contents) + len(choices[selected_player].equipment_weapon) + len(
                     choices[selected_player].equipment_armor) + len(choices[selected_player].equipment_offensive_horse) + len(choices[selected_player].equipment_defensive_horse) + len(choices[selected_player].pending_judgements))
 
                 if cards_discardable == 0:
                     print(
                         f"{choices[selected_player].character} has no cards that can be dismantled.")
+                    return False
 
                 if cards_discardable > 0:
                     options_str = []
                     options_str.append(
                         Separator("-----------------HAND--CARDS-----------------"))
                     i = 1
-                    for card in (choices[selected_player].hand_cards.contents):
+                    for item in (choices[selected_player].hand_cards.contents):
                         options_str.append(f"Hand-Card {i}")
                         i += 1
                     options_str.append(
@@ -1392,16 +859,19 @@ class Hand(Deck):
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{players[0].character}: Please select which card you would like to destroy:',
+                        'message': f'{players[0].character}: Please select which card you would like to DISMANTLE:',
                         'choices': options_str,
                         'filter': lambda card: options_str.index(card)
                     },
                 ]
                 answer_3 = prompt(question_3, style=custom_style_2)
-
                 card_dismantled_index = answer_3.get('Selected')
-                players[0].check_one_after_another()
-                players[0].check_wisdom()
+
+                if card_index != "Special":
+                    discarded = players[0].hand_cards.contents.pop(card_index)
+                    players[0].check_one_after_another()
+                    players[0].check_wisdom()
+                    discard_deck.add_to_top(discarded)
 
                 # Check if hand-card
                 if card_dismantled_index <= len(choices[selected_player].hand_cards.contents):
@@ -1409,7 +879,7 @@ class Hand(Deck):
                         card_dismantled_index - 1)
                     discard_deck.add_to_top(card_dismantled)
                     print(
-                        f"  >> Character Ability: Surprise; {players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s hand by using {card} as DISMANTLE.")
+                        f"{players[0].character} has DISMANTLED {card_dismantled} from {choices[selected_player].character}'s hand by using {card}.")
                     choices[selected_player].check_one_after_another()
 
                 # Check if equipment-card
@@ -1420,7 +890,7 @@ class Hand(Deck):
                         discard_deck.add_to_top(card_dismantled)
                         choices[selected_player].weapon_range = 1
                         print(
-                            f"  >> Character Ability: Surprise; {players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s weapon-slot by using {card} as DISMANTLE.")
+                            f"{players[0].character} has DISMANTLED {card_dismantled} from {choices[selected_player].character}'s weapon-slot by using {card}.")
                         choices[selected_player].check_warrior_woman()
 
                     elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 3):
@@ -1428,7 +898,7 @@ class Hand(Deck):
                         )
                         discard_deck.add_to_top(card_dismantled)
                         print(
-                            f"  >> Character Ability: Surprise; {players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s armor-slot by using {card} as DISMANTLE.")
+                            f"{players[0].character} has DISMANTLED {card_dismantled} from {choices[selected_player].character}'s armor-slot by using {card}.")
                         choices[selected_player].check_warrior_woman()
 
                     elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 4):
@@ -1436,7 +906,7 @@ class Hand(Deck):
                         )
                         discard_deck.add_to_top(card_dismantled)
                         print(
-                            f"  >> Character Ability: Surprise; {players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card} as DISMANTLE.")
+                            f"{players[0].character} has DISMANTLED {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card}.")
                         choices[selected_player].check_warrior_woman()
 
                     elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 5):
@@ -1444,7 +914,7 @@ class Hand(Deck):
                         )
                         discard_deck.add_to_top(card_dismantled)
                         print(
-                            f"  >> Character Ability: Surprise; {players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card} as DISMANTLE.")
+                            f"{players[0].character} has DISMANTLED {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card}.")
                         choices[selected_player].check_warrior_woman()
 
                     # Check if pending-time-delay-tool-card
@@ -1469,9 +939,420 @@ class Hand(Deck):
                                 card_dismantled)
                             print(
                                 f"{players[0].character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
-            card.effect_2 = None
             choices[selected_player].check_one_after_another()
-        return True
+            return True
+
+        if card.effect2 == 'Duel':
+            card.effect2 = None
+            pass
+
+        if card.effect2 == 'Negate':
+            card.effect2 = None
+            print(
+                f"{players[0].character}: {card} can only be played as a reaction.")
+
+        if card.effect2 == 'Greed':
+            card.effect2 = None
+            if not isinstance(card_index, str):
+                print(f"{card} - {card.flavour_text}")
+            else:
+                print("This card will behave as GREED.")
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{players[0].character}: Please confirm you would like to use the tool card: {card.effect}.',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                if card_index != "Special":
+                    discarded = players[0].hand_cards.contents.pop(card_index)
+                    players[0].check_one_after_another()
+                    players[0].check_wisdom()
+                    discard_deck.add_to_top(discarded)
+
+                players[0].check_one_after_another()
+                players[0].check_wisdom()
+                discard_deck.add_to_top(discarded)
+                players[0].hand_cards.draw(main_deck, 2)
+                print(f"{players[0].character} has played {card}.")
+                return True
+
+        if card.effect2 == 'Steal':
+            choices_index = players[0].calculate_targets_in_physical_range(
+                0)
+            if players[0].check_talent():
+                choices = players[1:]
+                choices_str = list_character_options(players[1:])
+                stealing_possible = True
+
+            elif len(choices_index) > 0:
+                choices = []
+                for player_index in choices_index:
+                    choices.append(players[player_index])
+                choices_str = list_character_options(choices)
+                stealing_possible = True
+
+            if stealing_possible:
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{players[0].character}: Please select a character to use {card} against as {card.effect2.upper()}.',
+                        'choices': choices_str,
+                        'filter': lambda player: choices_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected_player = answer.get('Selected')
+
+                if choices[selected_player].check_humility():
+                    card.effect2 = None
+                    return (' ')
+
+                if not isinstance(card_index, str):
+                    print(f"{card} - {card.flavour_text}")
+                else:
+                    print("This card will behave as a STEAL.")
+                question_2 = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{players[0].character}: Please confirm you would like to use {card} against {choices[selected_player].character} as {card.effect2.upper()}?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer_2 = prompt(question_2, style=custom_style_2)
+                if answer_2.get('Selected') == 'Yes':
+                    card.effect2 = None
+                    cards_discardable = (len(choices[selected_player].hand_cards.contents) + len(choices[selected_player].equipment_weapon) + len(
+                        choices[selected_player].equipment_armor) + len(choices[selected_player].equipment_offensive_horse) + len(choices[selected_player].equipment_defensive_horse) + len(choices[selected_player].pending_judgements))
+
+                    if cards_discardable == 0:
+                        print(
+                            f"{choices[selected_player].character} has no cards that can be stolen.")
+
+                    if cards_discardable > 0:
+                        options_str = []
+                        options_str.append(
+                            Separator("-----------------HAND--CARDS-----------------"))
+                        i = 1
+                        for item in (choices[selected_player].hand_cards.contents):
+                            options_str.append(f"Hand-Card {i}")
+                            i += 1
+                        options_str.append(
+                            Separator("---------------EQUIPPED--CARDS---------------"))
+                        if len(choices[selected_player].equipment_weapon) > 0:
+                            options_str.append(
+                                str(choices[selected_player].equipment_weapon[0]))
+                        else:
+                            options_str.append(
+                                Separator("  -----------<Empty Weapon Slot>-----------  "))
+                        if len(choices[selected_player].equipment_armor) > 0:
+                            options_str.append(
+                                str(choices[selected_player].equipment_armor[0]))
+                        else:
+                            options_str.append(
+                                Separator("  -----------<Empty Armor Slot>------------  "))
+                        if len(choices[selected_player].equipment_offensive_horse) > 0:
+                            options_str.append(
+                                str(choices[selected_player].equipment_offensive_horse[0]))
+                        else:
+                            options_str.append(
+                                Separator("  -----------<Empty Horse Slot>------------  "))
+                        if len(choices[selected_player].equipment_defensive_horse) > 0:
+                            options_str.append(
+                                str(choices[selected_player].equipment_defensive_horse[0]))
+                        else:
+                            options_str.append(
+                                Separator("  -----------<Empty Horse Slot>------------  "))
+                        options_str.append(
+                            Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+                        if len(choices[selected_player].pending_judgements) > 0:
+                            for pending_judgement_card in choices[selected_player].pending_judgements:
+                                options_str.append(
+                                    str(pending_judgement_card))
+
+                    question_3 = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{players[0].character}: Please select which card you would like to take:',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer_3 = prompt(question_3, style=custom_style_2)
+                    card_stolen_index = answer_3.get('Selected')
+                    if card_index != "Special":
+                        discarded = players[0].hand_cards.contents.pop(
+                            card_index)
+                        players[0].check_one_after_another()
+                        players[0].check_wisdom()
+                        discard_deck.add_to_top(discarded)
+
+                    # Check if hand-card
+                    if card_stolen_index <= len(choices[selected_player].hand_cards.contents):
+                        card_stolen = choices[selected_player].hand_cards.contents.pop(
+                            card_stolen_index - 1)
+                        self.add_to_top(card_stolen)
+                        print(
+                            f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s hand by using {card}.")
+                        choices[selected_player].check_one_after_another()
+
+                    # Check if equipment-card
+                    if card_stolen_index > len(choices[selected_player].hand_cards.contents):
+                        if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 2):
+                            card_stolen = choices[selected_player].equipment_weapon.pop(
+                            )
+                            choices[selected_player].weapon_range = 1
+                            self.add_to_top(card_stolen)
+                            print(
+                                f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s weapon-slot by using {card}.")
+                            choices[selected_player].check_warrior_woman()
+
+                        elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 3):
+                            card_stolen = choices[selected_player].equipment_armor.pop(
+                            )
+                            self.add_to_top(card_stolen)
+                            print(
+                                f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s armor-slot by using {card}.")
+                            choices[selected_player].check_warrior_woman()
+
+                        elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 4):
+                            card_stolen = choices[selected_player].equipment_offensive_horse.pop(
+                            )
+                            self.add_to_top(card_stolen)
+                            print(
+                                f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
+                            choices[selected_player].check_warrior_woman()
+
+                        elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 5):
+                            card_stolen = choices[selected_player].equipment_defensive_horse.pop(
+                            )
+                            self.add_to_top(card_stolen)
+                            print(
+                                f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
+                            choices[selected_player].check_warrior_woman()
+
+                        # Check if pending-time-delay-tool-card
+                        else:
+                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 7):
+                                card_stolen = choices[selected_player].pending_judgements[0]
+                                self.add_to_top(card_stolen)
+                                print(
+                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
+
+                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 8):
+                                card_stolen = choices[selected_player].pending_judgements[1]
+                                self.add_to_top(card_stolen)
+                                print(
+                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
+
+                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 9):
+                                card_stolen = choices[selected_player].pending_judgements[2]
+                                self.add_to_top(card_stolen)
+                                print(
+                                    f"{players[0].character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
+                choices[selected_player].check_one_after_another()
+                return True
+            else:
+                card.effect2 = None
+                print(
+                    f"{players[0].character}: You have insufficient range to reach anyone with {card}.")
+
+        # card.type == 'Delay-Tool':
+        if card.effect2 == 'Acedia':
+            choices = []
+            for player in players[1:]:
+                choices.append(str(player))
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{players[0]}: Please select a player to target with {card} as {card.effect2.upper()}.',
+                    'choices': choices,
+                    'filter': lambda player: choices.index(player)
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            selected_player = ((answer.get('Selected')) + 1)
+            if players[selected_player].check_humility():
+                card.effect_2 = None
+                return (' ')
+
+            if not isinstance(card_index, str):
+                print(f"{card} - {card.flavour_text}")
+            question_2 = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{players[0].character}: Please confirm you would like to use {card} against {players[selected_player].character} as {card.effect2.upper()}?',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer_2 = prompt(question_2, style=custom_style_2)
+            if answer_2.get('Selected') == 'Yes':
+                for possible_acedia in players[selected_player].pending_judgements:
+                    if possible_acedia.effect2 == 'Acedia':
+                        print(
+                            f"{players[0].character}: {players[selected_player].character} cannot be targeted by ACEDIA as they already have one pending.")
+                else:
+                    if card_index != "Special":
+                        card_used = players[0].hand_cards.contents.pop(
+                            card_index)
+                        players[0].check_one_after_another()
+                        players[selected_player].pending_judgements.append(
+                            card_used)
+                    else:
+                        card_used = card
+
+                    card_used = players[0].hand_cards.contents.pop(
+                        card_index)
+                    players[0].check_one_after_another()
+                    players[selected_player].pending_judgements.append(
+                        card_used)
+                    print(
+                        f"{players[0].character}: {players[selected_player].character} will face judgement by {card_used} on their next turn.")
+
+        if card.effect2 == 'Lightning':
+            for possible_lightning in players[0].pending_judgements:
+                if possible_lightning.effect2 == 'Lightning':
+                    print(
+                        f"{players[0].character}: You cannot play a LIGHTNING when you already have one active on yourself.")
+            else:
+                print(f"{card} - {card.flavour_text}")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{players[0].character}: Please confirm you would like to use the delay-tool card: {card.effect}.',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    players[0].hand_cards.contents.pop(card_index)
+                    players[0].check_one_after_another()
+                    players[0].pending_judgements.append(card)
+                    print(f"{players[0].character} has called {card}.")
+
+        # card.type == 'Weapon' or card.type == 'Armor' or card.type == '+1 Horse' or card.type == '-1 Horse':
+        if card.type == 'Weapon':
+            if players[0].equipment_weapon == []:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = False
+            else:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_weapon}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = True
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': message,
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                if popping:
+                    discarded = players[0].equipment_weapon.pop()
+                    discard_deck.add_to_top(discarded)
+                    players[0].check_warrior_woman()
+                players[0].hand_cards.contents.pop(card_index)
+                players[0].equipment_weapon = [card]
+                players[0].weapon_range = card.weapon_range
+                players[0].check_one_after_another()
+                print(f"{players[0].character} has equipped {card}.")
+
+        if card.type == 'Armor':
+            if players[0].equipment_armor == []:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = False
+            else:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_armor}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = True
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': message,
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                if popping:
+                    discarded = players[0].equipment_armor.pop()
+                    discard_deck.add_to_top(discarded)
+                    players[0].check_warrior_woman()
+                players[0].hand_cards.contents.pop(card_index)
+                players[0].equipment_armor = [card]
+                players[0].check_one_after_another()
+                print(f"{players[0].character} has equipped {card}.")
+
+        if card.type == '+1 Horse':
+            if players[0].equipment_defensive_horse == []:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = False
+            else:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_defensive_horse}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = True
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': message,
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                if popping:
+                    discarded = players[0].equipment_defensive_horse.pop()
+                    discard_deck.add_to_top(discarded)
+                    players[0].check_warrior_woman()
+                players[0].hand_cards.contents.pop(card_index)
+                players[0].equipment_defensive_horse = [card]
+                players[0].check_one_after_another()
+                print(f"{players[0].character} has equipped {card}.")
+
+        if card.type == '-1 Horse':
+            if players[0].equipment_offensive_horse == []:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = False
+            else:
+                message = f'{players[0].character}: Please confirm you would like to equip {card.effect} and replace {players[0].equipment_offensive_horse}.'
+                print(f"{card} - {card.flavour_text}")
+                popping = True
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': message,
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                if popping:
+                    discarded = players[0].equipment_offensive_horse.pop()
+                    discard_deck.add_to_top(discarded)
+                    players[0].check_warrior_woman()
+                players[0].hand_cards.contents.pop(card_index)
+                players[0].equipment_offensive_horse = [card]
+                players[0].check_one_after_another()
+                print(f"{players[0].character} has equipped {card}.")
+        popping = False
 
 
 # 108 Cards in the Deck;
@@ -2028,7 +1909,7 @@ class Player(Character):
                 main_deck.check_if_empty(main_deck, discard_deck)
                 pending_judgement = self.pending_judgements.pop(0)
                 # Check for secondary card effects (Da Qiao, Xu Huang)
-                if pending_judgement.effect_2 == 'Acedia':
+                if pending_judgement.effect2 == 'Acedia':
                     print(
                         f"{self.character} must face judgement for ACEDIA; (needs HEARTS to pass, or else misses action-phase of turn).")
                     main_deck.discard_from_deck()
@@ -2044,9 +1925,9 @@ class Player(Character):
                             f"{self.character}'s judgement card is a {judgement_card} and thus they miss their action-phase of this turn.")
                         # SKIP ACTION PHASE OF TURN!
                         self.acedia_active = True
-                    pending_judgement.effect_2 = None
+                    pending_judgement.effect2 = None
                     discard_deck.add_to_top(pending_judgement)
-                if pending_judgement.effect_2 == 'Lightning':
+                if pending_judgement.effect2 == 'Lightning':
                     print(
                         f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of SPADES or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto {players[1].character}.")
                     main_deck.discard_from_deck()
@@ -2062,11 +1943,11 @@ class Player(Character):
                             if self.check_brink_of_death_loop(0, "None") == "Break":
                                 return "Break"
                         self.check_eternal_loyalty(3)
-                        pending_judgement.effect_2 = None
+                        pending_judgement.effect2 = None
                         discard_deck.add_to_top(pending_judgement)
                     elif len(players[1].pending_judgements) > 0:
                         for possible_lightning in players[1].pending_judgements:
-                            if possible_lightning.effect_2 == 'Lightning':
+                            if possible_lightning.effect2 == 'Lightning':
                                 if len(players) < 3:
                                     print(
                                         f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it gets discarded.")
@@ -2081,7 +1962,7 @@ class Player(Character):
                             f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
                         players[1].pending_judgements.insert(
                             0, pending_judgement)
-                if pending_judgement.effect_2 == 'Rations Depleted':
+                if pending_judgement.effect2 == 'Rations Depleted':
                     print(
                         f"{self.character} must face judgement for RATIONS DEPLETED; (needs CLUBS to pass, or else misses drawing-phase of turn).")
                     main_deck.discard_from_deck()
@@ -2097,7 +1978,7 @@ class Player(Character):
                             f"{self.character}'s judgement card is a {judgement_card} and thus they miss their drawing-phase of this turn.")
                         # SKIP DRAWING PHASE OF TURN!
                         self.rations_depleted_active = True
-                    pending_judgement.effect_2 = None
+                    pending_judgement.effect2 = None
                     discard_deck.add_to_top(pending_judgement)
 
     def calculate_targets_in_physical_range(self, player_index):
@@ -2529,7 +2410,7 @@ class Player(Character):
                     options_str.append(
                         Separator("-----------------HAND--CARDS-----------------"))
                     i = 1
-                    for card in choices[selected_player_index].hand_cards.contents:
+                    for item in choices[selected_player_index].hand_cards.contents:
                         options_str.append(f"Hand-Card {i}")
                         i += 1
                     options_str.append(
@@ -3012,7 +2893,7 @@ class Player(Character):
                         options_str.append(
                             Separator("-----------------HAND--CARDS-----------------"))
                         i = 1
-                        for card in target_1.hand_cards.contents:
+                        for item in target_1.hand_cards.contents:
                             options_str.append(f"Hand-Card {i}")
                             i += 1
 
@@ -3043,7 +2924,7 @@ class Player(Character):
                         options_str.append(
                             Separator("-----------------HAND--CARDS-----------------"))
                         i = 1
-                        for card in target_2.hand_cards.contents:
+                        for item in target_2.hand_cards.contents:
                             options_str.append(f"Hand-Card {i}")
                             i += 1
 
@@ -3073,7 +2954,7 @@ class Player(Character):
         if source_player_index == None:
             source_player_index = 0
         if (self.character_ability1 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability2 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability3 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability4 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability5 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead."):
-            if card.suit == "Hearts" or card.suit == "Diamonds" or card.effect_2 == "Wine-Attack":
+            if card.suit == "Hearts" or card.suit == "Diamonds":
                 self.max_health -= 1
                 if self.current_health > self.max_health:
                     self.current_health -= 1
@@ -3216,7 +3097,7 @@ class Player(Character):
                         options_str.append(
                             Separator("-----------------HAND--CARDS-----------------"))
                         i = 1
-                        for card in players[source_player_index].hand_cards.contents:
+                        for item in players[source_player_index].hand_cards.contents:
                             options_str.append(f"Hand-Card {i}")
                             i += 1
                         options_str.append(
@@ -3461,32 +3342,26 @@ class Player(Character):
                                 discard_deck.add_to_top(card)
                                 self.weapon_range = 1
                                 weapon_popped = True
-                                print(
-                                    f"{self.character} has discarded {card} from their weapon-slot.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 3):
                                 card = self.equipment_armor.pop()
                                 discard_deck.add_to_top(card)
                                 armor_popped = True
-                                print(
-                                    f"{self.character} has discarded {card} from their armor-slot.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 4):
                                 card = self.equipment_offensive_horse.pop()
                                 discard_deck.add_to_top(card)
                                 off_horse_popped = True
-                                print(
-                                    f"{self.character} has discarded {card} from their horse-slot.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 5):
                                 card = self.equipment_defensive_horse.pop()
                                 discard_deck.add_to_top(card)
                                 def_horse_popped = True
-                                print(
-                                    f"{self.character} has discarded {card} from their horse-slot.")
 
-                        card.effect_2 = "Dismantle"
-                        if not self.hand_cards.use_secondary_effect(card):
+                        print(
+                            f"  >> Character Ability: Surprise; {self.character} has discarded {card} to use as a DISMANTLE.")
+                        card.effect2 = "Dismantle"
+                        if not self.hand_cards.use_card_effect("Special", card):
                             if weapon_popped:
                                 discard_deck.contents.pop()
                                 self.equipment_weapon.append(card)
@@ -3764,7 +3639,8 @@ class Player(Character):
             elif action_taken_index <= (len(playing_card_options) + 1):
                 card_index = (action_taken_index - 1)
                 card = self.hand_cards.contents[card_index]
-                self.hand_cards.use_primary_effect(card_index, card)
+                card.effect2 = card.effect
+                self.hand_cards.use_card_effect(card_index, card)
 
             # For activating an ability
             elif action_taken_index <= ((len(playing_card_options) + len(activatable_abilities)) + 1):
@@ -4093,7 +3969,7 @@ game_started = True
 # Gameplay
 print(' ')
 players[0].hand_cards.draw(main_deck, 25)
-# players[0].hand_cards.use_primary_effect()
+# players[0].hand_cards.use_card_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
