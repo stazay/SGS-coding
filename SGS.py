@@ -618,7 +618,7 @@ class Hand(Deck):
         print(" ")
         popping = False
         if card.type == 'Basic':
-            if card.effect_2 == 'Attack':
+            if card.effect == 'Attack':
                 if (players[0].attacks_this_turn == 0) or (players[0].check_berserk()) or (len(players[0].equipment_weapon) > 0 and players[0].equipment_weapon[0].effect == 'Zhuge Crossbow'):
                     choices_index = players[0].calculate_targets_in_weapon_range(
                         0)
@@ -714,11 +714,11 @@ class Hand(Deck):
                     print(
                         f"{players[0].character}: You can only play one ATTACK card per turn.")
 
-            if card.effect_2 == 'Defend':
+            if card.effect == 'Defend':
                 print(
                     f"{players[0].character}: {card} can only be played as a reaction.")
 
-            if card.effect_2 == 'Peach':
+            if card.effect == 'Peach':
                 if players[0].max_health > players[0].current_health:
                     print(f"{card} - {card.flavour_text}")
                     question = [
@@ -758,7 +758,7 @@ class Hand(Deck):
             if card.effect == 'Coerce':
                 pass
 
-            if card.effect_2 == 'Dismantle':
+            if card.effect == 'Dismantle':
                 choices = players[1:]
                 choices.append(players[0])
                 choices_str = list_character_options(players[1:])
@@ -928,11 +928,11 @@ class Hand(Deck):
             if card.effect == 'Duel':
                 pass
 
-            if card.effect_2 == 'Negate':
+            if card.effect == 'Negate':
                 print(
                     f"{players[0].character}: {card} can only be played as a reaction.")
 
-            if card.effect_2 == 'Greed':
+            if card.effect == 'Greed':
                 print(f"{card} - {card.flavour_text}")
                 question = [
                     {
