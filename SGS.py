@@ -1025,6 +1025,65 @@ class Player(Character):
                     output.append(target_index)
         return output
 
+    def create_targeting_menu(self, range_type):
+        if range_type == "Physical":
+            if self.check_talent():
+                output_str = [
+                    Separator("------<Cannot target yourself>------")]
+                for player in players[1:]:
+                    output_str.append(str(player))
+                return (output_str)
+            reachable_indexes = self.calculate_targets_in_physical_range(0)
+            if len(reachable_indexes) == 0:
+                print(
+                    f"{self.character} - You have insufficient range to reach anyone with this card.")
+                return "Break"
+            output_str = []
+            for player in players:
+                output_str.append(Separator("------" + str(player) + "------"))
+            for reachable_index in reachable_indexes:
+                output_str.pop(reachable_index)
+                output_str.insert(reachable_index, str(
+                    players[reachable_index]))
+            return (output_str)
+
+        if range_type == "Extended Physical":
+            reachable_indexes = self.calculate_targets_in_extended_physical_range(
+                0)
+            if self.check_talent():
+                output_str = [
+                    Separator("------<Cannot target yourself>------")]
+                for player in players[1:]:
+                    output_str.append(str(player))
+                return (output_str)
+            if len(reachable_indexes) == 0:
+                print(
+                    f"{self.character} - You have insufficient range to reach anyone with this card.")
+                return "Break"
+            output_str = []
+            for player in players:
+                output_str.append(Separator("------" + str(player) + "------"))
+            for reachable_index in reachable_indexes:
+                output_str.pop(reachable_index)
+                output_str.insert(reachable_index, str(
+                    players[reachable_index]))
+            return (output_str)
+
+        if range_type == "Weapon":
+            reachable_indexes = self.calculate_targets_in_weapon_range(0)
+            if len(reachable_indexes) == 0:
+                print(
+                    f"{self.character} - You have insufficient range to reach anyone with an ATTACK.")
+                return "Break"
+            output_str = []
+            for player in players:
+                output_str.append(Separator("------" + str(player) + "------"))
+            for reachable_index in reachable_indexes:
+                output_str.pop(reachable_index)
+                output_str.insert(reachable_index, str(
+                    players[reachable_index]))
+            return (output_str)
+
     def check_activatable_abilities(self):
         return ["Character_Ability_X", "Character_Ability_Y", "Character_Ability_Z"]
 
@@ -1367,12 +1426,10 @@ class Player(Character):
         else:
             return (False, None)
 
-    def check_weapon_axe(self, target_index=0, choices=[]):
-        if target_index == None:
-            target_index = 0
-        if choices == []:
-            choices = players
+    def check_weapon_axe(self, target_index=0):
         if len(self.equipment_weapon) > 0:
+            if target_index == None:
+                target_index = 0
             if self.equipment_weapon[0].effect == "Axe":
                 cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_armor) + len(
                     self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
@@ -1381,7 +1438,7 @@ class Player(Character):
                         {
                             'type': 'list',
                             'name': 'Selected',
-                            'message': f'{self.character}: Would you like to discard two cards to force the damage against {choices[target_index].character} ({choices[target_index].current_health}/{choices[target_index].max_health} HP remaining)?',
+                            'message': f'{self.character}: Would you like to discard two cards to force the damage against {players[target_index].character} ({players[target_index].current_health}/{players[target_index].max_health} HP remaining)?',
                             'choices': ['Yes', 'No']
                         },
                     ]
@@ -1403,92 +1460,131 @@ class Player(Character):
                             ]
                             answer = prompt(question, style=custom_style_2)
                             card_index = answer.get('Selected')
+                            if card_index > len(self.hand_cards.contents) - 1:
+                                self.check_warrior_woman()
                             options_str.pop(card_index)
                             discarded = options.pop(card_index)
                             discard_deck.add_to_top(discarded)
                             print(
                                 f"{self.character} has discarded {discarded} using {self.equipment_weapon[0]}.")
-                        print(
-                            f"  >> {self.character} has forced the damage to {choices[target_index].character}, by using {self.equipment_weapon[0]}, and discarding two cards ({choices[target_index].current_health}/{choices[target_index].max_health} HP remaining).")
+                            num -= 1
                         damage_dealt = 1
-                        choices[target_index].current_health -= damage_dealt
-                        self.check_insanity(
-                            choices, target_index)
+                        players[target_index].current_health -= damage_dealt
+                        print(
+                            f"  >> {self.character} has forced the damage to {players[target_index].character}, by using {self.equipment_weapon[0]}, and discarding two cards ({players[target_index].current_health}/{players[target_index].max_health} HP remaining).")
+                        self.check_insanity(target_index)
                         for player_index, player in enumerate(players):
                             if player.current_health < 1:
                                 if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                     return "Break"
-                        choices[target_index].check_eternal_loyalty(
+                        players[target_index].check_eternal_loyalty(
                             damage_dealt)
-                        if choices[target_index].check_eye_for_an_eye(
+                        if players[target_index].check_eye_for_an_eye(
                                 source_player_index=0, mode="Activate") == "Break":
                             return "Break"
-                        choices[target_index].check_plotting_for_power(
+                        players[target_index].check_plotting_for_power(
                             damage_dealt, "Reaction")
-                        choices[target_index].check_retaliation(
+                        players[target_index].check_retaliation(
                             0, damage_dealt)
                 return ("Axe")
 
-    def check_weapon_black_pommel(self):
-        if self.equipment_weapon[0].effect == "Black Pommel":
-            print(
-                f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore ignores any armor when attacking.")
-            return True
+    def check_weapon_black_pommel(self, target_index=0):
+        if len(self.equipment_weapon) > 0:
+            if self.equipment_weapon[0].effect == "Black Pommel":
+                return True
 
-    def check_weapon_huangs_longbow(self, target_index=0, choices=[]):
+    def check_weapon_frost_blade(self, target_index=0, mode="Check"):
         if target_index == None:
             target_index = 0
-        if choices == []:
-            choices = players
-        if self.equipment_weapon[0].effect == "Huang's Longbow":
-            if (len(choices[target_index].equipment_offensive_horse) + len(choices[target_index].equipment_defensive_horse)) > 0:
-                options_str = []
-                if len(choices[target_index].equipment_offensive_horse) > 0:
-                    options_str.append(
-                        str(choices[target_index].equipment_offensive_horse))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Horse Slot>------------  "))
-                if len(choices[target_index].equipment_defensive_horse) > 0:
-                    options_str.append(
-                        str(choices[target_index].equipment_defensive_horse))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Horse Slot>------------  "))
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{self.character}: Please select which horse of {choices[target_index]} to slay?',
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                slain_horse_index = answer.get('Selected')
-                if slain_horse_index == 0:
-                    discarded = choices[target_index].equipment_offensive_horse.pop(
-                    )
-                    discard_deck.add_to_top(discarded)
-                    choices[target_index].check_warrior_woman()
-                if slain_horse_index == 1:
-                    discarded = choices[target_index].equipment_defensive_horse.pop(
-                    )
-                    discard_deck.add_to_top(discarded)
-                    choices[target_index].check_warrior_woman()
-                print(
-                    f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and slays {discarded} of {choices[target_index]} upon hit.")
-            return True
+        if mode == "Check":
+            if len(self.equipment_weapon) > 0:
+                if self.equipment_weapon[0].effect == "Frost Blade":
+                    cards_discardable = (len(players[target_index].hand_cards.contents) + len(players[target_index].equipment_weapon) + len(
+                        players[target_index].equipment_armor) + len(players[target_index].equipment_offensive_horse) + len(players[target_index].equipment_defensive_horse))
+                    if cards_discardable > 1:
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Would you like to force {players[target_index].character} to discard two cards instead of taking damage ({players[target_index].current_health}/{players[target_index].max_health} HP remaining)?',
+                                'choices': ['Yes', 'No']
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        if answer.get('Selected') == "Yes":
+                            print(
+                                f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and chose to make {players[target_index].character} discard two cards instead of taking damage.")
+                            players[target_index].check_weapon_frost_blade(
+                                0, "Activate")
+                            return True
 
-    def check_weapon_sky_scorcher_halberd(self, target_index=0, choices=[]):
-        if self.equipment_weapon[0].effect == "Sky Scorcher Halberd":
-            pass
+        if mode == "Activate":
+            self.hand_cards.discard_from_equip_or_hand(2)
+
+    def check_weapon_huangs_longbow(self, target_index=0):
+        if len(self.equipment_weapon) > 0:
+            if target_index == None:
+                target_index = 0
+            if self.equipment_weapon[0].effect == "Huang's Longbow":
+                if (len(players[target_index].equipment_offensive_horse) + len(players[target_index].equipment_defensive_horse)) > 0:
+                    options_str = []
+                    if len(players[target_index].equipment_offensive_horse) > 0:
+                        options_str.append(
+                            str(players[target_index].equipment_offensive_horse))
+                    else:
+                        options_str.append(
+                            Separator("  -----------<Empty Horse Slot>------------  "))
+                    if len(players[target_index].equipment_defensive_horse) > 0:
+                        options_str.append(
+                            str(players[target_index].equipment_defensive_horse))
+                    else:
+                        options_str.append(
+                            Separator("  -----------<Empty Horse Slot>------------  "))
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select which horse of {players[target_index]} to slay?',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    slain_horse_index = answer.get('Selected')
+                    if slain_horse_index == 0:
+                        discarded = players[target_index].equipment_offensive_horse.pop(
+                        )
+                        discard_deck.add_to_top(discarded)
+                        players[target_index].check_warrior_woman()
+                    if slain_horse_index == 1:
+                        discarded = players[target_index].equipment_defensive_horse.pop(
+                        )
+                        discard_deck.add_to_top(discarded)
+                        players[target_index].check_warrior_woman()
+                    print(
+                        f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and slays {discarded} of {players[target_index]} upon hit.")
+                return True
 
     def check_weapon_zhuge_crossbow(self):
-        if self.equipment_weapon[0].effect == "Zhuge Crossbow":
-            print(
-                f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore has no limit to the amount of attacks per turn.")
-            return True
+        if len(self.equipment_weapon) > 0:
+            if self.equipment_weapon[0].effect == "Zhuge Crossbow":
+                print(
+                    f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore has no limit to the amount of attacks per turn.")
+                return True
+
+# Still TO DO:
+    def check_weapon_gender_swords(self, target_index=0):
+        pass
+
+    def check_weapon_green_dragon_halberd(self, target_index=0):
+        pass
+
+    def check_weapon_serpent_spear(self):
+        pass
+
+    def check_weapon_sky_scorcher_halberd(self, target_index=0):
+        if self.equipment_weapon[0].effect == "Sky Scorcher Halberd":
+            pass
 
 # Using cards from a players' hand
     def play_reaction_effect(self, card_played, player_index=None, reacting_player_index=None, player_reacting_list=[]):
@@ -1598,10 +1694,7 @@ class Player(Character):
                 choices_index = self.calculate_targets_in_weapon_range(
                     0)
                 if len(choices_index) > 0:
-                    choices = []
-                    for player_index in choices_index:
-                        choices.append(players[player_index])
-                    choices_str = list_character_options(choices)
+                    choices_str = self.create_targeting_menu("Weapon")
                     question = [
                         {
                             'type': 'list',
@@ -1612,9 +1705,9 @@ class Player(Character):
                         },
                     ]
                     answer = prompt(question, style=custom_style_2)
-                    selected_player = answer.get('Selected')
+                    selected = answer.get('Selected')
 
-                    if choices[selected_player].check_empty_city():
+                    if players[selected].check_empty_city():
                         return (' ')
 
                     print(f"{card} - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
@@ -1622,7 +1715,7 @@ class Player(Character):
                         {
                             'type': 'list',
                             'name': 'Selected',
-                            'message': f'{self.character}: Please confirm you would like to use {card} against {choices[selected_player]}?',
+                            'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected]}?',
                             'choices': ['Yes', 'No'],
                         },
                     ]
@@ -1636,51 +1729,54 @@ class Player(Character):
                                 card_index)
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
-                        if not self.check_weapon_black_pommel():
-                            if choices[selected_player].armor_black_shield(discarded):
-                                return(' ')
-                        if choices[selected_player].check_relish(source_player_index=0, mode="Activate"):
+                        if self.check_weapon_black_pommel():
+                            print(
+                                f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore ignores any armor when attacking.")
+                        elif players[selected].armor_black_shield(discarded):
                             return(' ')
-                        if self.check_fearsome_archer(discarded, choices, selected_player):
+                        if players[selected].check_relish(source_player_index=0, mode="Activate"):
                             return(' ')
-                        if self.check_iron_cavalry(discarded, choices, selected_player):
+                        if self.check_fearsome_archer(discarded, selected):
                             return(' ')
-                        attack_defended = choices[selected_player].play_reaction_effect(
-                            card, 0, selected_player, choices)
+                        if self.check_iron_cavalry(discarded, selected):
+                            return(' ')
+                        attack_defended = players[selected].play_reaction_effect(
+                            card, 0, selected, players)
                         if type(attack_defended) == Card:
                             if attack_defended.effect == 'Defend':
                                 print(
-                                    f"{choices[selected_player].character} successfully defended the attack with {attack_defended}.")
+                                    f"{players[selected].character} successfully defended the attack with {attack_defended}.")
+                                self.check_weapon_axe(selected)
                                 self.check_fearsome_advance(
-                                    discarded, choices, selected_player)
-                                choices[selected_player].check_lightning_strike()
+                                    discarded, selected)
+                                players[selected].check_lightning_strike()
                             elif attack_defended.effect == 0:
                                 pass
                         else:
-                            if self.check_backstab(discarded, choices, selected_player):
+                            if self.check_weapon_frost_blade(selected, "Check"):
                                 return(' ')
-                            if choices[selected_player].check_reckless(discarded, 0):
+                            if self.check_backstab(discarded, selected):
+                                return(' ')
+                            if players[selected].check_reckless(discarded, 0):
                                 return(' ')
                             damage_dealt = 1
-                            choices[selected_player].current_health -= damage_dealt
+                            players[selected].current_health -= damage_dealt
                             print(
-                                f"{self.character} attacked {choices[selected_player].character}, dealing {damage_dealt} damage. ({choices[selected_player].current_health}/{choices[selected_player].max_health} HP remaining)")
-                            self.check_weapon_huangs_longbow(
-                                selected_player, choices)
-                            self.check_insanity(
-                                choices, selected_player)
+                                f"{self.character} attacked {players[selected].character}, dealing {damage_dealt} damage. ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
+                            self.check_weapon_huangs_longbow(selected)
+                            self.check_insanity(selected)
                             for player_index, player in enumerate(players):
                                 if player.current_health < 1:
                                     if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                         return "Break"
-                            choices[selected_player].check_eternal_loyalty(
+                            players[selected].check_eternal_loyalty(
                                 damage_dealt)
-                            if choices[selected_player].check_eye_for_an_eye(
+                            if players[selected].check_eye_for_an_eye(
                                     source_player_index=0, mode="Activate") == "Break":
                                 return(' ')
-                            choices[selected_player].check_plotting_for_power(
+                            players[selected].check_plotting_for_power(
                                 damage_dealt, "Reaction")
-                            choices[selected_player].check_retaliation(
+                            players[selected].check_retaliation(
                                 0, damage_dealt)
                 else:
                     print(
@@ -1737,10 +1833,7 @@ class Player(Character):
             pass
 
         if card.effect2 == 'Dismantle':
-            choices = players[1:]
-            choices.append(players[0])
-            choices_str = list_character_options(players[1:])
-            choices_str.append(str(players[0]))
+            choices_str = list_character_options(players[::])
             question = [
                 {
                     'type': 'list',
@@ -1751,7 +1844,7 @@ class Player(Character):
                 },
             ]
             answer = prompt(question, style=custom_style_2)
-            selected_player = answer.get('Selected')
+            selected = answer.get('Selected')
 
             print(
                 f"{card} - You can target any player and discard one of their cards, on-hand or equipped.")
@@ -1759,7 +1852,7 @@ class Player(Character):
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{self.character}: Please confirm you would like to use {card} against {choices[selected_player]}?',
+                    'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected]}?',
                     'choices': ['Yes', 'No'],
                 },
             ]
@@ -1767,19 +1860,19 @@ class Player(Character):
             if answer.get('Selected') == 'No':
                 return False
             if answer.get('Selected') == 'Yes':
-                cards_discardable = (len(choices[selected_player].hand_cards.contents) + len(choices[selected_player].equipment_weapon) + len(
-                    choices[selected_player].equipment_armor) + len(choices[selected_player].equipment_offensive_horse) + len(choices[selected_player].equipment_defensive_horse) + len(choices[selected_player].pending_judgements))
+                cards_discardable = (len(players[selected].hand_cards.contents) + len(players[selected].equipment_weapon) + len(
+                    players[selected].equipment_armor) + len(players[selected].equipment_offensive_horse) + len(players[selected].equipment_defensive_horse) + len(players[selected].pending_judgements))
 
                 if cards_discardable == 0:
                     print(
-                        f"{choices[selected_player].character} has no cards that can be dismantled.")
+                        f"{players[selected].character} has no cards that can be dismantled.")
                     return False
 
                 if cards_discardable > 0:
-                    if choices[selected_player] == players[0]:
+                    if players[selected] == players[0]:
                         options_str = players[0].create_str_nonblind_menu(True)
                     else:
-                        options_str = choices[selected_player].create_str_semiblind_menu(
+                        options_str = players[selected].create_str_semiblind_menu(
                             True)
 
                 question = [
@@ -1802,72 +1895,72 @@ class Player(Character):
                 discard_deck.add_to_top(discarded)
 
                 # Check if hand-card
-                if card_dismantled_index <= len(choices[selected_player].hand_cards.contents):
-                    card_dismantled = choices[selected_player].hand_cards.contents.pop(
+                if card_dismantled_index <= len(players[selected].hand_cards.contents):
+                    card_dismantled = players[selected].hand_cards.contents.pop(
                         card_dismantled_index - 1)
                     discard_deck.add_to_top(card_dismantled)
                     print(
-                        f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s hand by using {card}.")
-                    choices[selected_player].check_one_after_another()
+                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s hand by using {card}.")
+                    players[selected].check_one_after_another()
 
                 # Check if equipment-card
-                if card_dismantled_index > len(choices[selected_player].hand_cards.contents):
-                    if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 2):
-                        card_dismantled = choices[selected_player].equipment_weapon.pop(
+                if card_dismantled_index > len(players[selected].hand_cards.contents):
+                    if card_dismantled_index == (len(players[selected].hand_cards.contents) + 2):
+                        card_dismantled = players[selected].equipment_weapon.pop(
                         )
                         discard_deck.add_to_top(card_dismantled)
-                        choices[selected_player].weapon_range = 1
+                        players[selected].weapon_range = 1
                         print(
-                            f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s weapon-slot by using {card}.")
-                        choices[selected_player].check_warrior_woman()
+                            f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s weapon-slot by using {card}.")
+                        players[selected].check_warrior_woman()
 
-                    elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 3):
-                        card_dismantled = choices[selected_player].equipment_armor.pop(
+                    elif card_dismantled_index == (len(players[selected].hand_cards.contents) + 3):
+                        card_dismantled = players[selected].equipment_armor.pop(
                         )
                         discard_deck.add_to_top(card_dismantled)
                         print(
-                            f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s armor-slot by using {card}.")
-                        choices[selected_player].check_warrior_woman()
+                            f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s armor-slot by using {card}.")
+                        players[selected].check_warrior_woman()
 
-                    elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 4):
-                        card_dismantled = choices[selected_player].equipment_offensive_horse.pop(
+                    elif card_dismantled_index == (len(players[selected].hand_cards.contents) + 4):
+                        card_dismantled = players[selected].equipment_offensive_horse.pop(
                         )
                         discard_deck.add_to_top(card_dismantled)
                         print(
-                            f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                        choices[selected_player].check_warrior_woman()
+                            f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s horse-slot by using {card}.")
+                        players[selected].check_warrior_woman()
 
-                    elif card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 5):
-                        card_dismantled = choices[selected_player].equipment_defensive_horse.pop(
+                    elif card_dismantled_index == (len(players[selected].hand_cards.contents) + 5):
+                        card_dismantled = players[selected].equipment_defensive_horse.pop(
                         )
                         discard_deck.add_to_top(card_dismantled)
                         print(
-                            f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                        choices[selected_player].check_warrior_woman()
+                            f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s horse-slot by using {card}.")
+                        players[selected].check_warrior_woman()
 
                     # Check if pending-time-delay-tool-card
                     else:
-                        if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 7):
-                            card_dismantled = choices[selected_player].pending_judgements[0]
+                        if card_dismantled_index == (len(players[selected].hand_cards.contents) + 7):
+                            card_dismantled = players[selected].pending_judgements[0]
                             discard_deck.add_to_top(
                                 card_dismantled)
                             print(
-                                f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
+                                f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using {card}.")
 
-                        if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 8):
-                            card_dismantled = choices[selected_player].pending_judgements[1]
+                        if card_dismantled_index == (len(players[selected].hand_cards.contents) + 8):
+                            card_dismantled = players[selected].pending_judgements[1]
                             discard_deck.add_to_top(
                                 card_dismantled)
                             print(
-                                f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
+                                f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using {card}.")
 
-                        if card_dismantled_index == (len(choices[selected_player].hand_cards.contents) + 9):
-                            card_dismantled = choices[selected_player].pending_judgements[2]
+                        if card_dismantled_index == (len(players[selected].hand_cards.contents) + 9):
+                            card_dismantled = players[selected].pending_judgements[2]
                             discard_deck.add_to_top(
                                 card_dismantled)
                             print(
-                                f"{self.character} has destroyed {card_dismantled} from {choices[selected_player].character}'s pending judgements by using {card}.")
-            choices[selected_player].check_one_after_another()
+                                f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using {card}.")
+            players[selected].check_one_after_another()
             return True
 
         if card.effect2 == 'Duel':
@@ -1902,16 +1995,9 @@ class Player(Character):
         if card.effect2 == 'Steal':
             choices_index = self.calculate_targets_in_physical_range(
                 0)
-            if self.check_talent():
-                choices = players[1:]
-                choices_str = list_character_options(players[1:])
-                stealing_possible = True
 
-            elif len(choices_index) > 0:
-                choices = []
-                for player_index in choices_index:
-                    choices.append(players[player_index])
-                choices_str = list_character_options(choices)
+            if len(choices_index) > 0:
+                choices_str = self.create_targeting_menu("Physical")
                 stealing_possible = True
 
             if stealing_possible:
@@ -1925,9 +2011,9 @@ class Player(Character):
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
-                selected_player = answer.get('Selected')
+                selected = answer.get('Selected')
 
-                if choices[selected_player].check_humility():
+                if players[selected].check_humility():
                     return False
 
                 print(f"{card} - You can use this card on a player within physical range to take a card from them (on-hand or equipped) and add it to your hand.")
@@ -1935,7 +2021,7 @@ class Player(Character):
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{self.character}: Please confirm you would like to use {card} against {choices[selected_player]}?',
+                        'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected]}?',
                         'choices': ['Yes', 'No'],
                     },
                 ]
@@ -1943,16 +2029,16 @@ class Player(Character):
                 if answer.get('Selected') == 'No':
                     return False
                 if answer.get('Selected') == 'Yes':
-                    cards_discardable = (len(choices[selected_player].hand_cards.contents) + len(choices[selected_player].equipment_weapon) + len(
-                        choices[selected_player].equipment_armor) + len(choices[selected_player].equipment_offensive_horse) + len(choices[selected_player].equipment_defensive_horse) + len(choices[selected_player].pending_judgements))
+                    cards_discardable = (len(players[selected].hand_cards.contents) + len(players[selected].equipment_weapon) + len(
+                        players[selected].equipment_armor) + len(players[selected].equipment_offensive_horse) + len(players[selected].equipment_defensive_horse) + len(players[selected].pending_judgements))
 
                     if cards_discardable == 0:
                         print(
-                            f"{choices[selected_player].character} has no cards that can be stolen.")
+                            f"{players[selected].character} has no cards that can be stolen.")
                         return False
 
                     if cards_discardable > 0:
-                        options_str = choices[selected_player].create_str_semiblind_menu(
+                        options_str = players[selected].create_str_semiblind_menu(
                             True)
 
                     question = [
@@ -1976,69 +2062,69 @@ class Player(Character):
                     discard_deck.add_to_top(discarded)
 
                     # Check if hand-card
-                    if card_stolen_index <= len(choices[selected_player].hand_cards.contents):
-                        card_stolen = choices[selected_player].hand_cards.contents.pop(
+                    if card_stolen_index <= len(players[selected].hand_cards.contents):
+                        card_stolen = players[selected].hand_cards.contents.pop(
                             card_stolen_index - 1)
                         self.hand_cards.add_to_top(card_stolen)
                         print(
-                            f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s hand by using {card}.")
-                        choices[selected_player].check_one_after_another()
+                            f"{self.character} has taken {card_stolen} from {players[selected].character}'s hand by using {card}.")
+                        players[selected].check_one_after_another()
 
                     # Check if equipment-card
-                    if card_stolen_index > len(choices[selected_player].hand_cards.contents):
-                        if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 2):
-                            card_stolen = choices[selected_player].equipment_weapon.pop(
+                    if card_stolen_index > len(players[selected].hand_cards.contents):
+                        if card_stolen_index == (len(players[selected].hand_cards.contents) + 2):
+                            card_stolen = players[selected].equipment_weapon.pop(
                             )
-                            choices[selected_player].weapon_range = 1
+                            players[selected].weapon_range = 1
                             self.hand_cards.add_to_top(card_stolen)
                             print(
-                                f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s weapon-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
+                                f"{self.character} has taken {card_stolen} from {players[selected].character}'s weapon-slot by using {card}.")
+                            players[selected].check_warrior_woman()
 
-                        elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 3):
-                            card_stolen = choices[selected_player].equipment_armor.pop(
+                        elif card_stolen_index == (len(players[selected].hand_cards.contents) + 3):
+                            card_stolen = players[selected].equipment_armor.pop(
                             )
                             self.hand_cards.add_to_top(card_stolen)
                             print(
-                                f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s armor-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
+                                f"{self.character} has taken {card_stolen} from {players[selected].character}'s armor-slot by using {card}.")
+                            players[selected].check_warrior_woman()
 
-                        elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 4):
-                            card_stolen = choices[selected_player].equipment_offensive_horse.pop(
+                        elif card_stolen_index == (len(players[selected].hand_cards.contents) + 4):
+                            card_stolen = players[selected].equipment_offensive_horse.pop(
                             )
                             self.hand_cards.add_to_top(card_stolen)
                             print(
-                                f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
+                                f"{self.character} has taken {card_stolen} from {players[selected].character}'s horse-slot by using {card}.")
+                            players[selected].check_warrior_woman()
 
-                        elif card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 5):
-                            card_stolen = choices[selected_player].equipment_defensive_horse.pop(
+                        elif card_stolen_index == (len(players[selected].hand_cards.contents) + 5):
+                            card_stolen = players[selected].equipment_defensive_horse.pop(
                             )
                             self.hand_cards.add_to_top(card_stolen)
                             print(
-                                f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s horse-slot by using {card}.")
-                            choices[selected_player].check_warrior_woman()
+                                f"{self.character} has taken {card_stolen} from {players[selected].character}'s horse-slot by using {card}.")
+                            players[selected].check_warrior_woman()
 
                         # Check if pending-time-delay-tool-card
                         else:
-                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 7):
-                                card_stolen = choices[selected_player].pending_judgements[0]
+                            if card_stolen_index == (len(players[selected].hand_cards.contents) + 7):
+                                card_stolen = players[selected].pending_judgements[0]
                                 self.hand_cards.add_to_top(card_stolen)
                                 print(
-                                    f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
+                                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using {card}.")
 
-                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 8):
-                                card_stolen = choices[selected_player].pending_judgements[1]
+                            if card_stolen_index == (len(players[selected].hand_cards.contents) + 8):
+                                card_stolen = players[selected].pending_judgements[1]
                                 self.hand_cards.add_to_top(card_stolen)
                                 print(
-                                    f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
+                                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using {card}.")
 
-                            if card_stolen_index == (len(choices[selected_player].hand_cards.contents) + 9):
-                                card_stolen = choices[selected_player].pending_judgements[2]
+                            if card_stolen_index == (len(players[selected].hand_cards.contents) + 9):
+                                card_stolen = players[selected].pending_judgements[2]
                                 self.hand_cards.add_to_top(card_stolen)
                                 print(
-                                    f"{self.character} has taken {card_stolen} from {choices[selected_player].character}'s pending judgements by using {card}.")
-                choices[selected_player].check_one_after_another()
+                                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using {card}.")
+                players[selected].check_one_after_another()
                 return True
             else:
                 print(
@@ -2047,21 +2133,21 @@ class Player(Character):
 
         # card.type == 'Delay-Tool':
         if card.effect2 == 'Acedia':
-            choices = []
+            choices_str = []
             for player in players[1:]:
-                choices.append(str(player))
+                choices_str.append(str(player))
             question = [
                 {
                     'type': 'list',
                     'name': 'Selected',
                     'message': f'{self}: Please select a player to target with {card}.',
-                    'choices': choices,
-                    'filter': lambda player: choices.index(player)
+                    'choices': choices_str,
+                    'filter': lambda player: choices_str.index(player)
                 },
             ]
             answer = prompt(question, style=custom_style_2)
-            selected_player = ((answer.get('Selected')) + 1)
-            if players[selected_player].check_humility():
+            selected = ((answer.get('Selected')) + 1)
+            if players[selected].check_humility():
                 return (' ')
 
             print(f"{card} - You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.")
@@ -2069,7 +2155,7 @@ class Player(Character):
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected_player].character}?',
+                    'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected].character}?',
                     'choices': ['Yes', 'No'],
                 },
             ]
@@ -2077,10 +2163,10 @@ class Player(Character):
             if answer.get('Selected') == 'No':
                 return False
             if answer.get('Selected') == 'Yes':
-                for possible_acedia in players[selected_player].pending_judgements:
+                for possible_acedia in players[selected].pending_judgements:
                     if possible_acedia.effect2 == 'Acedia':
                         print(
-                            f"{self.character}: {players[selected_player].character} cannot be targeted by ACEDIA as they already have one pending.")
+                            f"{self.character}: {players[selected].character} cannot be targeted by ACEDIA as they already have one pending.")
                 else:
                     if card_index == "Special":
                         card_used = card
@@ -2088,10 +2174,10 @@ class Player(Character):
                         card_used = self.hand_cards.contents.pop(
                             card_index)
                     self.check_one_after_another()
-                    players[selected_player].pending_judgements.append(
+                    players[selected].pending_judgements.append(
                         card_used)
                     print(
-                        f"{self.character}: {players[selected_player].character} will face judgement for ACEDIA on their next turn.")
+                        f"{self.character}: {players[selected].character} will face judgement for ACEDIA on their next turn.")
                     return True
 
         if card.effect2 == 'Lightning':
@@ -2124,16 +2210,9 @@ class Player(Character):
         if card.effect2 == 'Rations Depleted':
             choices_index = self.calculate_targets_in_extended_physical_range(
                 0)
-            if self.check_talent():
-                choices = players[1:]
-                choices_str = list_character_options(players[1:])
-                blockade_possible = True
 
-            elif len(choices_index) > 0:
-                choices = []
-                for player_index in choices_index:
-                    choices.append(players[player_index])
-                choices_str = list_character_options(choices)
+            if len(choices_index) > 0:
+                choices_str = self.create_targeting_menu("Extended Physical")
                 blockade_possible = True
 
             if blockade_possible:
@@ -2147,14 +2226,14 @@ class Player(Character):
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
-                selected_player = (answer.get('Selected'))
+                selected = (answer.get('Selected'))
 
                 print(f"{card} - You can place Delay-Tool on any other player in physical range. The target must perform a judgement for this card. If it is not CLUBS, they forfeit their draw-phase.")
                 question = [
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{self.character}: Please confirm you would like to use {card} against {choices[selected_player].character}?',
+                        'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected].character}?',
                         'choices': ['Yes', 'No'],
                     },
                 ]
@@ -2162,19 +2241,19 @@ class Player(Character):
                 if answer.get('Selected') == 'No':
                     return False
                 if answer.get('Selected') == 'Yes':
-                    for possible_rations_depleted in choices[selected_player].pending_judgements:
+                    for possible_rations_depleted in players[selected].pending_judgements:
                         if possible_rations_depleted.effect2 == 'Rations Depleted':
                             print(
-                                f"{self.character}: {choices[selected_player].character} cannot be targeted by RATIONS DEPLETED as they already have one pending.")
+                                f"{self.character}: {players[selected].character} cannot be targeted by RATIONS DEPLETED as they already have one pending.")
                         return False
                     else:
                         if card_index == "Special":
                             card_used = card
                         self.check_one_after_another()
-                        players[selected_player].pending_judgements.append(
+                        players[selected].pending_judgements.append(
                             card_used)
                         print(
-                            f"{self.character}: {choices[selected_player].character} will face judgement by {card_used} for RATIONS DEPLETED on their next turn.")
+                            f"{self.character}: {players[selected].character} will face judgement by {card_used} for RATIONS DEPLETED on their next turn.")
                         return True
 
         # card.type == 'Equipment'
@@ -2294,47 +2373,47 @@ class Player(Character):
         popping = False
 
 # Ability checks
-    def check_backstab(self, discarded, choices=[], selected_player_index=0):
-        if selected_player_index == None:
-            selected_player_index = 0
+    def check_backstab(self, discarded, selected_index=0):
+        if selected_index == None:
+            selected_index = 0
         if (self.character_ability1 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability2 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability3 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability4 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability5 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."):
             possible_indexes = self.calculate_targets_in_physical_range(0)
             possible_targets = []
             for target in possible_indexes:
                 possible_targets.append(players[target])
-            if (choices[selected_player_index]) in possible_targets:
+            if (players[selected_index]) in possible_targets:
                 question = [
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{self.character}: Choose to activate Backstab against {choices[selected_player_index].character}, causing you to flip a judgement; if not HEARTS, the attack will instead reduce their maximum health by 1.',
+                        'message': f'{self.character}: Choose to activate Backstab against {players[selected_index].character}, causing you to flip a judgement; if not HEARTS, the attack will instead reduce their maximum health by 1.',
                         'choices': ['Yes', 'No'],
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'Yes':
                     print(
-                        f"  >> Character Ability: Backstab; {self.character} has activated Backstab, forcing a judgement card to be flipped. If not HEARTS, {choices[selected_player_index].character} loses a maximum health instead of a health.")
+                        f"  >> Character Ability: Backstab; {self.character} has activated Backstab, forcing a judgement card to be flipped. If not HEARTS, {players[selected_index].character} loses a maximum health instead of a health.")
                     main_deck.check_if_empty(main_deck, discard_deck)
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
                     print(f"{self.character} flipped a {judgement_card}.")
                     # Add checks for Sima Yi and Zhang Jiao
                     if judgement_card.suit == "Spades" or judgement_card.suit == "Clubs" or judgement_card.suit == "Diamonds":
-                        choices[selected_player_index].max_health -= 1
-                        if choices[selected_player_index].current_health > choices[selected_player_index].max_health:
-                            choices[selected_player_index].current_health -= 1
+                        players[selected_index].max_health -= 1
+                        if players[selected_index].current_health > players[selected_index].max_health:
+                            players[selected_index].current_health -= 1
                         print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore {choices[selected_player_index].character} loses maximum health instead. ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining)")
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {players[selected_index].character} loses maximum health instead. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                         for player_index, player in enumerate(players):
                             if player.current_health < 1:
                                 players[player_index].check_brink_of_death_loop(
                                     player_index, 0)
                     if judgement_card.suit == "Hearts":
                         damage_dealt = 1
-                        choices[selected_player_index].current_health -= damage_dealt
+                        players[selected_index].current_health -= damage_dealt
                         print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore Backstab does not apply. Damage dealt as normal; {damage_dealt} damage to {choices[selected_player_index].character}. ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining)")
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore Backstab does not apply. Damage dealt as normal; {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                         for player_index, player in enumerate(players):
                             if player.current_health < 1:
                                 players[player_index].check_brink_of_death_loop(
@@ -2522,13 +2601,13 @@ class Player(Character):
                     if answer.get('Selected') == (len(options_str) - 1):
                         damage_dealt = 0
                     else:
-                        selected_player_index = answer.get('Selected')
-                        difference = options[selected_player_index].max_health - \
-                            len(options[selected_player_index].hand_cards.contents)
-                        options[selected_player_index].hand_cards.draw(
+                        selected_index = answer.get('Selected')
+                        difference = options[selected_index].max_health - \
+                            len(options[selected_index].hand_cards.contents)
+                        options[selected_index].hand_cards.draw(
                             difference, False)
                         print(
-                            f"  >> Character Ability: Eternal Loyalty; {self.character} has refilled {players[selected_player_index]}'s hand to their maximum health limit! (+{difference} cards)")
+                            f"  >> Character Ability: Eternal Loyalty; {self.character} has refilled {options[selected_index]}'s hand to their maximum health limit! (+{difference} cards)")
                         damage_dealt -= 1
                 else:
                     print(
@@ -2651,33 +2730,33 @@ class Player(Character):
                     if player.character == 'Zhang Jiao':
                         self.character_ability4 = "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."
 
-    def check_fearsome_advance(self, discarded, choices=[], selected_player_index=0):
-        if selected_player_index == None:
-            selected_player_index = 0
-        cards_discardable = (len(choices[selected_player_index].hand_cards.contents) + len(choices[selected_player_index].equipment_weapon) + len(
-            choices[selected_player_index].equipment_armor) + len(choices[selected_player_index].equipment_offensive_horse) + len(choices[selected_player_index].equipment_defensive_horse))
+    def check_fearsome_advance(self, discarded, selected_index=0):
+        if selected_index == None:
+            selected_index = 0
+        cards_discardable = (len(players[selected_index].hand_cards.contents) + len(players[selected_index].equipment_weapon) + len(
+            players[selected_index].equipment_armor) + len(players[selected_index].equipment_offensive_horse) + len(players[selected_index].equipment_defensive_horse))
         if cards_discardable > 0:
             if (self.character_ability1 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability2 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability3 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability4 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability5 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)."):
                 question = [
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{self.character}: Choose to activate Fearsome Advance against {choices[selected_player_index].character}, causing you to discard one of their cards?',
+                        'message': f'{self.character}: Choose to activate Fearsome Advance against {players[selected_index].character}, causing you to discard one of their cards?',
                         'choices': ['Yes', 'No'],
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'Yes':
                     print(
-                        f"  >> Character Ability: Fearsome Advance; {self.character} has activated Fearsome Advance, forcing {choices[selected_player_index].character} to discard a card.")
+                        f"  >> Character Ability: Fearsome Advance; {self.character} has activated Fearsome Advance, forcing {players[selected_index].character} to discard a card.")
 
-                    options_str = choices[selected_player_index].create_str_semiblind_menu(
+                    options_str = players[selected_index].create_str_semiblind_menu(
                     )
                     question = [
                         {
                             'type': 'list',
                             'name': 'Selected',
-                            'message': f'{self.character}: Please select which card you would like to discard from {choices[selected_player_index]}:',
+                            'message': f'{self.character}: Please select which card you would like to discard from {players[selected_index]}:',
                             'choices': options_str,
                             'filter': lambda card: options_str.index(card)
                         },
@@ -2686,78 +2765,78 @@ class Player(Character):
                     card_discarded_index = answer.get('Selected')
 
                     # Check if hand-card
-                    if card_discarded_index <= len(choices[selected_player_index].hand_cards.contents):
-                        card_discarded = choices[selected_player_index].hand_cards.contents.pop(
+                    if card_discarded_index <= len(players[selected_index].hand_cards.contents):
+                        card_discarded = players[selected_index].hand_cards.contents.pop(
                             card_discarded_index - 1)
                         discard_deck.add_to_top(card_discarded)
                         print(
-                            f"  >> Character Ability: Fearsome Advance; {self.character} has made {choices[selected_player_index].character} discard {card_discarded} from their hand.")
-                        choices[selected_player_index].check_one_after_another()
+                            f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their hand.")
+                        players[selected_index].check_one_after_another()
 
                     # Check if equipment-card
                     else:
-                        if card_discarded_index == (len(choices[selected_player_index].hand_cards.contents) + 2):
-                            card_discarded = choices[selected_player_index].equipment_weapon.pop(
+                        if card_discarded_index == (len(players[selected_index].hand_cards.contents) + 2):
+                            card_discarded = players[selected_index].equipment_weapon.pop(
                             )
                             discard_deck.add_to_top(card_discarded)
-                            choices[selected_player_index].weapon_range = 1
+                            players[selected_index].weapon_range = 1
                             print(
-                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {choices[selected_player_index].character} discard {card_discarded} from their weapon-slot.")
-                            choices[selected_player_index].check_warrior_woman()
+                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their weapon-slot.")
+                            players[selected_index].check_warrior_woman()
 
-                        elif card_discarded_index == (len(choices[selected_player_index].hand_cards.contents) + 3):
-                            card_discarded = choices[selected_player_index].equipment_armor.pop(
-                            )
-                            discard_deck.add_to_top(card_discarded)
-                            print(
-                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {choices[selected_player_index].character} discard {card_discarded} from their armor-slot.")
-                            choices[selected_player_index].check_warrior_woman()
-
-                        elif card_discarded_index == (len(choices[selected_player_index].hand_cards.contents) + 4):
-                            card_discarded = choices[selected_player_index].equipment_offensive_horse.pop(
+                        elif card_discarded_index == (len(players[selected_index].hand_cards.contents) + 3):
+                            card_discarded = players[selected_index].equipment_armor.pop(
                             )
                             discard_deck.add_to_top(card_discarded)
                             print(
-                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {choices[selected_player_index].character} discard {card_discarded} from their horse-slot.")
-                            choices[selected_player_index].check_warrior_woman()
+                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their armor-slot.")
+                            players[selected_index].check_warrior_woman()
 
-                        elif card_discarded_index == (len(choices[selected_player_index].hand_cards.contents) + 5):
-                            card_discarded = choices[selected_player_index].equipment_defensive_horse.pop(
+                        elif card_discarded_index == (len(players[selected_index].hand_cards.contents) + 4):
+                            card_discarded = players[selected_index].equipment_offensive_horse.pop(
                             )
                             discard_deck.add_to_top(card_discarded)
                             print(
-                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {choices[selected_player_index].character} discard {card_discarded} from their horse slot.")
-                            choices[selected_player_index].check_warrior_woman()
+                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their horse-slot.")
+                            players[selected_index].check_warrior_woman()
 
-    def check_fearsome_archer(self, discarded, choices=[], selected_player_index=0):
-        if selected_player_index == None:
-            selected_player_index = 0
+                        elif card_discarded_index == (len(players[selected_index].hand_cards.contents) + 5):
+                            card_discarded = players[selected_index].equipment_defensive_horse.pop(
+                            )
+                            discard_deck.add_to_top(card_discarded)
+                            print(
+                                f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their horse slot.")
+                            players[selected_index].check_warrior_woman()
+
+    def check_fearsome_archer(self, discarded, selected_index=0):
+        if selected_index == None:
+            selected_index = 0
         if (self.character_ability1 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability2 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability3 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability4 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability5 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining."):
-            if (len(choices[selected_player_index].hand_cards.contents) <= self.weapon_range) or (len(choices[selected_player_index].hand_cards.contents) >= self.current_health):
+            if (len(players[selected_index].hand_cards.contents) <= self.weapon_range) or (len(players[selected_index].hand_cards.contents) >= self.current_health):
                 question = [
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{self.character}: Choose to activate Fearsome Archer against {choices[selected_player_index].character}, and make your attack impossible to dodge?',
+                        'message': f'{self.character}: Choose to activate Fearsome Archer against {players[selected_index].character}, and make your attack impossible to dodge?',
                         'choices': ['Yes', 'No'],
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'Yes':
                     damage_dealt = 1
-                    choices[selected_player_index].current_health -= damage_dealt
+                    players[selected_index].current_health -= damage_dealt
                     print(
-                        f"  >> Character Ability: Fearsome Archer; {self.character} attacked {choices[selected_player_index].character} with an undodgable {discarded}, dealing {damage_dealt} damage. ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining)")
+                        f"  >> Character Ability: Fearsome Archer; {self.character} attacked {players[selected_index].character} with an undodgable {discarded}, dealing {damage_dealt} damage. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, 0)
-                    choices[selected_player_index].check_eternal_loyalty(1)
-                    choices[selected_player_index].check_eye_for_an_eye(
+                    players[selected_index].check_eternal_loyalty(1)
+                    players[selected_index].check_eye_for_an_eye(
                         0, "Activate")
-                    choices[selected_player_index].check_plotting_for_power(
+                    players[selected_index].check_plotting_for_power(
                         damage_dealt, "Reaction")
-                    choices[selected_player_index].check_retaliation(
+                    players[selected_index].check_retaliation(
                         0, damage_dealt)
                     return True
 
@@ -2917,22 +2996,22 @@ class Player(Character):
                 f"  >> Character Ability: Humility; {self.character} cannot be targeted by STEAL or ACEDIA.")
             return True
 
-    def check_iron_cavalry(self, discarded, choices=[], selected_player_index=0):
-        if selected_player_index == None:
-            selected_player_index = 0
+    def check_iron_cavalry(self, discarded, selected_index=0):
+        if selected_index == None:
+            selected_index = 0
         if (self.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
             question = [
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{self.character}: Choose to activate Iron Cavalry against {choices[selected_player_index].character}, causing you to flip a judgement; if red, the attack is impossible to dodge?',
+                    'message': f'{self.character}: Choose to activate Iron Cavalry against {players[selected_index].character}, causing you to flip a judgement; if red, the attack is impossible to dodge?',
                     'choices': ['Yes', 'No'],
                 },
             ]
             answer = prompt(question, style=custom_style_2)
             if answer.get('Selected') == 'Yes':
                 print(
-                    f"  >> Character Ability: Iron Cavalry; {self.character} has activated Iron Cavalry, forcing a judgement card to be flipped. If red, {choices[selected_player_index].character} cannot dodge the attack.")
+                    f"  >> Character Ability: Iron Cavalry; {self.character} has activated Iron Cavalry, forcing a judgement card to be flipped. If red, {players[selected_index].character} cannot dodge the attack.")
                 main_deck.check_if_empty(main_deck, discard_deck)
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
@@ -2940,19 +3019,19 @@ class Player(Character):
                 # Add checks for Sima Yi and Zhang Jiao
                 if judgement_card.suit == "Diamonds" or judgement_card.suit == "Hearts":
                     damage_dealt = 1
-                    choices[selected_player_index].current_health -= damage_dealt
+                    players[selected_index].current_health -= damage_dealt
                     print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {discarded} cannot be dodged, dealing {damage_dealt} damage to {choices[selected_player_index].character}. ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining)")
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {discarded} cannot be dodged, dealing {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, 0)
-                    choices[selected_player_index].check_eternal_loyalty(1)
-                    choices[selected_player_index].check_eye_for_an_eye(
+                    players[selected_index].check_eternal_loyalty(1)
+                    players[selected_index].check_eye_for_an_eye(
                         0, "Activate")
-                    choices[selected_player_index].check_plotting_for_power(
+                    players[selected_index].check_plotting_for_power(
                         damage_dealt, "Reaction")
-                    choices[selected_player_index].check_retaliation(
+                    players[selected_index].check_retaliation(
                         0, damage_dealt)
                     return True
                 else:
@@ -3012,19 +3091,19 @@ class Player(Character):
                                 f"{self.hand_cards.contents[discarded_index]} cannot be used as DEFEND as it is NOT black-suited.")
                             return None
 
-    def check_insanity(self, choices=[], selected_player_index=0):
-        if selected_player_index == None:
-            selected_player_index = 0
+    def check_insanity(self, selected_index=0):
+        if selected_index == None:
+            selected_index = 0
         if (self.character_ability1 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability2 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability3 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability4 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability5 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."):
             possible_indexes = self.calculate_targets_in_physical_range(0)
             possible_targets = []
             for target in possible_indexes:
                 possible_targets.append(players[target])
-            if (choices[selected_player_index]) in possible_targets:
+            if (players[selected_index]) in possible_targets:
                 if self.max_health > self.current_health:
                     self.current_health += 1
                 print(
-                    f"  >> Character Ability: Insanity; {self.character} regains one unit of health for damaging {choices[selected_player_index]}, within their physical range. ({self.current_health}/{self.max_health} HP remaining)")
+                    f"  >> Character Ability: Insanity; {self.character} regains one unit of health for damaging {players[selected_index]}, within their physical range. ({self.current_health}/{self.max_health} HP remaining)")
 
     def check_insurrection(self):
         if self.character_ability2 == "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'.":
@@ -3072,7 +3151,6 @@ class Player(Character):
             answer = prompt(question, style=custom_style_2)
 
             if answer.get('Selected') == 'Yes':
-                choices = players
                 choices_str = list_character_options(players)
                 question = [
                     {
@@ -3084,21 +3162,21 @@ class Player(Character):
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
-                selected_player_index = answer.get('Selected')
+                selected_index = answer.get('Selected')
                 print(
-                    f"  >> Character Ability: Lightning Strike; {self.character} will force {choices[selected_player_index].character} to flip a judgement. If SPADES, they take two lightning damage.")
+                    f"  >> Character Ability: Lightning Strike; {self.character} will force {players[selected_index].character} to flip a judgement. If SPADES, they take two lightning damage.")
 
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(
-                    f"{choices[selected_player_index].character} flipped a {judgement_card}.")
+                    f"{players[selected_index].character} flipped a {judgement_card}.")
                 # Add checks for Sima Yi and Zhang Jiao
-                choices[selected_player_index].check_envy_of_heaven()
+                players[selected_index].check_envy_of_heaven()
                 if judgement_card.suit == "Spades":
                     damage_dealt = 2
-                    choices[selected_player_index].current_health -= damage_dealt
+                    players[selected_index].current_health -= damage_dealt
                     print(
-                        f"  >> Character Ability: Lightning Strike; {choices[selected_player_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({choices[selected_player_index].current_health}/{choices[selected_player_index].max_health} HP remaining).")
+                        f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
                         if (player.character_ability1 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
                             dodging_player_index = player_index
@@ -3106,17 +3184,17 @@ class Player(Character):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, dodging_player_index)
-                    choices[selected_player_index].check_eternal_loyalty(
+                    players[selected_index].check_eternal_loyalty(
                         damage_dealt)
-                    choices[selected_player_index].check_eye_for_an_eye(
+                    players[selected_index].check_eye_for_an_eye(
                         dodging_player_index, "Activate")
-                    choices[selected_player_index].check_plotting_for_power(
+                    players[selected_index].check_plotting_for_power(
                         damage_dealt, "Reaction")
-                    choices[selected_player_index].check_retaliation(
+                    players[selected_index].check_retaliation(
                         dodging_player_index, damage_dealt)
                 else:
                     print(
-                        f"  >> Character Ability: Lightning Strike; {choices[selected_player_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
+                        f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
 
     def check_mediocrity(self, phase="Draw"):
         if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
@@ -4479,16 +4557,14 @@ game_started = True
 # Gameplay
 print(' ')
 players[0].hand_cards.draw(main_deck, 25)
-players[1].hand_cards.draw(main_deck, 25)
+# players[1].hand_cards.draw(main_deck, 25)
 # players[0].hand_cards.use_card_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
 
 players[0].current_health = 30
-players[1].current_health = 1
 # players[0].role = 'Rebel'
-players[0].reset_once_per_turn()
 players[0].start_beginning_phase()
-players[0].start_beginning_phase()
+# players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
