@@ -571,6 +571,12 @@ class Hand(Deck):
                         return(output_value)
 
             elif card_played.effect2 == 'Attack':
+                if (not players[0].weapon_check_effect() == "Black Pommel"):
+                    armor_check = player_reacting_list[reacting_player_index].armor_eight_trigrams(
+                    )
+                    if armor_check[0]:
+                        return(armor_check[1])
+
                 choices_str = self.list_cards()
                 choices_str.append(
                     Separator("--------------------Other--------------------"))
@@ -614,7 +620,7 @@ class Hand(Deck):
         popping = False
         # card.type == 'Basic':
         if card.effect2 == 'Attack':
-            if (players[0].attacks_this_turn == 0) or (players[0].check_berserk()) or (len(players[0].equipment_weapon) > 0 and players[0].equipment_weapon[0].effect == 'Zhuge Crossbow'):
+            if (players[0].attacks_this_turn == 0) or (players[0].check_berserk()) or (players[0].weapon_check_effect() == "Zhuge Crossbow"):
                 choices_index = players[0].calculate_targets_in_weapon_range(
                     0)
                 if len(choices_index) > 0:
@@ -656,6 +662,9 @@ class Hand(Deck):
                                 card_index)
                         players[0].check_one_after_another()
                         discard_deck.add_to_top(discarded)
+                        if (not players[0].weapon_check_effect() == "Black Pommel"):
+                            if choices[selected_player].armor_black_shield(discarded):
+                                return(' ')
                         if choices[selected_player].check_relish(source_player_index=0, mode="Activate"):
                             return(' ')
                         if players[0].check_fearsome_archer(discarded, choices, selected_player):
@@ -1788,6 +1797,53 @@ class Player(Character):
         print(' ')
 
 # In-game checks
+    def armor_black_shield(self, attack_card):
+        if len(self.equipment_armor) > 0:
+            if self.equipment_armor[0].effect == "Black Shield":
+                if attack_card.suit == "Spades" or attack_card.suit == "Clubs":
+                    print(
+                        f"  >> {self.character} has {self.equipment_armor[0]} equipped, and therefore CANNOT be affected by black attack cards. ({attack_card} discarded as normal)")
+                    return True
+            else:
+                return False
+
+    def armor_eight_trigrams(self):
+        if len(self.equipment_armor) > 0:
+            if self.equipment_armor[0].effect == "Eight-Trigrams":
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Eight-Trigrams (armor), and flip a judgement card (if red, automatically DEFEND is played)?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    main_deck.check_if_empty(main_deck, discard_deck)
+                    print(
+                        f"  >> {self.character} chose to activate their equipped {self.equipment_armor[0]} (armor); needs HEARTS or DIAMONDS to automatically dodge.")
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(f"{self.character} flipped a {judgement_card}.")
+                    # Add checks for Sima Yi and Zhang Jiao
+                    self.check_envy_of_heaven()
+                    if judgement_card.suit == "Hearts" or "Diamonds":
+                        return (True, judgement_card)
+                    else:
+                        return False
+
+    def weapon_check_effect(self):
+        if len(self.equipment_weapon) > 0:
+            if self.equipment_weapon[0].effect == "Black Pommel":
+                print(
+                    f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore ignores any armor when attacking.")
+                return ("Black Pommel")
+            if self.equipment_weapon[0].effect == "Zhuge Crossbow":
+                print(
+                    f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore has no limit to the amount of attacks per turn.")
+                return ("Zhuge Crossbow")
+
     def calculate_targets_in_physical_range(self, player_index):
         output = []
         for (target_index, target) in enumerate(players):
@@ -4297,6 +4353,8 @@ game_started = True
 # players[0].hand_cards.view_hand()
 # players[0].hand_cards.discard_from_hand(2)
 # players[1].hand_cards.view_hand()
+# players[0].equipment_weapon.append(Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel', 'When equipped, the wielder ignores any armor of their targets.', 2))
+# players[1].equipment_armor.append(Card(2, 'Two', 'Spades', 'Armor', 'Eight-Trigrams', 'When equipped: whenever a DEFEND is needed, the wearer can perform a judgement. If it is red, the DEFEND is considered to be played.'))
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Acedia', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Acedia'))
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Lightning', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Lightning'))
 # players[0].start_judgement_phase()
