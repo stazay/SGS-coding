@@ -487,7 +487,7 @@ all_cards = [
          'You can use this card on a player within physical range to take a card from them (on-hand or equipped) and add it to your hand.'),
     Card(5, 'Five', 'Spades', '+1 Horse', 'Shadow; +1 Horse',
          'When equipped, this horse places you further away from players in distance calculations by +1.'),
-    Card(5, 'Five', 'Spades', 'Weapon', 'Green-Dragon Halberd',
+    Card(5, 'Five', 'Spades', 'Weapon', 'Green Dragon Halberd',
          "When equipped, and the target of the wielder's ATTACK is DEFENDED against, the wielder may ATTACK again.", 3),
     Card(6, 'Six', 'Spades', 'Delay-Tool', 'Acedia',
          'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.'),
@@ -1066,7 +1066,7 @@ class Player(Character):
             for player in players[dying_player_index:]:
                 if players[dying_player_index].current_health > 0:
                     break
-                self.current_health += player.play_reaction_effect(
+                self.current_health += player.use_reaction_effect(
                     "Brink Of Death", dying_player_index, reacting_player_index)
                 reacting_player_index += 1
                 if reacting_player_index >= len(players):
@@ -1074,7 +1074,7 @@ class Player(Character):
             for player in players[:dying_player_index]:
                 if players[dying_player_index].current_health > 0:
                     break
-                self.current_health += player.play_reaction_effect(
+                self.current_health += player.use_reaction_effect(
                     "Brink Of Death", dying_player_index, reacting_player_index)
                 reacting_player_index += 1
                 if reacting_player_index >= len(players):
@@ -1090,7 +1090,7 @@ class Player(Character):
                         players[source_player_index].hand_cards.draw(
                             main_deck, 3, False)
                         print(
-                            f"{players[source_player_index].character} draws three cards for killing a rebel!")
+                            f"{players[source_player_index].character} draws 3 cards for killing a rebel!")
                     if self.role == 'Advisor' and players[source_player_index].role == 'Emperor':
                         print(
                             f"{players[source_player_index].character} loses all their cards for killing their Advisor.")
@@ -1381,9 +1381,9 @@ class Player(Character):
             return (False, None)
 
     def check_weapon_axe(self, target_index=0):
+        if target_index == None:
+            target_index = 0
         if len(self.equipment_weapon) > 0:
-            if target_index == None:
-                target_index = 0
             if self.equipment_weapon[0].effect == "Axe":
                 cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_armor) + len(
                     self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
@@ -1442,7 +1442,7 @@ class Player(Character):
                             0, damage_dealt)
                 return ("Axe")
 
-    def check_weapon_black_pommel(self, target_index=0):
+    def check_weapon_black_pommel(self):
         if len(self.equipment_weapon) > 0:
             if self.equipment_weapon[0].effect == "Black Pommel":
                 return True
@@ -1514,10 +1514,56 @@ class Player(Character):
             if answer.get('Selected') == "Discard one hand-card.":
                 return False
 
-    def check_weapon_huangs_longbow(self, target_index=0):
+    def check_weapon_green_dragon_halberd(self, target_index=0):
+        if target_index == None:
+            target_index = 0
         if len(self.equipment_weapon) > 0:
-            if target_index == None:
-                target_index = 0
+            if self.equipment_weapon[0].effect == "Green Dragon Halberd":
+                possible_attacks = []
+                for card in self.hand_cards.contents:
+                    if card.effect == "Attack":
+                        possible_attacks.append(card)
+                if len(possible_attacks) > 0:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Your ATTACK was defended by {players[target_index].character}. ATTACK again with Green Dragon Halberd?',
+                            'choices': ['Yes', 'No']
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    if answer.get('Selected') == "Yes":
+                        options_str = self.hand_cards.list_cards()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Do nothing.")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Select another card to ATTACK {players[target_index].character} again with Green Dragon Halberd?',
+                                'choices': options_str,
+                                'filter': lambda player: options_str.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options_str[card_index] == "Do nothing.":
+                        return (' ')
+                    elif self.hand_cards.contents[card_index].effect == "Attack":
+                        discarded = self.hand_cards.contents.pop(card_index)
+                        discard_deck.add_to_top(discarded)
+                        self.check_one_after_another()
+                        print(
+                            f"  >> {self.character} used Green Dragon Halberd to ATTACK again with {discarded}!")
+                        discarded.effect2 = "Attack"
+                        self.activate_attack(discarded, target_index)
+
+    def check_weapon_huangs_longbow(self, target_index=0):
+        if target_index == None:
+            target_index = 0
+        if len(self.equipment_weapon) > 0:
             if self.equipment_weapon[0].effect == "Huang's Longbow":
                 if (len(players[target_index].equipment_offensive_horse) + len(players[target_index].equipment_defensive_horse)) > 0:
                     options_str = []
@@ -1559,6 +1605,8 @@ class Player(Character):
                 return True
 
     def check_weapon_sky_scorcher_halberd(self, target_index=0):
+        if target_index == None:
+            target_index = 0
         if len(self.hand_cards.contents) == 0:
             if self.equipment_weapon[0].effect == "Sky Scorcher Halberd":
                 question = [
@@ -1623,9 +1671,6 @@ class Player(Character):
                 return True
 
 # Still TO DO:
-    def check_weapon_green_dragon_halberd(self, target_index=0):
-        pass
-
     def check_weapon_serpent_spear(self):
         pass
 
@@ -1673,10 +1718,10 @@ class Player(Character):
                             discarded = self.hand_cards.contents.pop(
                                 card_index)
                             discard_deck.add_to_top(discarded)
+                        self.check_ardour(discarded)
                         self.check_one_after_another()
                         extra_targets = self.check_weapon_sky_scorcher_halberd(
                             selected)
-                        print(extra_targets)
                         if (extra_targets == None) or (extra_targets[0] == 0):
                             self.activate_attack(card, selected)
                         elif (extra_targets[0] == 1):
@@ -2293,7 +2338,7 @@ class Player(Character):
             return(' ')
         if self.check_iron_cavalry(discarded, selected):
             return(' ')
-        attack_defended = players[selected].play_reaction_effect(
+        attack_defended = players[selected].use_reaction_effect(
             discarded, 0, selected)
         if type(attack_defended) == Card:
             if attack_defended.effect == 'Defend':
@@ -2303,6 +2348,7 @@ class Player(Character):
                 self.check_fearsome_advance(
                     discarded, selected)
                 players[selected].check_lightning_strike()
+                self.check_weapon_green_dragon_halberd(selected)
             elif attack_defended.effect == 0:
                 pass
         else:
@@ -2332,7 +2378,7 @@ class Player(Character):
             players[selected].check_retaliation(
                 0, damage_dealt)
 
-    def play_reaction_effect(self, card_played, player_index=None, reacting_player_index=None):
+    def use_reaction_effect(self, card_played, player_index=None, reacting_player_index=None):
         if player_index == None:
             player_index = 0
         if reacting_player_index == None:
@@ -2342,7 +2388,7 @@ class Player(Character):
 
         while reactions_possible:
             print(" ")
-            if isinstance(card_played, str):
+            if card_played == "Brink Of Death":
                 choices_str = self.hand_cards.list_cards()
                 choices_str.append(
                     Separator("--------------------Other--------------------"))
@@ -2375,7 +2421,7 @@ class Player(Character):
                             reactions_possible = False
                             return(output_value)
 
-                elif self.hand_cards.contents[card_index].effect == 'Peach':
+                elif self.hand_cards.contents[card_index].effect == "Peach":
                     discarded = self.hand_cards.contents.pop(card_index)
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
@@ -2388,7 +2434,9 @@ class Player(Character):
                         reactions_possible = False
                         return(output_value)
 
-            elif card_played.effect2 == 'Attack':
+            elif card_played.effect2 == "Attack":
+                self.check_ardour(card_played)
+
                 if not players[player_index].check_weapon_black_pommel():
                     armor_check = self.armor_eight_trigrams(
                     )
@@ -2485,6 +2533,13 @@ class Player(Character):
             num -= 1
 
 # Ability checks
+    def check_ardour(self, card):
+        if (self.character_ability1 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability2 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability3 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability4 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability5 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card."):
+            if (card.effect == "Duel") or (card.effect == "Attack" and (card.suit == "Hearts" or card.suit == "Diamonds")):
+                print(
+                    f"  >> Character Ability: Ardour; {self.character} used or was target of {card} (a DUEL or red-suited ATTACK). He draws a card.")
+                self.hand_cards.draw(main_deck, 1, False)
+
     def check_backstab(self, discarded, selected_index=0):
         if selected_index == None:
             selected_index = 0
@@ -4659,8 +4714,8 @@ game_started = True
 # players[0].hand_cards.draw(main_deck, 4)
 # players[0].hand_cards.view_hand()
 # players[0].hand_cards.discard_from_hand(2)
-players[0].equipment_weapon.append(Card(12, 'Queen', 'Diamonds', 'Weapon', 'Sky Scorcher Halberd',
-                                        'When equipped and using the last on-hand card to ATTACK, the ATTACK can target an additional two players.', 4))
+players[0].equipment_weapon.append(Card(5, 'Five', 'Spades', 'Weapon', 'Green Dragon Halberd',
+                                        "When equipped, and the target of the wielder's ATTACK is DEFENDED against, the wielder may ATTACK again.", 3))
 # players[0].equipment_weapon.append(Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel', 'When equipped, the wielder ignores any armor of their targets.', 2))
 # players[1].equipment_armor.append(Card(2, 'Two', 'Spades', 'Armor', 'Eight-Trigrams', 'When equipped: whenever a DEFEND is needed, the wearer can perform a judgement. If it is red, the DEFEND is considered to be played.'))
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Acedia', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Acedia'))
@@ -4671,14 +4726,14 @@ players[0].equipment_weapon.append(Card(12, 'Queen', 'Diamonds', 'Weapon', 'Sky 
 # Gameplay
 print(' ')
 players[0].hand_cards.draw(main_deck, 25)
-players[0].hand_cards.discard_from_hand(28)
-# players[1].hand_cards.draw(main_deck, 25)
+players[1].hand_cards.draw(main_deck, 25)
 # players[0].hand_cards.use_card_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
 
 players[0].current_health = 30
+players[1].current_health = 1
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
