@@ -1046,6 +1046,8 @@ class Player(Character):
             char_abils.append(" Character Ability >> Blockade")
         if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
             char_abils.append(" Character Ability >> Green Salve")
+        if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
+            char_abils.append(" Character Ability >> Marriage")
         if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
             char_abils.append(" Character Ability >> National Colours")
         if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
@@ -1359,6 +1361,7 @@ class Player(Character):
     def reset_once_per_turn(self):
         self.attacks_this_turn = 0
         self.used_green_salve = False
+        self.used_marriage = False
 
 # Equipment-card checks
     def armor_black_shield(self, attack_card):
@@ -1792,9 +1795,12 @@ class Player(Character):
                     if answer.get('Selected') == 'Yes':
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
+                        self.hand_cards.contents.insert(
+                            card_index, "Placeholder")
                         discard_deck.add_to_top(card1)
                         card2 = self.hand_cards.contents.pop(secondary_index)
                         discard_deck.add_to_top(card2)
+                        self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
 
@@ -1839,11 +1845,12 @@ class Player(Character):
                     if answer.get('Selected') == 'Yes':
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
+                        self.hand_cards.contents.insert(
+                            card_index, "Placeholder")
                         discard_deck.add_to_top(card1)
                         card2 = self.hand_cards.contents.pop(secondary_index)
                         discard_deck.add_to_top(card2)
-                        self.check_ardour(card1)
-                        self.check_ardour(card2)
+                        self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
 
@@ -1879,11 +1886,13 @@ class Player(Character):
                     ]
                     answer = prompt(question, style=custom_style_2)
                     if answer.get('Selected') == 'Yes':
-                        self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
+                        self.hand_cards.contents.insert(
+                            card_index, "Placeholder")
                         discard_deck.add_to_top(card1)
                         card2 = self.hand_cards.contents.pop(secondary_index)
                         discard_deck.add_to_top(card2)
+                        self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
 
@@ -2937,11 +2946,15 @@ class Player(Character):
                     if attack_played[0] != None:
                         discarded_1 = self.hand_cards.contents.pop(
                             attack_played[1])
+                        self.hand_cards.contents.insert(
+                            attack_played[1], "Placeholder")
                         discard_deck.add_to_top(discarded_1)
                         discarded_2 = self.hand_cards.contents.pop(
                             attack_played[3])
+                        self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded_2)
+
                         discarded_2.effect2 == "Attack"
                         reactions_possible = False
                         return(discarded_2)
@@ -3036,9 +3049,12 @@ class Player(Character):
                     if attack_played[0] != None:
                         discarded_1 = self.hand_cards.contents.pop(
                             attack_played[1])
+                        self.hand_cards.contents.insert(
+                            attack_played[1], "Placeholder")
                         discard_deck.add_to_top(discarded_1)
                         discarded_2 = self.hand_cards.contents.pop(
                             attack_played[3])
+                        self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded_2)
                         duel_won = players[player_index].use_reaction_effect(
@@ -4911,11 +4927,11 @@ class Player(Character):
             if not self.used_green_salve:
                 if cards_discardable > 0:
                     options_str = []
-                    choices = []
+                    options = []
                     for player_index, player in enumerate(players):
                         if player.max_health > player.current_health:
                             options_str.append(str(players[player_index]))
-                            choices.append(players[player_index])
+                            options.append(players[player_index])
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -4933,68 +4949,157 @@ class Player(Character):
                             },
                         ]
                         answer = prompt(question, style=custom_style_2)
-                        if answer.get('Selected') == len(options_str) - 1:
+                        player_healed_index = answer.get('Selected')
+                        if options_str[player_healed_index] == "Cancel ability.":
                             return(' ')
+
+                        options_str = self.create_str_nonblind_menu()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel ability.")
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a card to discard?',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+
+                        if options_str[discarded_index] == "Cancel ability.":
+                            return (' ')
+
+                        # Check if hand-card
+                        elif discarded_index <= len(self.hand_cards.contents):
+                            card = self.hand_cards.contents.pop(
+                                discarded_index - 1)
+                            discard_deck.add_to_top(card)
+
+                        # Check if equipment-card
                         else:
-                            player_healed_index = answer.get('Selected')
-
-                            options_str = self.create_str_nonblind_menu()
-                            options_str.append(
-                                Separator("--------------------Other--------------------"))
-                            options_str.append("Cancel ability.")
-
-                            question = [
-                                {
-                                    'type': 'list',
-                                    'name': 'Selected',
-                                    'message': f'{self.character}: Please select a card to discard?',
-                                    'choices': options_str,
-                                    'filter': lambda card: options_str.index(card)
-                                },
-                            ]
-                            answer = prompt(question, style=custom_style_2)
-                            discarded_index = answer.get('Selected')
-
-                            if options_str[discarded_index] == "Cancel ability.":
-                                return (' ')
-
-                            # Check if hand-card
-                            elif discarded_index <= len(self.hand_cards.contents):
-                                card = self.hand_cards.contents.pop(
-                                    discarded_index - 1)
+                            if discarded_index == (len(self.hand_cards.contents) + 2):
+                                card = self.equipment_weapon.pop()
                                 discard_deck.add_to_top(card)
+                                self.weapon_range = 1
+                                print(
+                                    f"{self.character} has discarded {card} from their weapon-slot.")
 
-                            # Check if equipment-card
-                            else:
-                                if discarded_index == (len(self.hand_cards.contents) + 2):
-                                    card = self.equipment_weapon.pop()
-                                    discard_deck.add_to_top(card)
-                                    self.weapon_range = 1
-                                    print(
-                                        f"{self.character} has discarded {card} from their weapon-slot.")
+                            if discarded_index == (len(self.hand_cards.contents) + 3):
+                                card = self.equipment_armor.pop()
+                                discard_deck.add_to_top(card)
+                                print(
+                                    f"{self.character} has discarded {card} from their armor-slot.")
 
-                                if discarded_index == (len(self.hand_cards.contents) + 3):
-                                    card = self.equipment_armor.pop()
-                                    discard_deck.add_to_top(card)
-                                    print(
-                                        f"{self.character} has discarded {card} from their armor-slot.")
+                            if discarded_index == (len(self.hand_cards.contents) + 4):
+                                card = self.equipment_offensive_horse.pop()
+                                discard_deck.add_to_top(card)
+                                print(
+                                    f"{self.character} has discarded {card} from their horse-slot.")
 
-                                if discarded_index == (len(self.hand_cards.contents) + 4):
-                                    card = self.equipment_offensive_horse.pop()
-                                    discard_deck.add_to_top(card)
-                                    print(
-                                        f"{self.character} has discarded {card} from their horse-slot.")
+                            if discarded_index == (len(self.hand_cards.contents) + 5):
+                                card = self.equipment_defensive_horse.pop()
+                                discard_deck.add_to_top(card)
+                                print(
+                                    f"{self.character} has discarded {card} from their horse-slot.")
 
-                                if discarded_index == (len(self.hand_cards.contents) + 5):
-                                    card = self.equipment_defensive_horse.pop()
-                                    discard_deck.add_to_top(card)
-                                    print(
-                                        f"{self.character} has discarded {card} from their horse-slot.")
+                        options[player_healed_index].current_health += 1
+                        self.used_green_salve = True
+                        print(
+                            f"  >> Character Ability: Green Salve; {self.character} discarded {card} to heal {options[player_healed_index].character} by one! ({options[player_healed_index].current_health}/{options[player_healed_index].max_health} HP remaining)")
 
-                            choices[player_healed_index].current_health += 1
-                            self.used_green_salve = True
-                            print(
-                                f"  >> Character Ability: Green Salve; {self.character} discarded {card} to heal {choices[player_healed_index].character} by one! ({choices[player_healed_index].current_health}/{choices[player_healed_index].max_health} HP remaining)")
+    def activate_marriage(self):
+        if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
+            if len(self.hand_cards.contents) > 1:
+                if not self.used_marriage:
+                    options = [
+                        Separator("------<Cannot target yourself>------")]
+                    for player in players[1:]:
+                        if (player.gender == "Male") and (player.current_health < player.max_health):
+                            options.append(str(player))
+                        elif player.gender != "Male":
+                            options.append(
+                                Separator(str(f"--{player.character} (FEMALE - cannot be targeted)--")))
+                        else:
+                            options.append(
+                                Separator(str(f"--{player.character} (FULL HEALTH - cannot be targeted)--")))
+                    options.append(
+                        Separator("--------------------Other--------------------"))
+                    options.append("Cancel ability.")
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Who would you like to marry (you both heal one)?',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    player_healed_index = answer.get('Selected')
+
+                    if options[player_healed_index] == "Cancel ability.":
+                        return (' ')
+
+                    options = self.create_str_nonblind_menu(True)
+                    options.append(
+                        Separator("--------------------Other--------------------"))
+                    options.append("Cancel ability.")
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select two hand-cards to discard?',
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card1_index = answer.get('Selected')
+
+                    if options[card1_index] == "Cancel ability.":
+                        return (' ')
+
+                    card1 = self.hand_cards.contents[card1_index]
+                    options.pop(card1_index)
+                    options.insert(card1_index, Separator(
+                        "------" + str(card1) + "------"))
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select one more card to discard and play as an ATTACK:',
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card2_index = answer.get('Selected')
+                    if options[card2_index] == "Cancel ability.":
+                        return (' ')
+
+                    discarded1 = self.hand_cards.contents.pop(card1_index)
+                    discard_deck.add_to_top(discarded1)
+                    self.hand_cards.contents.insert(card1_index, "Placeholder")
+                    discarded2 = self.hand_cards.contents.pop(card2_index)
+                    discard_deck.add_to_top(discarded2)
+                    self.hand_cards.contents.remove("Placeholder")
+                    self.check_one_after_another()
+                    if self.max_health > self.current_health:
+                        self.current_health += 1
+                        players[player_healed_index].current_health += 1
+                        print(
+                            f"  >> Character Ability: Marriage; {self.character} ({self.current_health}/{self.max_health} HP remaining) has healed both themselves and {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
+                    else:
+                        players[player_healed_index].current_health += 1
+                        print(
+                            f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
 
 # Game-state
 # Beginning Phase
@@ -5115,6 +5220,8 @@ class Player(Character):
                     self.activate_blockade()
                 if options[action_taken_index] == " Character Ability >> Green Salve":
                     self.activate_green_salve()
+                if options[action_taken_index] == " Character Ability >> Marriage":
+                    self.activate_marriage()
                 if options[action_taken_index] == " Character Ability >> National Colours":
                     self.activate_national_colours()
                 if options[action_taken_index] == " Character Ability >> Surprise":
