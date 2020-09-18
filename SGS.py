@@ -1725,9 +1725,9 @@ class Player(Character):
                     answer = prompt(question, style=custom_style_2)
                     if options[answer.get('Selected')] == "Target noone else.":
                         return [0]
-                    selected_1 = answer.get('Selected')
-                    options.pop(selected_1)
-                    options.insert(selected_1, Separator(
+                    selected1 = answer.get('Selected')
+                    options.pop(selected1)
+                    options.insert(selected1, Separator(
                         "------" + str(player) + "------"))
 
                     question = [
@@ -1742,12 +1742,12 @@ class Player(Character):
                     answer = prompt(question, style=custom_style_2)
                     if options[answer.get('Selected')] == "Target noone else.":
                         print(
-                            f"  >> {self.character} used the Sky Scorcher Halberd to hit an extra player, {players[selected_1].character}!!!")
-                        return [1, selected_1]
-                    selected_2 = answer.get('Selected')
+                            f"  >> {self.character} used the Sky Scorcher Halberd to hit an extra player, {players[selected1].character}!!!")
+                        return [1, selected1]
+                    selected2 = answer.get('Selected')
                     print(
-                        f"  >> {self.character} used the Sky Scorcher Halberd to hit two extra players, {players[selected_1].character} and {players[selected_2].character}!!!")
-                    return [2, selected_1, selected_2]
+                        f"  >> {self.character} used the Sky Scorcher Halberd to hit two extra players, {players[selected1].character} and {players[selected2].character}!!!")
+                    return [2, selected1, selected2]
 
     def check_weapon_zhuge_crossbow(self):
         if len(self.equipment_weapon) > 0:
@@ -2747,11 +2747,11 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
-    def activate_attack(self, discarded, selected, discarded_2=None):
+    def activate_attack(self, discarded, selected, discarded2=None):
         if players[selected].check_relish(source_player_index=0, mode="Activate"):
             return(' ')
         self.check_weapon_gender_swords(selected)
-        if (discarded_2 == None) or (discarded_2.effect == "Black Attack"):
+        if (discarded2 == None) or (discarded2.effect == "Black Attack"):
             if self.check_weapon_black_pommel():
                 print(
                     f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore ignores any armor when attacking.")
@@ -2779,7 +2779,7 @@ class Player(Character):
                 return(' ')
             if self.check_backstab(discarded, selected):
                 return(' ')
-            if (discarded_2 == None) or (discarded_2.effect2 == "Red Attack"):
+            if (discarded2 == None) or (discarded2.effect2 == "Red Attack"):
                 if players[selected].check_reckless(discarded, 0):
                     return(' ')
             damage_dealt = 1
@@ -2944,20 +2944,20 @@ class Player(Character):
                 elif options_str[card_index] == " Weapon Ability >> Serpent Spear":
                     attack_played = self.check_weapon_serpent_spear("Activate")
                     if attack_played[0] != None:
-                        discarded_1 = self.hand_cards.contents.pop(
+                        discarded1 = self.hand_cards.contents.pop(
                             attack_played[1])
                         self.hand_cards.contents.insert(
                             attack_played[1], "Placeholder")
-                        discard_deck.add_to_top(discarded_1)
-                        discarded_2 = self.hand_cards.contents.pop(
+                        discard_deck.add_to_top(discarded1)
+                        discarded2 = self.hand_cards.contents.pop(
                             attack_played[3])
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
-                        discard_deck.add_to_top(discarded_2)
+                        discard_deck.add_to_top(discarded2)
 
-                        discarded_2.effect2 == "Attack"
+                        discarded2.effect2 == "Attack"
                         reactions_possible = False
-                        return(discarded_2)
+                        return(discarded2)
 
                 elif self.hand_cards.contents[card_index].effect == "Attack":
                     discarded = self.hand_cards.contents.pop(card_index)
@@ -3047,16 +3047,16 @@ class Player(Character):
                 elif options_str[card_index] == " Weapon Ability >> Serpent Spear":
                     attack_played = self.check_weapon_serpent_spear("Activate")
                     if attack_played[0] != None:
-                        discarded_1 = self.hand_cards.contents.pop(
+                        discarded1 = self.hand_cards.contents.pop(
                             attack_played[1])
                         self.hand_cards.contents.insert(
                             attack_played[1], "Placeholder")
-                        discard_deck.add_to_top(discarded_1)
-                        discarded_2 = self.hand_cards.contents.pop(
+                        discard_deck.add_to_top(discarded1)
+                        discarded2 = self.hand_cards.contents.pop(
                             attack_played[3])
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
-                        discard_deck.add_to_top(discarded_2)
+                        discard_deck.add_to_top(discarded2)
                         duel_won = players[player_index].use_reaction_effect(
                             "Attack", card_played, reacting_player_index, player_index)
                         if duel_won:
@@ -4086,15 +4086,15 @@ class Player(Character):
                     ]
 
                     answer = prompt(question, style=custom_style_2)
-                    target_1_index = answer.get('Selected')
+                    target1_index = answer.get('Selected')
 
-                    if target_1_index == (len(players) + 1):
+                    if target1_index == (len(players) + 1):
                         return self.check_raid()
 
-                    targets_str.pop(target_1_index)
-                    targets_str.insert(target_1_index, Separator(
-                        f"--{players[target_1_index].character} (Already selected)--"))
-                    target_1 = targets[target_1_index]
+                    targets_str.pop(target1_index)
+                    targets_str.insert(target1_index, Separator(
+                        f"--{players[target1_index].character} (Already selected)--"))
+                    target1 = targets[target1_index]
                     targets_str.insert(-1, "Target noone else")
                     targets.insert(-1, "Target noone else")
 
@@ -4109,20 +4109,20 @@ class Player(Character):
                     ]
 
                     answer = prompt(question, style=custom_style_2)
-                    target_2_index = answer.get('Selected')
-                    target_2 = targets[target_2_index]
+                    target2_index = answer.get('Selected')
+                    target2 = targets[target2_index]
 
-                    if target_2 == "Cancel":
+                    if target2 == "Cancel":
                         return self.check_raid()
                     else:
                         print(' ')
-                        options_str = target_1.create_str_blind_menu()
+                        options_str = target1.create_str_blind_menu()
 
                         question = [
                             {
                                 'type': 'list',
                                 'name': 'Selected',
-                                'message': f"{self.character}: Please select which card you would like to take from {target_1.character}'s hand:",
+                                'message': f"{self.character}: Please select which card you would like to take from {target1.character}'s hand:",
                                 'choices': options_str,
                                 'filter': lambda card: options_str.index(card)
                             },
@@ -4130,24 +4130,24 @@ class Player(Character):
                         answer = prompt(question, style=custom_style_2)
                         card_stolen_index = answer.get('Selected')
 
-                        if card_stolen_index <= len(target_1.hand_cards.contents):
-                            card_stolen = target_1.hand_cards.contents.pop(
+                        if card_stolen_index <= len(target1.hand_cards.contents):
+                            card_stolen = target1.hand_cards.contents.pop(
                                 card_stolen_index - 1)
                             self.hand_cards.add_to_top(card_stolen)
                             print(
-                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target_1.character}'s hand.")
-                            target_1.check_one_after_another()
+                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target1.character}'s hand.")
+                            target1.check_one_after_another()
                             activated_raid = False
 
-                    if target_2 != "Target noone else":
+                    if target2 != "Target noone else":
                         print(' ')
-                        options_str = target_2.create_str_blind_menu()
+                        options_str = target2.create_str_blind_menu()
 
                         question = [
                             {
                                 'type': 'list',
                                 'name': 'Selected',
-                                'message': f"{self.character}: Please select which card you would like to take from {target_2.character}'s hand:",
+                                'message': f"{self.character}: Please select which card you would like to take from {target2.character}'s hand:",
                                 'choices': options_str,
                                 'filter': lambda card: options_str.index(card)
                             },
@@ -4155,13 +4155,13 @@ class Player(Character):
                         answer = prompt(question, style=custom_style_2)
                         card_stolen_index = answer.get('Selected')
 
-                        if card_stolen_index <= len(target_2.hand_cards.contents):
-                            card_stolen = target_2.hand_cards.contents.pop(
+                        if card_stolen_index <= len(target2.hand_cards.contents):
+                            card_stolen = target2.hand_cards.contents.pop(
                                 card_stolen_index - 1)
                             self.hand_cards.add_to_top(card_stolen)
                             print(
-                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target_2.character}'s hand.")
-                            target_2.check_one_after_another()
+                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target2.character}'s hand.")
+                            target2.check_one_after_another()
                             activated_raid = False
                     return True
 
@@ -4519,17 +4519,17 @@ class Player(Character):
                         card.effect2 = "Rations Depleted"
                         if not self.use_card_effect("Special", card):
                             if weapon_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_weapon.append(card)
                                 self.weapon_range = card.weapon_range
                             if armor_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_armor.append(card)
                             if off_horse_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_offensive_horse.append(card)
                             if def_horse_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_defensive_horse.append(card)
                             else:
                                 self.hand_cards.draw(discard_deck, 1, False)
@@ -4634,17 +4634,17 @@ class Player(Character):
                         card.effect2 = "Acedia"
                         if not self.use_card_effect("Special", card):
                             if weapon_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_weapon.append(card)
                                 self.weapon_range = card.weapon_range
                             if armor_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_armor.append(card)
                             if off_horse_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_offensive_horse.append(card)
                             if def_horse_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_defensive_horse.append(card)
                             else:
                                 self.hand_cards.draw(discard_deck, 1, False)
@@ -4749,17 +4749,17 @@ class Player(Character):
                         card.effect2 = "Dismantle"
                         if not self.use_card_effect("Special", card):
                             if weapon_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_weapon.append(card)
                                 self.weapon_range = card.weapon_range
                             if armor_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_armor.append(card)
                             if off_horse_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_offensive_horse.append(card)
                             if def_horse_popped:
-                                discard_deck.contents.pop()
+                                discard_deck.contents.pop(0)
                                 self.equipment_defensive_horse.append(card)
                             else:
                                 self.hand_cards.draw(discard_deck, 1, False)
@@ -4891,18 +4891,18 @@ class Player(Character):
                                 card.effect2 = "Attack"
                                 if not self.use_card_effect("Special", card):
                                     if weapon_popped:
-                                        discard_deck.contents.pop()
+                                        discard_deck.contents.pop(0)
                                         self.equipment_weapon.append(card)
                                         self.weapon_range = card.weapon_range
                                     if armor_popped:
-                                        discard_deck.contents.pop()
+                                        discard_deck.contents.pop(0)
                                         self.equipment_armor.append(card)
                                     if off_horse_popped:
-                                        discard_deck.contents.pop()
+                                        discard_deck.contents.pop(0)
                                         self.equipment_offensive_horse.append(
                                             card)
                                     if def_horse_popped:
-                                        discard_deck.contents.pop()
+                                        discard_deck.contents.pop(0)
                                         self.equipment_defensive_horse.append(
                                             card)
                                     else:
@@ -5259,13 +5259,13 @@ class Player(Character):
             pass
         else:
             # Check for characters that have increased hand-card limits at end of their turn
-            limit_increase_1 = self.check_bloodline()
-            limit_increase_2 = self.check_plotting_for_power(0, "Discard")
-            if limit_increase_1 == None:
-                limit_increase_1 = 0
-            if limit_increase_2 == None:
-                limit_increase_2 = 0
-            limit_increase = limit_increase_1 + limit_increase_2
+            limit_increase1 = self.check_bloodline()
+            limit_increase2 = self.check_plotting_for_power(0, "Discard")
+            if limit_increase1 == None:
+                limit_increase1 = 0
+            if limit_increase2 == None:
+                limit_increase2 = 0
+            limit_increase = limit_increase1 + limit_increase2
 
             # Discard down to your current health level
             if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
