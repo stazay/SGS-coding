@@ -1268,19 +1268,23 @@ class Player(Character):
 
             return(options_str)
 
-    def create_str_nonblind_menu(self, append_judgements=False, omit_item=None):
+    def create_str_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
             self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         if append_judgements == 1:
             cards_discardable += len(self.pending_judgements)
         if cards_discardable > 0:
             options_str = []
-            options_str.append(
-                Separator("-----------------HAND--CARDS-----------------"))
+            if not only_hand_cards:
+                options_str.append(
+                    Separator("-----------------HAND--CARDS-----------------"))
             for card in self.hand_cards.contents:
                 options_str.append(str(card))
-            options_str.append(
-                Separator("---------------EQUIPPED--CARDS---------------"))
+            if only_hand_cards:
+                return (options_str)
+            else:
+                options_str.append(
+                    Separator("---------------EQUIPPED--CARDS---------------"))
             if omit_item == "Weapon":
                 options_str.append(
                     Separator("    ---------<Cannot use weapon>---------    "))
@@ -1402,7 +1406,7 @@ class Player(Character):
                     if answer.get('Selected') == "Yes":
                         num = 2
                         options_str = self.create_str_nonblind_menu(
-                            False, omit_item="Weapon")
+                            False, False, omit_item="Weapon")
                         options = self.create_actual_menu()
                         while num > 0:
                             question = [
@@ -1776,7 +1780,43 @@ class Player(Character):
             pass
 
         if card.effect2 == 'Granary':
-            pass
+            print(f"{card} - {card.flavour_text}")
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Please confirm you would like to use the tool card: {card.effect}.',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                print(
+                    f"{self.character} has activated {card}. {len(players)} cards have been flipped from the deck. Everyone takes a card; {self.character} goes first!")
+                discarded = self.hand_cards.contents.pop(card_index)
+                self.check_one_after_another()
+                self.check_wisdom()
+                discard_deck.add_to_top(discarded)
+                granary = Player("Temporary")
+                granary.hand_cards.draw(main_deck, len(players), False)
+                options_str = granary.create_str_nonblind_menu(
+                    only_hand_cards=True)
+                for player in players:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{player.character}: Please select which card you would like to take:',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    drawn = granary.hand_cards.contents.pop(card_index)
+                    player.hand_cards.add_to_top(drawn)
+                    options_str.pop(card_index)
+                    print(f"{player.character} has taken {drawn} via GRANARY!")
 
         if card.effect2 == 'Peach Gardens':
             print(f"{card} - {card.flavour_text}")
@@ -1797,7 +1837,7 @@ class Player(Character):
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
                 for player in players:
-                    if player.max_health > player.current_health:
+                    if player.max_health < player.current_health:
                         current_health += 1
                         print(
                             f"{player.character} has been healed by one. ({player.current_health}/{player.max_health} HP remaining)")
@@ -1820,6 +1860,7 @@ class Player(Character):
                 self.check_one_after_another()
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
+                # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player in players[1:]:
                     roa_response = player.use_reaction_effect(
                         "Defend", discarded, 0, player)
@@ -1831,16 +1872,8 @@ class Player(Character):
                         print(
                             f"{player.character} failed to defend from {discarded}, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         player.current_health -= 1
-                        self.check_insanity(player)
-                        if player.current_health < 1:
-                            for player_index, player in enumerate(players[player_index:]):
-                                if player.current_health < 1:
-                                    players[player_index].check_brink_of_death_loop(
-                                        player_index, 0)
-                            for player_index, player in enumerate(players[:player_index]):
-                                if player.current_health < 1:
-                                    players[player_index].check_brink_of_death_loop(
-                                        player_index, 0)
+                        players[0].check_insanity(player)
+                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
                         if player.current_health > 0:
                             players[player].check_eternal_loyalty(1)
                         if players[player].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
@@ -1890,7 +1923,8 @@ class Player(Character):
 
                 if cards_discardable > 0:
                     if players[selected] == players[0]:
-                        options_str = players[0].create_str_nonblind_menu(True)
+                        options_str = players[0].create_str_nonblind_menu(
+                            False, True, None)
                     else:
                         options_str = players[selected].create_str_semiblind_menu(
                             True)
@@ -1984,7 +2018,77 @@ class Player(Character):
             return True
 
         if card.effect2 == 'Duel':
-            pass
+            options_str = []
+            for player in players[1:]:
+                options_str.append(str(player))
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self}: Please select a player to target with {card}.',
+                    'choices': options_str,
+                    'filter': lambda player: options_str.index(player)
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            selected = ((answer.get('Selected')) + 1)
+
+            if players[selected].check_empty_city():
+                return (' ')
+
+            print(f"{card} - You can target any player for a duel with this card. If the target does not play an ATTACK, they are damaged. If they do ATTACK, then you must play one in response or take damage. Whoever does not attack, takes damage.")
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected]}?',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                if card_index == "Special":
+                    discarded = card
+                else:
+                    discarded = self.hand_cards.contents.pop(
+                        card_index)
+                    discard_deck.add_to_top(discarded)
+                print(
+                    f"{self.character} has challenged {players[selected].character} to a DUEL! Players must play ATTACK cards in turn, until one doesn't. The loser of the DUEL, takes one damage!")
+                self.check_ardour(discarded)
+                self.check_one_after_another()
+                duel_won = players[selected].use_reaction_effect(
+                    "Attack", discarded, 0, selected)
+                if duel_won:
+                    print(
+                        f"{self.character} has won the DUEL! {players[selected].character} takes one damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
+                    players[selected].current_health -= 1
+                    for player_index, player in enumerate(players):
+                        if player.current_health < 1:
+                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                                return "Break"
+                        players[selected].check_eternal_loyalty(1)
+                        if players[selected].check_eye_for_an_eye(
+                                source_player_index=0, mode="Activate") == "Break":
+                            return(' ')
+                        players[selected].check_plotting_for_power(
+                            1, mode="Reaction")
+                        players[selected].check_retaliation(0, 1)
+                if not duel_won:
+                    print(
+                        f"{players[selected].character} has won the DUEL! {self.character} takes one damage! ({self.current_health}/{self.max_health} HP remaining)")
+                    self.current_health -= 1
+                    for player_index, player in enumerate(players):
+                        if player.current_health < 1:
+                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                                return "Break"
+                        self.check_eternal_loyalty(1)
+                        if self.check_eye_for_an_eye(
+                                source_player_index=selected, mode="Activate") == "Break":
+                            return(' ')
+                        self.check_plotting_for_power(
+                            1, mode="Reaction")
+                        self.check_retaliation(0, 1)
 
         if card.effect2 == 'Negate':
             print(
@@ -2584,6 +2688,41 @@ class Player(Character):
                     discarded.effect2 = "Defend"
                     reactions_possible = False
                     return(discarded)
+
+            elif response_required == "Attack" and card_played.effect2 == "Duel":
+                self.check_ardour(card_played)
+
+                options_str = self.hand_cards.list_cards()
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Do nothing.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f"{self.character}: You having a DUEL vs {players[player_index].character}; please choose a response (an ATTACK card or do nothing)!",
+                        'choices': options_str,
+                        'filter': lambda card: options_str.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card_index = answer.get('Selected')
+                if options_str[card_index] == "Do nothing.":
+                    reactions_possible = False
+                    return True
+
+                elif self.hand_cards.contents[card_index].effect == "Attack":
+                    discarded = self.hand_cards.contents.pop(card_index)
+                    self.check_one_after_another()
+                    discard_deck.add_to_top(discarded)
+                    discarded.effect2 = "Attack"
+                    duel_won = players[player_index].use_reaction_effect(
+                        "Attack", card_played, reacting_player_index, player_index)
+                    if duel_won:
+                        return False
+                    else:
+                        return True
 
     def discard_from_equip_or_hand(self, num=1):
         while num > 0:
@@ -3509,9 +3648,9 @@ class Player(Character):
                     f"  >> Character Ability: One After Another; {self.character} can draw a card whenever they use or lose their last on-hand card.")
                 self.hand_cards.draw(main_deck, 1, False)
 
-    def check_plotting_for_power(self, damage_dealt, phase="Reaction"):
+    def check_plotting_for_power(self, damage_dealt, mode="Reaction"):
         if (self.character_ability1 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability2 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability3 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability4 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability5 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE."):
-            if phase == "Reaction":
+            if mode == "Reaction":
                 while damage_dealt > 0:
                     self.hand_cards.draw(main_deck, 1, False)
                     print(
@@ -3535,7 +3674,7 @@ class Player(Character):
                         f"  >> Character Ability: Plotting for Power; {self.character} has set one hand-card down aside as a RITE ({len(self.rites)} total RITE(S)).")
                     damage_dealt -= 1
 
-            if phase == "Discard":
+            if mode == "Discard":
                 limit_increase = len(self.rites)
                 if limit_increase > 0:
                     print(
@@ -4435,7 +4574,7 @@ class Player(Character):
 # Drawing Phase
     def start_drawing_phase(self):
         print(" ")
-        cards_drawn = 0
+        cards_drawn = 2
         message = True
         # Checks for Lu Su; Altruism
         if self.check_dashing_hero():
@@ -4828,14 +4967,14 @@ game_started = True
 
 # Gameplay
 print(' ')
-players[0].hand_cards.draw(main_deck, 50)
-# players[1].hand_cards.draw(main_deck, 25)
+players[0].hand_cards.draw(main_deck, 25)
+players[1].hand_cards.draw(main_deck, 25)
 # players[0].hand_cards.use_card_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
 # players[0].start_action_phase()
 
-players[0].current_health = 50
+players[0].current_health = 60
 players[1].current_health = 1
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
