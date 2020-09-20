@@ -695,6 +695,7 @@ class Player(Character):
         self.rites = []
         self.terrains = []
         self.previous_turn_health = None
+        self.wine_active = False
 
     def __repr__(self):
         character_details = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining"
@@ -1036,11 +1037,13 @@ class Player(Character):
                     players[reachable_index]))
             return (output_str)
 
-    def check_activatable_abilities(self, type=None):
+    def check_activatable_abilities(self, types=None):
         char_abils = []
-        if type == None:
+        if types == None:
             if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
                 char_abils.append(" Character Ability >> Blockade")
+            if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
+                char_abils.append(" Character Ability >> Drown in Wine")
             if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
                 char_abils.append(" Character Ability >> Green Salve")
             if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
@@ -1055,7 +1058,7 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Warrior Saint")
             return char_abils
 
-        if type == "Attack":
+        if types == "Attack":
             if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
                 char_abils.append(" Character Ability >> Warrior Saint")
             return char_abils
@@ -2210,7 +2213,7 @@ class Player(Character):
                             discard_deck.add_to_top(discarded)
                             self.check_one_after_another()
                             self.check_wisdom()
-                            players[selected].activate_coerce_attack(
+                            players[selected].activate_coerce(
                                 selected, attacked, discarded)
 
         elif card.effect2 == 'Dismantle':
@@ -2840,12 +2843,8 @@ class Player(Character):
         if self.character == players[0].character:
             if self.check_fearsome_archer(discarded, discarded2, selected):
                 return(' ')
-        if self.character == players[0].character:
-            if self.check_iron_cavalry(discarded, discarded2, selected):
-                return(' ')
-        else:
-            if self.check_iron_cavalry(discarded, discarded2, selected, coerced):
-                return(' ')
+        if self.check_iron_cavalry(discarded, discarded2, selected):
+            return(' ')
         if coerced == None:
             attack_defended = players[selected].use_reaction_effect(
                 "Defend", discarded, 0, selected)
@@ -2872,6 +2871,8 @@ class Player(Character):
                 if players[selected].check_reckless(discarded, 0):
                     return(' ')
             damage_dealt = 1
+            if self.wine_active:
+                damage_dealt = 2
             players[selected].current_health -= damage_dealt
             print(
                 f"{self.character} attacked {players[selected].character}, dealing {damage_dealt} damage. ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
@@ -2890,7 +2891,7 @@ class Player(Character):
                 damage_dealt, mode="Reaction")
             players[selected].check_retaliation(0, damage_dealt)
 
-    def activate_coerce_attack(self, coerced, selected, discarded):
+    def activate_coerce(self, coerced, selected, discarded):
         if selected == None:
             selected = 0
         if coerced == None:
@@ -3019,6 +3020,8 @@ class Player(Character):
                 options_str = self.hand_cards.list_cards()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
+                if (self.activate_drown_in_wine("Check")) and (self.character == players[player_index].character):
+                    options_str.append(" Character Ability >> Drown in Wine")
                 if self.check_first_aid(player_index, "Check"):
                     options_str.append(" Character Ability >> First Aid")
                 options_str.append("Do nothing.")
@@ -3037,8 +3040,16 @@ class Player(Character):
                 if options_str[card_index] == "Do nothing.":
                     reactions_possible = False
                     return(output_value)
+
+                elif options_str[card_index] == " Character Ability >> Drown in Wine":
+                    if self.activate_drown_in_wine("Reaction"):
+                        output_value += 1
+                        if players[player_index].check_break_brink_loop(output_value):
+                            reactions_possible = False
+                            return(output_value)
+
                 elif options_str[card_index] == " Character Ability >> First Aid":
-                    if (self.check_first_aid(player_index, "Activate")):
+                    if (self.check_first_aid(player_index, "Reaction")):
                         output_value += 1
                         bonus_output = players[player_index].check_rescued(
                             reacting_player_index)
@@ -3823,7 +3834,7 @@ class Player(Character):
             if mode == "Check":
                 return True
 
-            if mode == "Activate":
+            if mode == "Reaction":
                 cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                     self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
                 if cards_discardable > 0:
@@ -3974,11 +3985,9 @@ class Player(Character):
                 f"  >> Character Ability: Humility; {self.character} cannot be targeted by STEAL or ACEDIA.")
             return True
 
-    def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0, attacker_index=0):
+    def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0):
         if selected_index == None:
             selected_index = 0
-        if attacker_index == None:
-            attacker_index = 0
         if (self.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
             question = [
                 {
@@ -4083,7 +4092,11 @@ class Player(Character):
         if selected_index == None:
             selected_index = 0
         if (self.character_ability1 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability2 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability3 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability4 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability5 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."):
-            possible_indexes = self.calculate_targets_in_physical_range(0)
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability2 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability3 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability4 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability5 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."):
+                    source_index = player_index
+            possible_indexes = self.calculate_targets_in_physical_range(
+                source_index)
             possible_targets = []
             for target in possible_indexes:
                 possible_targets.append(players[target])
@@ -4759,6 +4772,63 @@ class Player(Character):
                     else:
                         print(
                             f"{options[discarded_index]} cannot be used as RATIONS DEPLETED as it is NOT a black-suited, basic/equipment card.")
+
+    def activate_drown_in_wine(self, mode="Check"):
+        if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
+            usable_cards = []
+            for card in self.hand_cards.contents:
+                if card.suit == "Spades":
+                    usable_cards.append(card)
+
+            if mode == "Check":
+                return True
+
+            if mode == "Activate" or mode == "Reaction":
+                if len(usable_cards) < 1:
+                    print(
+                        f"{self.character}: You cannot use this ability as you have no hand-cards that are SPADES.")
+
+                else:
+                    options_str = self.create_str_nonblind_menu(True)
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("Cancel ability.")
+                    options = self.hand_cards.contents
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a card to use as WINE?',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    discarded_index = answer.get('Selected')
+                    if options_str[discarded_index] == "Cancel ability.":
+                        return (' ')
+
+                    if options[discarded_index].suit != "Spades":
+                        print(
+                            f"{options[discarded_index]} cannot be used as WINE as it is not of suit SPADES.")
+
+                    if options[discarded_index].suit == "Spades":
+                        if discarded_index <= len(self.hand_cards.contents):
+                            discarded = self.hand_cards.contents.pop(
+                                discarded_index)
+                            discard_deck.add_to_top(discarded)
+
+                            if mode == "Activate":
+                                print(
+                                    f"  >> Character Ability: Drown in Wine; {self.character} has discarded {discarded} from their hand to use as WINE - Their next attack will do two damage.")
+                                self.wine_active = True
+
+                            if mode == "Reaction":
+                                print(
+                                    f"  >> Character Ability: Drown in Wine; {self.character} has discarded {discarded} from their hand to use as WINE - They heal by one!")
+
+                            return True
 
     def activate_national_colours(self):
         if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
@@ -5438,6 +5508,8 @@ class Player(Character):
             else:
                 if options[action_taken_index] == " Character Ability >> Blockade":
                     self.activate_blockade()
+                if options[action_taken_index] == " Character Ability >> Drown in Wine":
+                    self.activate_drown_in_wine("Activate")
                 if options[action_taken_index] == " Character Ability >> Green Salve":
                     self.activate_green_salve()
                 if options[action_taken_index] == " Character Ability >> Marriage":
@@ -5800,6 +5872,7 @@ players[1].hand_cards.draw(main_deck, 25)
 # players[0].start_action_phase()
 
 players[0].current_health = 60
+players[0].max_health = 120
 players[1].current_health = 1
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
