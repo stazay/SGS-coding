@@ -695,6 +695,7 @@ class Player(Character):
         self.rites = []
         self.terrains = []
         self.previous_turn_health = None
+        self.used_bare_chested = False
         self.wine_active = False
 
     def __repr__(self):
@@ -1064,7 +1065,7 @@ class Player(Character):
             return char_abils
 
     def check_break_brink_loop(self, amount_healed):
-        if self.current_health < (0 + amount_healed):
+        if self.current_health + amount_healed > 0:
             return True
         else:
             return False
@@ -1127,81 +1128,76 @@ class Player(Character):
                     f"{players[dying_player_index].character} has been successfully healed back to {players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP.")
 
     def check_pending_judgements(self):
-        if self.pending_judgements == []:
-            pass
-        else:
-            while len(self.pending_judgements) > 0:
-                print(" ")
-                main_deck.check_if_empty(main_deck, discard_deck)
-                pending_judgement = self.pending_judgements.pop(0)
-                if pending_judgement.effect2 == 'Acedia':
+        while len(self.pending_judgements) > 0:
+            print(" ")
+            main_deck.check_if_empty(main_deck, discard_deck)
+            pending_judgement = self.pending_judgements.pop(0)
+            if pending_judgement.effect2 == 'Acedia':
+                print(
+                    f"{self.character} must face judgement for ACEDIA; (needs HEARTS to pass, or else misses action-phase of turn).")
+                main_deck.discard_from_deck()
+                judgement_card = discard_deck.contents[0]
+                print(f"{self.character} flipped a {judgement_card}.")
+                # Add checks for Sima Yi and Zhang Jiao
+                self.check_envy_of_heaven()
+                if judgement_card.suit == "Hearts":
                     print(
-                        f"{self.character} must face judgement for ACEDIA; (needs HEARTS to pass, or else misses action-phase of turn).")
-                    main_deck.discard_from_deck()
-                    judgement_card = discard_deck.contents[0]
-                    print(f"{self.character} flipped a {judgement_card}.")
-                    # Add checks for Sima Yi and Zhang Jiao
-                    self.check_envy_of_heaven()
-                    if judgement_card.suit == "Hearts":
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
-                    else:
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and thus they miss their action-phase of this turn.")
-                        # SKIP ACTION PHASE OF TURN!
-                        self.acedia_active = True
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
+                else:
+                    print(
+                        f"{self.character}'s judgement card is a {judgement_card} and thus they miss their action-phase of this turn.")
+                    self.acedia_active = True
+                discard_deck.add_to_top(pending_judgement)
+            if pending_judgement.effect2 == 'Lightning':
+                print(
+                    f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of SPADES or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto {players[1].character}.")
+                main_deck.discard_from_deck()
+                judgement_card = discard_deck.contents[0]
+                print(f"{self.character} flipped a {judgement_card}.")
+                # Add checks for Sima Yi and Zhang Jiao
+                self.check_envy_of_heaven()
+                if judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
+                    print(
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
+                    self.current_health -= 3
+                    if self.current_health < 1:
+                        if self.check_brink_of_death_loop(0, "None") == "Break":
+                            return "Break"
+                    self.check_eternal_loyalty(3)
                     discard_deck.add_to_top(pending_judgement)
-                if pending_judgement.effect2 == 'Lightning':
+                elif len(players[1].pending_judgements) > 0:
+                    for possible_lightning in players[1].pending_judgements:
+                        if possible_lightning.effect2 == 'Lightning':
+                            if len(players) < 3:
+                                print(
+                                    f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it gets discarded.")
+                                discard_deck.add_to_top(pending_judgement)
+                            else:
+                                print(
+                                    f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
+                                players[2].pending_judgements.insert(
+                                    0, pending_judgement)
+                else:
                     print(
-                        f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of SPADES or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto {players[1].character}.")
-                    main_deck.discard_from_deck()
-                    judgement_card = discard_deck.contents[0]
-                    print(f"{self.character} flipped a {judgement_card}.")
-                    # Add checks for Sima Yi and Zhang Jiao
-                    self.check_envy_of_heaven()
-                    if judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
-                        self.current_health -= 3
-                        if self.current_health < 1:
-                            if self.check_brink_of_death_loop(0, "None") == "Break":
-                                return "Break"
-                        self.check_eternal_loyalty(3)
-                        discard_deck.add_to_top(pending_judgement)
-                    elif len(players[1].pending_judgements) > 0:
-                        for possible_lightning in players[1].pending_judgements:
-                            if possible_lightning.effect2 == 'Lightning':
-                                if len(players) < 3:
-                                    print(
-                                        f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it gets discarded.")
-                                    discard_deck.add_to_top(pending_judgement)
-                                else:
-                                    print(
-                                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
-                                    players[2].pending_judgements.insert(
-                                        0, pending_judgement)
-                    else:
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
-                        players[1].pending_judgements.insert(
-                            0, pending_judgement)
-                if pending_judgement.effect2 == 'Rations Depleted':
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
+                    players[1].pending_judgements.insert(
+                        0, pending_judgement)
+            if pending_judgement.effect2 == 'Rations Depleted':
+                print(
+                    f"{self.character} must face judgement for RATIONS DEPLETED; (needs CLUBS to pass, or else misses drawing-phase of turn).")
+                main_deck.discard_from_deck()
+                judgement_card = discard_deck.contents[0]
+                print(f"{self.character} flipped a {judgement_card}.")
+                # Add checks for Sima Yi and Zhang Jiao
+                self.check_envy_of_heaven()
+                if judgement_card.suit == "Clubs":
                     print(
-                        f"{self.character} must face judgement for RATIONS DEPLETED; (needs CLUBS to pass, or else misses drawing-phase of turn).")
-                    main_deck.discard_from_deck()
-                    judgement_card = discard_deck.contents[0]
-                    print(f"{self.character} flipped a {judgement_card}.")
-                    # Add checks for Sima Yi and Zhang Jiao
-                    self.check_envy_of_heaven()
-                    if judgement_card.suit == "Clubs":
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
-                    else:
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and thus they miss their drawing-phase of this turn.")
-                        # SKIP DRAWING PHASE OF TURN!
-                        self.rations_depleted_active = True
-                    discard_deck.add_to_top(pending_judgement)
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
+                else:
+                    print(
+                        f"{self.character}'s judgement card is a {judgement_card} and thus they miss their drawing-phase of this turn.")
+                    self.rations_depleted_active = True
+                discard_deck.add_to_top(pending_judgement)
 
     def create_actual_menu(self):
         options = []
@@ -1365,6 +1361,7 @@ class Player(Character):
 
     def reset_once_per_turn(self):
         self.attacks_this_turn = 0
+        self.used_bare_chested = False
         self.used_green_salve = False
         self.used_marriage = False
 
@@ -2391,36 +2388,39 @@ class Player(Character):
                 self.check_one_after_another()
                 duel_won = players[selected].use_reaction_effect(
                     "Attack", discarded, 0, selected)
+                damage_dealt = 1
+                if self.used_bare_chested:
+                    damage_dealt = 2
                 if duel_won:
                     print(
-                        f"{self.character} has won the DUEL! {players[selected].character} takes one damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
-                    players[selected].current_health -= 1
+                        f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
+                    players[selected].current_health -= damage_dealt
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                 return "Break"
-                        players[selected].check_eternal_loyalty(1)
+                        players[selected].check_eternal_loyalty(damage_dealt)
                         if players[selected].check_eye_for_an_eye(
                                 source_player_index=0, mode="Activate") == "Break":
                             return(' ')
                         players[selected].check_plotting_for_power(
-                            1, mode="Reaction")
-                        players[selected].check_retaliation(0, 1)
+                            damage_dealt, mode="Reaction")
+                        players[selected].check_retaliation(0, damage_dealt)
                 if not duel_won:
                     print(
-                        f"{players[selected].character} has won the DUEL! {self.character} takes one damage! ({self.current_health}/{self.max_health} HP remaining)")
-                    self.current_health -= 1
+                        f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
+                    self.current_health -= damage_dealt
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                 return "Break"
-                        self.check_eternal_loyalty(1)
+                        self.check_eternal_loyalty(damage_dealt)
                         if self.check_eye_for_an_eye(
                                 source_player_index=selected, mode="Activate") == "Break":
                             return(' ')
                         self.check_plotting_for_power(
-                            1, mode="Reaction")
-                        self.check_retaliation(0, 1)
+                            damage_dealt, mode="Reaction")
+                        self.check_retaliation(0, damage_dealt)
 
         elif card.effect2 == 'Negate':
             print(
@@ -2871,13 +2871,14 @@ class Player(Character):
                 if players[selected].check_reckless(discarded, 0):
                     return(' ')
             damage_dealt = 1
-            if self.wine_active:
+            if (self.wine_active) or (self.used_bare_chested):
                 damage_dealt = 2
             players[selected].current_health -= damage_dealt
             print(
                 f"{self.character} attacked {players[selected].character}, dealing {damage_dealt} damage. ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
             self.check_weapon_huangs_longbow(selected)
             self.check_insanity(selected)
+            self.wine_active = False
             for player_index, player in enumerate(players):
                 if player.current_health < 1:
                     if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
@@ -3044,6 +3045,8 @@ class Player(Character):
                 elif options_str[card_index] == " Character Ability >> Drown in Wine":
                     if self.activate_drown_in_wine("Reaction"):
                         output_value += 1
+                        print(
+                            f"{self.character} has healed themselves using WINE! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
                         if players[player_index].check_break_brink_loop(output_value):
                             reactions_possible = False
                             return(output_value)
@@ -3051,10 +3054,12 @@ class Player(Character):
                 elif options_str[card_index] == " Character Ability >> First Aid":
                     if (self.check_first_aid(player_index, "Reaction")):
                         output_value += 1
-                        bonus_output = players[player_index].check_rescued(
-                            reacting_player_index)
-                        if bonus_output == 1:
-                            output_value += bonus_output
+                        if self.character == players[player_index].character:
+                            print(
+                                f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                        else:
+                            print(
+                                f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
                         if players[player_index].check_break_brink_loop(output_value):
                             reactions_possible = False
                             return(output_value)
@@ -3068,6 +3073,12 @@ class Player(Character):
                         reacting_player_index)
                     if bonus_output == 1:
                         output_value += bonus_output
+                    if self.character == players[player_index].character:
+                        print(
+                            f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                    else:
+                        print(
+                            f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
                     if players[player_index].check_break_brink_loop(output_value):
                         reactions_possible = False
                         return(output_value)
@@ -3400,6 +3411,24 @@ class Player(Character):
                                 players[player_index].check_brink_of_death_loop(
                                     player_index, 0)
                     return True
+
+    def check_bare_chested(self):
+        if (self.character_ability1 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability2 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability3 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability4 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability5 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage."):
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Choose to activate Bare-chested, and draw one less card; if yes, all ATTACK or DUEL cards will do increased damage?',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                print(
+                    f"  >> Character Ability: Bare-chested; {self.character} has activated Bare-chested, and all their ATTACK and DUEL cards will do increased damage for this turn.")
+                self.used_bare_chested = True
+                return True
 
     def check_berserk(self):
         if (self.character_ability1 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability2 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability3 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability4 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability5 == "Berserk: There is no limit on how many times you can ATTACK during your turn."):
@@ -4826,7 +4855,7 @@ class Player(Character):
 
                             if mode == "Reaction":
                                 print(
-                                    f"  >> Character Ability: Drown in Wine; {self.character} has discarded {discarded} from their hand to use as WINE - They heal by one!")
+                                    f"  >> Character Ability: Drown in Wine; {self.character} has discarded {discarded} from their hand to use as WINE!")
 
                             return True
 
@@ -5430,7 +5459,6 @@ class Player(Character):
             return self.start_drawing_phase()
         else:
             # Check for Yan Liang & Wen Chou; Dual Heroes
-            # Check for Xu Chu; Bare the Chest
             # Check for Zhang He; Flexibility
             if self.check_raid():
                 return self.start_action_phase()
@@ -5442,6 +5470,10 @@ class Player(Character):
         cards_drawn = 2
         message = True
         # Checks for Lu Su; Altruism
+        # Check for Xu Chu; Bare the Chest
+        if self.check_bare_chested():
+            cards_drawn -= 1
+            message = False
         if self.check_dashing_hero():
             cards_drawn += 1
             message = False
@@ -5571,6 +5603,7 @@ class Player(Character):
         print(" ")
         self.acedia_active = False
         self.rations_depleted_active = False
+        self.used_bare_chested = False
         self.check_disintegrate()
         self.check_eclipse_the_moon()
         self.check_second_wind("End")
