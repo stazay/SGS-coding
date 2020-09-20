@@ -447,9 +447,6 @@ class Hand(Deck):
             for card in self.list_cards():
                 print(card)
 
-    def show_hand(self, *char_name):
-        pass
-
     def draw(self, deck_drawn, num=1, message=True):
         if message == True:
             if num == 1:
@@ -464,9 +461,6 @@ class Hand(Deck):
             card = deck_drawn.remove_from_top()
             self.add_to_top(card)
             num -= 1
-
-    def give_to_player(self, card):
-        pass
 
 
 # 108 Cards in the Deck;
@@ -981,7 +975,7 @@ class Player(Character):
                     output.append(target_index)
         return output
 
-    def create_targeting_menu(self, range_type="Weapon"):
+    def create_targeting_menu(self, range_type="Weapon", source_player_index=0):
         if range_type == "Physical":
             if self.check_talent():
                 output_str = [
@@ -989,7 +983,8 @@ class Player(Character):
                 for player in players[1:]:
                     output_str.append(str(player))
                 return (output_str)
-            reachable_indexes = self.calculate_targets_in_physical_range(0)
+            reachable_indexes = self.calculate_targets_in_physical_range(
+                source_player_index)
             if len(reachable_indexes) == 0:
                 print(
                     f"{self.character} - You have insufficient range to reach anyone with this card.")
@@ -1005,7 +1000,7 @@ class Player(Character):
 
         if range_type == "Extended Physical":
             reachable_indexes = self.calculate_targets_in_extended_physical_range(
-                0)
+                source_player_index)
             if self.check_talent():
                 output_str = [
                     Separator("------<Cannot target yourself>------")]
@@ -1026,7 +1021,8 @@ class Player(Character):
             return (output_str)
 
         if range_type == "Weapon":
-            reachable_indexes = self.calculate_targets_in_weapon_range(0)
+            reachable_indexes = self.calculate_targets_in_weapon_range(
+                source_player_index)
             if len(reachable_indexes) == 0:
                 print(
                     f"{self.character} - You have insufficient range to reach anyone with an ATTACK.")
@@ -1040,23 +1036,29 @@ class Player(Character):
                     players[reachable_index]))
             return (output_str)
 
-    def check_activatable_abilities(self):
+    def check_activatable_abilities(self, type=None):
         char_abils = []
-        if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
-            char_abils.append(" Character Ability >> Blockade")
-        if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
-            char_abils.append(" Character Ability >> Green Salve")
-        if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
-            char_abils.append(" Character Ability >> Marriage")
-        if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
-            char_abils.append(" Character Ability >> National Colours")
-        if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
-            char_abils.append(" Character Ability >> Surprise")
-        if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
-            char_abils.append(" Character Ability >> Trojan Flesh")
-        if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
-            char_abils.append(" Character Ability >> Warrior Saint")
-        return char_abils
+        if type == None:
+            if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
+                char_abils.append(" Character Ability >> Blockade")
+            if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
+                char_abils.append(" Character Ability >> Green Salve")
+            if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
+                char_abils.append(" Character Ability >> Marriage")
+            if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
+                char_abils.append(" Character Ability >> National Colours")
+            if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
+                char_abils.append(" Character Ability >> Surprise")
+            if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
+                char_abils.append(" Character Ability >> Trojan Flesh")
+            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+                char_abils.append(" Character Ability >> Warrior Saint")
+            return char_abils
+
+        if type == "Attack":
+            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+                char_abils.append(" Character Ability >> Warrior Saint")
+            return char_abils
 
     def check_break_brink_loop(self, amount_healed):
         if self.current_health < (0 + amount_healed):
@@ -1758,6 +1760,10 @@ class Player(Character):
 
 # Using/discarding cards from a players' hand
     def use_card_effect(self, card_index, card, secondary_index=None, secondary_card=None):
+        if card_index == None:
+            card_index = 0
+        if secondary_index == None:
+            secondary_index = 0
         print(" ")
         popping = False
         # Special attacks via Serpent Spear
@@ -1886,6 +1892,7 @@ class Player(Character):
                     ]
                     answer = prompt(question, style=custom_style_2)
                     if answer.get('Selected') == 'Yes':
+                        self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
                         self.hand_cards.contents.insert(
                             card_index, "Placeholder")
@@ -2133,13 +2140,84 @@ class Player(Character):
                         players[player].check_retaliation(0, 1)
 
         elif card.effect2 == 'Coerce':
-            pass
+            possible_targets = 0
+            for player in players[1:]:
+                if len(player.equipment_weapon) > 0:
+                    possible_targets += 1
+
+            if possible_targets > 0:
+                options_str = []
+                options_str.append(
+                    Separator("------<Cannot target yourself>------"))
+                for player in players[1:]:
+                    if len(player.equipment_weapon) > 0:
+                        options_str.append(str(player))
+                    else:
+                        options_str.append(
+                            Separator("------" + str(player) + "------"))
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to target with {card}.',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+
+                print(
+                    f"{card} - Use this card to target any other player that possesses a weapon. Afterwards, you can then select any target within their attacking range. Your target can then ATTACK the victim. If they do not, you will take their weapon and add it to your hand.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please confirm you would like to use {card} against {players[selected]}?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'No':
+                    return False
+                if answer.get('Selected') == 'Yes':
+                    if len(players[selected].calculate_targets_in_weapon_range(selected)) > 0:
+                        options_str = players[selected].create_targeting_menu(
+                            "Weapon", selected)
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel")
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a target for {players[selected].character} to ATTACK!',
+                                'choices': options_str,
+                                'filter': lambda player: options_str.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        attacked = answer.get('Selected')
+                        if options_str[attacked] == "Cancel":
+                            return False
+                        else:
+                            print(
+                                f"{self.character} has coerced {players[selected].character} into attacking {players[attacked].character}. If they refuse, {self.character} gets their weapon.")
+                            discarded = self.hand_cards.contents.pop(
+                                card_index)
+                            discard_deck.add_to_top(discarded)
+                            self.check_one_after_another()
+                            self.check_wisdom()
+                            players[selected].activate_coerce_attack(
+                                selected, attacked, discarded)
 
         elif card.effect2 == 'Dismantle':
             options_str = list_character_options(players)
             options_str.pop(0)
-            options_str.insert(0, (Separator(
-                f"--{self.character} (Can't target yourself!)--")))
+            options_str.insert(
+                0, (Separator("------<Cannot target yourself>------")))
             question = [
                 {
                     'type': 'list',
@@ -2268,6 +2346,8 @@ class Player(Character):
 
         elif card.effect2 == 'Duel':
             options_str = []
+            options_str.append(
+                Separator("------<Cannot target yourself>------"))
             for player in players[1:]:
                 options_str.append(str(player))
             question = [
@@ -2280,7 +2360,7 @@ class Player(Character):
                 },
             ]
             answer = prompt(question, style=custom_style_2)
-            selected = ((answer.get('Selected')) + 1)
+            selected = answer.get('Selected')
 
             if players[selected].check_empty_city():
                 return (' ')
@@ -2507,8 +2587,8 @@ class Player(Character):
         # card.type == 'Delay-Tool':
         elif card.effect2 == 'Acedia':
             options_str = []
-            options_str.append(Separator(
-                f"--{self.character} (Can't target yourself!)--"))
+            options_str.append(
+                Separator("------<Cannot target yourself>------"))
             for player in players[1:]:
                 options_str.append(str(player))
             question = [
@@ -2747,7 +2827,7 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
-    def activate_attack(self, discarded, selected, discarded2=None):
+    def activate_attack(self, discarded, selected, coerced=False, discarded2=None):
         if players[selected].check_relish(source_player_index=0, mode="Activate"):
             return(' ')
         self.check_weapon_gender_swords(selected)
@@ -2757,16 +2837,25 @@ class Player(Character):
                     f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore ignores any armor when attacking.")
             elif players[selected].armor_black_shield(discarded):
                 return(' ')
-        if self.check_fearsome_archer(discarded, selected):
-            return(' ')
-        if self.check_iron_cavalry(discarded, selected):
-            return(' ')
-        attack_defended = players[selected].use_reaction_effect(
-            "Defend", discarded, 0, selected)
+        if self.character == players[0].character:
+            if self.check_fearsome_archer(discarded, discarded2, selected):
+                return(' ')
+        if self.character == players[0].character:
+            if self.check_iron_cavalry(discarded, discarded2, selected):
+                return(' ')
+        else:
+            if self.check_iron_cavalry(discarded, discarded2, selected, coerced):
+                return(' ')
+        if coerced == None:
+            attack_defended = players[selected].use_reaction_effect(
+                "Defend", discarded, 0, selected)
+        else:
+            attack_defended = players[selected].use_reaction_effect(
+                "Defend", discarded, coerced, selected)
         if type(attack_defended) == Card:
             if (attack_defended.effect == "Defend") or (attack_defended.effect2 == "Defend"):
                 print(
-                    f"{players[selected].character} successfully defended the attack with {attack_defended}.")
+                    f"{players[selected].character} successfully defended the ATTACK with {attack_defended}.")
                 self.check_weapon_axe(selected)
                 self.check_fearsome_advance(
                     discarded, selected)
@@ -2800,6 +2889,121 @@ class Player(Character):
             players[selected].check_plotting_for_power(
                 damage_dealt, mode="Reaction")
             players[selected].check_retaliation(0, damage_dealt)
+
+    def activate_coerce_attack(self, coerced, selected, discarded):
+        if selected == None:
+            selected = 0
+        if coerced == None:
+            coerced = 0
+
+        options_str = []
+        options_str.append(
+            Separator("--------------------Cards--------------------"))
+        playing_card_options_str = get_playing_card_options(self.hand_cards)
+        for card in playing_card_options_str:
+            options_str.append(card)
+        options_str.append(
+            Separator("--------------------Other--------------------"))
+        activatable_abilities = self.check_activatable_abilities("Attack")
+        for ability in activatable_abilities:
+            options_str.append(ability)
+        if self.check_weapon_serpent_spear("Check"):
+            options_str.append(" Weapon Ability >> Serpent Spear")
+        options_str.append(f"Don't attack {players[selected]}!")
+
+        options = []
+        options.append("Cards")
+        for card in self.hand_cards.contents:
+            options.append(card)
+        options.append("Other")
+        activatable_abilities = self.check_activatable_abilities("Attack")
+        for ability in activatable_abilities:
+            options.append(ability)
+        if self.check_weapon_serpent_spear("Check"):
+            options.append(" Weapon Ability >> Serpent Spear")
+        options.append(f"Don't attack {players[selected]}!")
+
+        question = [
+            {
+                'type': 'list',
+                'name': 'Selected',
+                'message': f"{self.character}: You have been targeted by {discarded} into attacking {players[selected].character}! If you don't, {players[0].character} gets your weapon. (Play an ATTACK or do nothing!)",
+                'choices': options_str,
+                'filter': lambda action: options_str.index(action)
+            },
+        ]
+
+        answer = prompt(question, style=custom_style_2)
+        action_taken_index = answer.get('Selected')
+
+        if options[action_taken_index] == (f"Don't attack {players[selected]}!"):
+            weapon = self.equipment_weapon.pop()
+            players[0].hand_cards.add_to_top(weapon)
+            print(
+                f"{self.character}: Your weapon has been stolen by {players[0].character} for not attacking {players[selected].character}!")
+
+        elif options[action_taken_index] == " Character Ability >> Warrior Saint":
+            discarded = self.activate_warrior_saint("Reaction")
+            if discarded != None:
+                discarded.effect2 = "Attack"
+                print(
+                    f"{self.character} was coerced into attacking {players[selected]}.")
+                extra_targets = self.check_weapon_sky_scorcher_halberd(
+                    selected)
+                if (extra_targets == None) or (extra_targets[0] == 0):
+                    self.activate_attack(discarded, selected, coerced)
+                elif (extra_targets[0] == 1):
+                    self.activate_attack(discarded, selected, coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[1], coerced)
+                elif (extra_targets[0] == 2):
+                    self.activate_attack(discarded, selected, coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[1], coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[2], coerced)
+
+        elif options[action_taken_index] == " Weapon Ability >> Serpent Spear":
+            attack_played = self.check_weapon_serpent_spear("Activate")
+            if attack_played[0] != None:
+                print(
+                    f"{self.character} was coerced into attacking {players[selected]}.")
+                discarded1 = self.hand_cards.contents.pop(
+                    attack_played[1])
+                self.hand_cards.contents.insert(
+                    attack_played[1], "Placeholder")
+                discard_deck.add_to_top(discarded1)
+                discarded2 = self.hand_cards.contents.pop(
+                    attack_played[3])
+                self.hand_cards.contents.remove("Placeholder")
+                self.check_one_after_another()
+                discard_deck.add_to_top(discarded2)
+                discarded1.effect1 = "Attack"
+                discarded2.effect2 = "Attack"
+                self.activate_attack(discarded, selected, coerced, discarded2)
+
+        elif options[action_taken_index].effect == "Attack":
+            print(
+                f"{self.character} was coerced into attacking {players[selected]}.")
+            discarded = options.pop(action_taken_index)
+            discard_deck.add_to_top(discarded)
+            discarded.effect2 = "Attack"
+            self.check_ardour(discarded)
+            self.check_one_after_another()
+            extra_targets = self.check_weapon_sky_scorcher_halberd(
+                selected)
+            if (extra_targets == None) or (extra_targets[0] == 0):
+                self.activate_attack(discarded, selected, coerced)
+            elif (extra_targets[0] == 1):
+                self.activate_attack(discarded, selected, coerced)
+                self.activate_attack(
+                    discarded, extra_targets[1], coerced)
+            elif (extra_targets[0] == 2):
+                self.activate_attack(discarded, selected, coerced)
+                self.activate_attack(
+                    discarded, extra_targets[1], coerced)
+                self.activate_attack(
+                    discarded, extra_targets[2], coerced)
 
     def use_reaction_effect(self, response_required, card_played=None, player_index=None, reacting_player_index=None):
         if player_index == None:
@@ -3110,28 +3314,25 @@ class Player(Character):
                     self.weapon_range = 1
                     print(
                         f"{self.character} has discarded {card} from their weapon-slot.")
-                    self.check_warrior_woman()
 
                 if discarded_index == (len(self.hand_cards.contents) + 3):
                     card = self.equipment_armor.pop()
                     discard_deck.add_to_top(card)
                     print(
                         f"{self.character} has discarded {card} from their armor-slot.")
-                    self.check_warrior_woman()
 
                 if discarded_index == (len(self.hand_cards.contents) + 4):
                     card = self.equipment_offensive_horse.pop()
                     discard_deck.add_to_top(card)
                     print(
                         f"{self.character} has discarded {card} from their horse-slot.")
-                    self.check_warrior_woman()
 
                 if discarded_index == (len(self.hand_cards.contents) + 5):
                     card = self.equipment_defensive_horse.pop()
                     discard_deck.add_to_top(card)
                     print(
                         f"{self.character} has discarded {card} from their horse-slot.")
-                    self.check_warrior_woman()
+                self.check_warrior_woman()
             num -= 1
 
 # Ability checks
@@ -3577,7 +3778,7 @@ class Player(Character):
                                 f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their horse slot.")
                             players[selected_index].check_warrior_woman()
 
-    def check_fearsome_archer(self, discarded, selected_index=0):
+    def check_fearsome_archer(self, discarded, discarded2=None, selected_index=0):
         if selected_index == None:
             selected_index = 0
         if (self.character_ability1 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability2 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability3 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability4 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability5 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining."):
@@ -3592,10 +3793,19 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'Yes':
+                    if self.check_weapon_frost_blade(selected_index, "Check"):
+                        return(' ')
+                    if (discarded2 == None) or (discarded2.effect2 == "Red Attack"):
+                        if players[selected_index].check_reckless(discarded, 0):
+                            return(' ')
                     damage_dealt = 1
                     players[selected_index].current_health -= damage_dealt
-                    print(
-                        f"  >> Character Ability: Fearsome Archer; {self.character} attacked {players[selected_index].character} with an undodgable {discarded}, dealing {damage_dealt} damage. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                    if discarded2 == None:
+                        print(
+                            f"  >> Character Ability: Fearsome Archer; {self.character} attacked {players[selected_index].character} with an undodgable {discarded}, dealing {damage_dealt} damage. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                    else:
+                        print(
+                            f"  >> Character Ability: Fearsome Archer; {self.character} attacked {players[selected_index].character} with an undodgable ATTACK, dealing {damage_dealt} damage. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
@@ -3764,9 +3974,11 @@ class Player(Character):
                 f"  >> Character Ability: Humility; {self.character} cannot be targeted by STEAL or ACEDIA.")
             return True
 
-    def check_iron_cavalry(self, discarded, selected_index=0):
+    def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0, attacker_index=0):
         if selected_index == None:
             selected_index = 0
+        if attacker_index == None:
+            attacker_index = 0
         if (self.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
             question = [
                 {
@@ -3786,10 +3998,19 @@ class Player(Character):
                 print(f"{self.character} flipped a {judgement_card}.")
                 # Add checks for Sima Yi and Zhang Jiao
                 if judgement_card.suit == "Diamonds" or judgement_card.suit == "Hearts":
+                    if self.check_weapon_frost_blade(selected_index, "Check"):
+                        return(' ')
+                    if (discarded2 == None) or (discarded2.effect2 == "Red Attack"):
+                        if players[selected_index].check_reckless(discarded, 0):
+                            return(' ')
                     damage_dealt = 1
                     players[selected_index].current_health -= damage_dealt
-                    print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {discarded} cannot be dodged, dealing {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                    if discarded2 == None:
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {discarded} cannot be dodged, dealing {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                    else:
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore the ATTACK cannot be dodged, dealing {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
@@ -5187,13 +5408,12 @@ class Player(Character):
             if self.check_weapon_serpent_spear("Check"):
                 options.append(" Weapon Ability >> Serpent Spear")
             options.append('End action-phase')
-            message = f"{self.character}, it is your action-phase: Please choose an option:"
 
             question = [
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': message,
+                    'message': f"{self.character}, it is your action-phase: Please choose an option:",
                     'choices': options,
                     'filter': lambda action: options.index(action)
                 },
@@ -5563,6 +5783,7 @@ game_started = True
 # players[0].hand_cards.view_hand()
 # players[0].hand_cards.discard_from_hand(2)
 # players[0].equipment_weapon.append(Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel', 'When equipped, the wielder ignores any armor of their targets.', 2))
+# players[1].equipment_weapon.append(Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel', 'When equipped, the wielder ignores any armor of their targets.', 2))
 # players[1].equipment_armor.append(Card(2, 'Two', 'Spades', 'Armor', 'Eight-Trigrams', 'When equipped: whenever a DEFEND is needed, the wearer can perform a judgement. If it is red, the DEFEND is considered to be played.'))
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Acedia', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Acedia'))
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Lightning', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Lightning'))
