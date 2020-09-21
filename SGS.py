@@ -145,16 +145,16 @@ wu_emperors = [
 hero_emperors = [
     Character("Dong Zhuo", "Heroes", 8, "Male",
               "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage.",
-              "Garden of Lust: Whenever you use an ATTACK on a female character or vice-versa, the targeted character needs to use two DODGE cards to successfully evade the attack.",
+              "Garden of Lust: Whenever you use an ATTACK on a female character or vice-versa, the targeted character needs to use two DEFEND cards to successfully evade the attack.",
               "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit.",
               "Tyrant (Ruler Ability): Whenever another Hero character causes damage to any other player, you can flip a judgement card. If the judgement card is of the suit SPADES, you can regain one unit of health."),
     Character("Yuan Shao", "Heroes", 4, "Male",
               "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS.",
               "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."),
     Character("Zhang Jiao", "Heroes", 3, "Male",
-              "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage.",
+              "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage.",
               "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped.",
-              "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns.")
+              "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns.")
 ]
 
 # Shu Characters
@@ -229,7 +229,7 @@ wei_characters = [
     Character("Zhang Liao", "Wei", 4, "Male",
               "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players."),
     Character("Zhen Ji", "Wei", 3, "Female",
-              "Impetus: Every one of your black-suited on-hand cards may be used as DODGE.",
+              "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND.",
               "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."),
     Character("Zhong Hui", "Wei", 4, "Male",
               "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE.",
@@ -1042,14 +1042,19 @@ class Player(Character):
         char_abils = []
         if types == None:
             emperor_index = None
+            false_ruler_index = None
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."):
+                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
                     if player.role == "Emperor":
                         emperor_index = player_index
-                        break
-            if emperor_index != None:
-                if self.role != "Emperor" and self.allegiance == "Heroes":
+                    else:
+                        false_ruler_index = player_index
+            if self.allegiance == "Heroes":
+                if (emperor_index != None) and (false_ruler_index != None):
                     char_abils.append(" Ruler Ability >> Amber Sky")
+                elif emperor_index != None:
+                    if self.role != "Emperor":
+                        char_abils.append(" Ruler Ability >> Amber Sky")
 
             if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
                 char_abils.append(" Character Ability >> Blockade")
@@ -3737,7 +3742,7 @@ class Player(Character):
                     if player.character == 'Yuan Shao':
                         self.character_ability3 = "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."
                     if player.character == 'Zhang Jiao':
-                        self.character_ability3 = "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."
+                        self.character_ability3 = "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."
         elif self.character_ability3 == "False Ruler: You possess the same ruler ability as the current emperor.":
             for player in players:
                 if player.role == 'Emperor':
@@ -3761,7 +3766,7 @@ class Player(Character):
                     if player.character == 'Yuan Shao':
                         self.character_ability4 = "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."
                     if player.character == 'Zhang Jiao':
-                        self.character_ability4 = "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."
+                        self.character_ability4 = "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."
 
     def check_fearsome_advance(self, discarded, selected_index=0):
         if selected_index == None:
@@ -4088,7 +4093,7 @@ class Player(Character):
                         f"{self.character}'s judgement card is a {judgement_card} and Iron Cavalry has no effect.")
 
     def check_impetus(self, source_player_index, mode="Check"):
-        if (self.character_ability1 == "Impetus: Every one of your black-suited on-hand cards may be used as DODGE." or self.character_ability2 == "Impetus: Every one of your black-suited on-hand cards may be used as DODGE." or self.character_ability3 == "Impetus: Every one of your black-suited on-hand cards may be used as DODGE." or self.character_ability4 == "Impetus: Every one of your black-suited on-hand cards may be used as DODGE." or self.character_ability5 == "Impetus: Every one of your black-suited on-hand cards may be used as DODGE."):
+        if (self.character_ability1 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability2 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability3 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability4 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability5 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND."):
             if mode == "Check":
                 return True
 
@@ -4192,7 +4197,7 @@ class Player(Character):
                     self.check_brink_of_death_loop()
 
     def check_lightning_strike(self):
-        if (self.character_ability1 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability2 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability3 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability4 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability5 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
+        if (self.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
             question = [
                 {
                     'type': 'list',
@@ -4231,7 +4236,7 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
-                        if (player.character_ability1 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DODGE card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
+                        if (player.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
                             dodging_player_index = player_index
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
@@ -5327,50 +5332,80 @@ class Player(Character):
 # Activatable abilities (once-per-turn)
     def activate_amber_sky(self):
         emperor_index = None
+        false_ruler_index = None
         if self.used_amber_sky:
             print(f"{self.character}: You can only use Amber Sky once per turn.")
         if not self.used_amber_sky:
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."):
+                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
                     if player.role == "Emperor":
                         emperor_index = player_index
-                        break
+                    else:
+                        false_ruler_index = player_index
 
-            if emperor_index != None:
-                if self.role != "Emperor" and self.allegiance == "Heroes":
-                    options = self.create_str_nonblind_menu(True)
-                    options.append(
-                        Separator("--------------------Other--------------------"))
-                    options.append("Cancel ability.")
+            if self.allegiance == "Heroes":
+                if self.role == "Emperor":
+                    if (false_ruler_index != None):
+                        target = players[false_ruler_index]
 
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select a DEFEND or LIGHTNING card to give to {players[player_index].character}?',
-                            'choices': options,
-                            'filter': lambda card: options.index(card)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    card_index = answer.get('Selected')
+                elif self.role != "Emperor":
+                    if false_ruler_index == None:
+                        target = players[emperor_index]
 
-                    if options[card_index] == "Cancel ability.":
-                        return (' ')
+                    elif (false_ruler_index != None) and (self.character == players[false_ruler_index].character):
+                        target = players[emperor_index]
 
                     else:
-                        card = self.hand_cards.contents[card_index]
-                        if (card.effect == "Defend") or (card.effect == "Lightning"):
-                            discarded = self.hand_cards.contents.pop(
-                                card_index)
-                            players[player_index].hand_cards.add_to_top(
-                                discarded)
-                            print(
-                                f"  >> Ruler Ability: Amber Sky; {self.character} gave {discarded} to {players[player_index]} in their turn!")
-                            self.used_amber_sky = True
+                        options = [str(players[emperor_index]),
+                                   str(players[false_ruler_index])]
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select who you will target with Amber Sky:',
+                                'choices': options,
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        selected = answer.get('Selected')
+                        if selected == str(players[emperor_index]):
+                            target = players[emperor_index]
                         else:
-                            print(
-                                f"{self.character}: You can only give a DODGE or LIGHTNING CARD with this effect.")
+                            target = players[false_ruler_index]
+
+                options = self.create_str_nonblind_menu(True)
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a DEFEND or LIGHTNING card to give to {target.character}?',
+                        'choices': options,
+                        'filter': lambda card: options.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card_index = answer.get('Selected')
+
+                if options[card_index] == "Cancel ability.":
+                    return (' ')
+
+                else:
+                    card = self.hand_cards.contents[card_index]
+                    if (card.effect == "Defend") or (card.effect == "Lightning"):
+                        discarded = self.hand_cards.contents.pop(
+                            card_index)
+                        target.hand_cards.add_to_top(
+                            discarded)
+                        print(
+                            f"  >> Ruler Ability: Amber Sky; {self.character} gave {discarded} to {target.character} in their turn!")
+                        self.used_amber_sky = True
+                    else:
+                        print(
+                            f"{self.character}: You can only give a DEFEND or LIGHTNING CARD with this effect.")
 
     def activate_green_salve(self):
         if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
@@ -6016,7 +6051,9 @@ main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
     player.hand_cards.draw(main_deck, 4, False)
+    player.check_false_ruler()
 print("All players have been dealt 4 cards!")
+
 game_started = True
 
 
@@ -6049,5 +6086,5 @@ players[0].current_health = 60
 players[1].current_health = 60
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
-# players[0].start_beginning_phase()
-# players[0].start_beginning_phase()
+players[0].start_beginning_phase()
+players[0].start_beginning_phase()
