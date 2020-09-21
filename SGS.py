@@ -1041,6 +1041,16 @@ class Player(Character):
     def check_activatable_abilities(self, types=None):
         char_abils = []
         if types == None:
+            emperor_index = None
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."):
+                    if player.role == "Emperor":
+                        emperor_index = player_index
+                        break
+            if emperor_index != None:
+                if self.role != "Emperor" and self.allegiance == "Heroes":
+                    char_abils.append(" Ruler Ability >> Amber Sky")
+
             if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
                 char_abils.append(" Character Ability >> Blockade")
             if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
@@ -1051,6 +1061,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Marriage")
             if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
                 char_abils.append(" Character Ability >> National Colours")
+            if (self.character_ability1 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability2 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability3 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability4 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability5 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."):
+                char_abils.append(" Character Ability >> Random Strike")
             if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
                 char_abils.append(" Character Ability >> Surprise")
             if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
@@ -1362,6 +1374,7 @@ class Player(Character):
     def reset_once_per_turn(self):
         self.attacks_this_turn = 0
         self.used_bare_chested = False
+        self.used_amber_sky = False
         self.used_green_salve = False
         self.used_marriage = False
 
@@ -2015,26 +2028,27 @@ class Player(Character):
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
-                for player in players[1:]:
+                for player_index, player in enumerate(players[1:]):
+                    player_index += 1
                     barb_response = player.use_reaction_effect(
                         "Attack", discarded, 0, player)
                     if type(barb_response) == Card:
                         if (barb_response.effect == "Attack") or (barb_response.effect2 == "Attack"):
                             print(
-                                f"{player.character} successfully defended against {discarded} with {barb_response}.")
+                                f"{player.character} successfully defended against BARBARIANS with {barb_response}.")
                     else:
-                        print(
-                            f"{player.character} failed to defend from {discarded}, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         player.current_health -= 1
+                        print(
+                            f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         players[0].check_insanity(player)
                         # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
                         if player.current_health > 0:
-                            players[player].check_eternal_loyalty(1)
-                        if players[player].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
+                            players[player_index].check_eternal_loyalty(1)
+                        if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
                             break
-                        players[player].check_plotting_for_power(
+                        players[player_index].check_plotting_for_power(
                             1, mode="Reaction")
-                        players[player].check_retaliation(0, 1)
+                        players[player_index].check_retaliation(0, 1)
 
         elif card.effect2 == 'Granary':
             print(f"{card} - {card.flavour_text}")
@@ -2100,44 +2114,53 @@ class Player(Character):
                             f"{player.character} has been healed by one. ({player.current_health}/{player.max_health} HP remaining)")
 
         elif card.effect2 == 'Rain of Arrows':
-            print(f"{card} - {card.flavour_text}")
+            print(
+                f"{card} - All other players must play a DEFEND or else suffer one damage.")
             question = [
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{self.character}: Please confirm you would like to use the tool card: {card.effect}.',
+                    'message': f'{self.character}: Please confirm you would like to use the tool card: RAIN OF ARROWS.',
                     'choices': ['Yes', 'No'],
                 },
             ]
             answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'No':
+                return False
+
             if answer.get('Selected') == 'Yes':
                 print(
-                    f"{self.character} has activated {card}. All damaged players will take one damage (unless playing DEFEND or tool-card negated).")
-                discarded = self.hand_cards.contents.pop(card_index)
+                    f"{self.character} has activated RAIN OF ARROWS. All damaged players will take one damage (unless playing DEFEND or tool-card negated).")
+                if card_index == "Special":
+                    discarded = card
+                else:
+                    discarded = self.hand_cards.contents.pop(card_index)
                 self.check_one_after_another()
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
-                for player in players[1:]:
+                for player_index, player in enumerate(players[1:]):
+                    player_index += 1
                     roa_response = player.use_reaction_effect(
                         "Defend", discarded, 0, player)
                     if type(roa_response) == Card:
                         if (roa_response.effect == "Defend") or (roa_response.effect2 == "Defend"):
                             print(
-                                f"{player.character} successfully defended against {discarded} with {roa_response}.")
+                                f"{player.character} successfully defended against RAIN OF ARROWS with {roa_response}.")
                     else:
-                        print(
-                            f"{player.character} failed to defend from {discarded}, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         player.current_health -= 1
+                        print(
+                            f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         players[0].check_insanity(player)
                         # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
                         if player.current_health > 0:
-                            players[player].check_eternal_loyalty(1)
-                        if players[player].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
+                            players[player_index].check_eternal_loyalty(1)
+                        if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
                             break
-                        players[player].check_plotting_for_power(
+                        players[player_index].check_plotting_for_power(
                             1, mode="Reaction")
-                        players[player].check_retaliation(0, 1)
+                        players[player_index].check_retaliation(0, 1)
+                return True
 
         elif card.effect2 == 'Coerce':
             possible_targets = 0
@@ -3149,7 +3172,7 @@ class Player(Character):
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f"{self.character}: {players[player_index].character} has activated {card_played}; please choose a response (an ATTACK card or do nothing)!",
+                        'message': f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!",
                         'choices': options_str,
                         'filter': lambda card: options_str.index(card)
                     },
@@ -3206,7 +3229,7 @@ class Player(Character):
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f"{self.character}: {players[player_index].character} has activated {card_played}; please choose a response (a DEFEND card or do nothing)!",
+                        'message': f"{self.character}: {players[player_index].character} has activated RAIN OF ARROWS; please choose a response (a DEFEND card or do nothing)!",
                         'choices': options_str,
                         'filter': lambda card: options_str.index(card)
                     },
@@ -4974,6 +4997,68 @@ class Player(Character):
                         print(
                             f"{options[discarded_index]} cannot be used as ACEDIA as is it NOT of suit DIAMONDS.")
 
+    def activate_random_strike(self):
+        if (self.character_ability1 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability2 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability3 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability4 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability5 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."):
+            if len(self.hand_cards.contents) > 1:
+                options = get_playing_card_options(self.hand_cards)
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select two hand-cards to discard and play as RAIN OF ARROWS:',
+                        'choices': options,
+                        'filter': lambda card: options.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card1_index = answer.get('Selected')
+
+                if options[card1_index] == "Cancel ability.":
+                    return (' ')
+
+                card1 = self.hand_cards.contents[card1_index]
+                options.pop(card1_index)
+                options.insert(card1_index, Separator(
+                    "------" + str(card1) + "------"))
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select one more card to discard and play as RAIN OF ARROWS:',
+                        'choices': options,
+                        'filter': lambda card: options.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card2_index = answer.get('Selected')
+                if options[card2_index] == "Cancel ability.":
+                    return (' ')
+
+                if (self.hand_cards.contents[card1_index].suit) == (self.hand_cards.contents[card2_index].suit):
+                    discarded1 = self.hand_cards.contents.pop(card1_index)
+                    discard_deck.add_to_top(discarded1)
+                    self.hand_cards.contents.insert(card1_index, "Placeholder")
+                    discarded2 = self.hand_cards.contents.pop(card2_index)
+                    discard_deck.add_to_top(discarded2)
+                    self.hand_cards.contents.remove("Placeholder")
+                    print(
+                        f"  >> Character Ability: Random Strike; {self.character} has activated Random Strike!")
+                    discarded1.effect2 = "Rain of Arrows"
+                    discarded2.effect2 = "Rain of Arrows"
+                    if not self.use_card_effect("Special", discarded1, "Special", discarded2):
+                        self.hand_cards.draw(discard_deck, 2, False)
+                        print(
+                            f"{self.character} cancelled using their effect, and their cards were returned.")
+
+                else:
+                    print(
+                        f"{self.character}: You must use two cards of the SAME suit to use Random Strike!")
+
     def activate_surprise(self):
         if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
@@ -5240,10 +5325,60 @@ class Player(Character):
                                 f"{options[discarded_index]} cannot be used as ATTACK as is it NOT red-suited.")
 
 # Activatable abilities (once-per-turn)
+    def activate_amber_sky(self):
+        emperor_index = None
+        if self.used_amber_sky:
+            print(f"{self.character}: You can only use Amber Sky once per turn.")
+        if not self.used_amber_sky:
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DODGE or LIGHTNING card during their individual turns."):
+                    if player.role == "Emperor":
+                        emperor_index = player_index
+                        break
+
+            if emperor_index != None:
+                if self.role != "Emperor" and self.allegiance == "Heroes":
+                    options = self.create_str_nonblind_menu(True)
+                    options.append(
+                        Separator("--------------------Other--------------------"))
+                    options.append("Cancel ability.")
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a DEFEND or LIGHTNING card to give to {players[player_index].character}?',
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+
+                    if options[card_index] == "Cancel ability.":
+                        return (' ')
+
+                    else:
+                        card = self.hand_cards.contents[card_index]
+                        if (card.effect == "Defend") or (card.effect == "Lightning"):
+                            discarded = self.hand_cards.contents.pop(
+                                card_index)
+                            players[player_index].hand_cards.add_to_top(
+                                discarded)
+                            print(
+                                f"  >> Ruler Ability: Amber Sky; {self.character} gave {discarded} to {players[player_index]} in their turn!")
+                            self.used_amber_sky = True
+                        else:
+                            print(
+                                f"{self.character}: You can only give a DODGE or LIGHTNING CARD with this effect.")
+
     def activate_green_salve(self):
         if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            if self.used_green_salve:
+                print(
+                    f"{self.character}: You can only use Green Salve once per turn.")
             if not self.used_green_salve:
                 if cards_discardable > 0:
                     options_str = []
@@ -5334,6 +5469,9 @@ class Player(Character):
     def activate_marriage(self):
         if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
             if len(self.hand_cards.contents) > 1:
+                if self.used_marriage:
+                    print(
+                        f"{self.character}: You can only use Marriage once per turn.")
                 if not self.used_marriage:
                     options = [
                         Separator("------<Cannot target yourself>------")]
@@ -5394,7 +5532,7 @@ class Player(Character):
                         {
                             'type': 'list',
                             'name': 'Selected',
-                            'message': f'{self.character}: Please select one more card to discard and play as an ATTACK:',
+                            'message': f'{self.character}: Please select one more card to discard:',
                             'choices': options,
                             'filter': lambda card: options.index(card)
                         },
@@ -5470,7 +5608,6 @@ class Player(Character):
         cards_drawn = 2
         message = True
         # Checks for Lu Su; Altruism
-        # Check for Xu Chu; Bare the Chest
         if self.check_bare_chested():
             cards_drawn -= 1
             message = False
@@ -5548,12 +5685,16 @@ class Player(Character):
                     self.activate_marriage()
                 if options[action_taken_index] == " Character Ability >> National Colours":
                     self.activate_national_colours()
+                if options[action_taken_index] == " Character Ability >> Random Strike":
+                    self.activate_random_strike()
                 if options[action_taken_index] == " Character Ability >> Surprise":
                     self.activate_surprise()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
                     self.activate_trojan_flesh()
                 if options[action_taken_index] == " Character Ability >> Warrior Saint":
                     self.activate_warrior_saint("Activate")
+                if options[action_taken_index] == " Ruler Ability >> Amber Sky":
+                    self.activate_amber_sky()
                 if options[action_taken_index] == " Weapon Ability >> Serpent Spear":
                     cards_list = self.check_weapon_serpent_spear("Activate")
                     if cards_list[0] != None:
@@ -5905,8 +6046,7 @@ players[1].hand_cards.draw(main_deck, 25)
 # players[0].start_action_phase()
 
 players[0].current_health = 60
-players[0].max_health = 120
-players[1].current_health = 1
+players[1].current_health = 60
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
