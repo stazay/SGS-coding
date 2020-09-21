@@ -1167,6 +1167,8 @@ class Player(Character):
                 for player in players:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
@@ -1191,6 +1193,8 @@ class Player(Character):
                 for player in players:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
@@ -1235,6 +1239,8 @@ class Player(Character):
                 for player in players:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
@@ -1465,12 +1471,16 @@ class Player(Character):
                     for player in players[user_index:]:
                         judgement_tinker = player.check_dark_sorcery(
                             judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                         judgement_tinker = player.check_devil(judgement_card)
                         if judgement_tinker[0]:
                             judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
                         judgement_tinker = player.check_dark_sorcery(
                             judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                         judgement_tinker = player.check_devil(judgement_card)
                         if judgement_tinker[0]:
                             judgement_card = judgement_tinker[1]
@@ -3502,12 +3512,16 @@ class Player(Character):
                     for player in players[user_index:]:
                         judgement_tinker = player.check_dark_sorcery(
                             judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                         judgement_tinker = player.check_devil(judgement_card)
                         if judgement_tinker[0]:
                             judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
                         judgement_tinker = player.check_dark_sorcery(
                             judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                         judgement_tinker = player.check_devil(judgement_card)
                         if judgement_tinker[0]:
                             judgement_card = judgement_tinker[1]
@@ -3685,7 +3699,7 @@ class Player(Character):
                         if discarded_index <= len(self.hand_cards.contents):
                             new_judgement_card = self.hand_cards.contents[discarded_index - 1]
                             if new_judgement_card.suit == "Spades" or new_judgement_card.suit == "Clubs":
-                                self.hand_cards.contents.pop(
+                                new_judgement_card = self.hand_cards.contents.pop(
                                     discarded_index - 1)
                                 discard_deck.add_to_top(new_judgement_card)
                                 print(
@@ -4001,12 +4015,16 @@ class Player(Character):
                 for player in players[retaliator_index:]:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
                 for player in players[:retaliator_index]:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
@@ -4396,12 +4414,16 @@ class Player(Character):
                     for player in players[user_index:]:
                         judgement_tinker = player.check_dark_sorcery(
                             judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                         judgement_tinker = player.check_devil(judgement_card)
                         if judgement_tinker[0]:
                             judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
                         judgement_tinker = player.check_dark_sorcery(
                             judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                         judgement_tinker = player.check_devil(judgement_card)
                         if judgement_tinker[0]:
                             judgement_card = judgement_tinker[1]
@@ -4471,12 +4493,16 @@ class Player(Character):
                 for player in players[user_index:]:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
                 for player in players[:user_index]:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
@@ -4660,12 +4686,16 @@ class Player(Character):
                 for player in players[user_index:]:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
                 for player in players[:user_index]:
                     judgement_tinker = player.check_dark_sorcery(
                         judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                     judgement_tinker = player.check_devil(judgement_card)
                     if judgement_tinker[0]:
                         judgement_card = judgement_tinker[1]
@@ -6197,7 +6227,6 @@ class Player(Character):
         print(" ")
         # Check for Xiahou Yuan; Godspeed
         # Check for Cao Pi; Exalt - this to be incorporated within below command!
-        # Check for Sima Yi; Devil // Zhang Jiao; Dark Sorcery - these to be incorporated within below command!
         if self.check_pending_judgements() == "Break":
             return players[0].start_beginning_phase()
         else:
