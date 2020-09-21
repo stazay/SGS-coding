@@ -1162,7 +1162,15 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
+
                 # Add checks for Sima Yi and Zhang Jiao
+                for player in players:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+
                 self.check_envy_of_heaven()
                 if judgement_card.suit == "Hearts":
                     print(
@@ -1178,7 +1186,15 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
+
                 # Add checks for Sima Yi and Zhang Jiao
+                for player in players:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+
                 self.check_envy_of_heaven()
                 if judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
                     print(
@@ -1214,7 +1230,15 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
+
                 # Add checks for Sima Yi and Zhang Jiao
+                for player in players:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+
                 self.check_envy_of_heaven()
                 if judgement_card.suit == "Clubs":
                     print(
@@ -1406,6 +1430,20 @@ class Player(Character):
     def armor_eight_trigrams(self):
         if len(self.equipment_armor) > 0:
             if self.equipment_armor[0].effect == "Eight-Trigrams":
+
+                if self.equipment_armor[0].suit == "Spades":
+                    for player_index, player in enumerate(players):
+                        if len(player.equipment_armor) > 0:
+                            if player.equipment_armor[0].effect == "Eight-Trigrams" and player.equipment_armor[0].suit == "Spades":
+                                user_index = player_index
+                                break
+                if self.equipment_armor[0].suit == "Clubs":
+                    for player_index, player in enumerate(players):
+                        if len(player.equipment_armor) > 0:
+                            if player.equipment_armor[0].effect == "Eight-Trigrams" and player.equipment_armor[0].suit == "Clubs":
+                                user_index = player_index
+                                break
+
                 question = [
                     {
                         'type': 'list',
@@ -1422,7 +1460,21 @@ class Player(Character):
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
                     print(f"{self.character} flipped a {judgement_card}.")
+
                     # Add checks for Sima Yi and Zhang Jiao
+                    for player in players[user_index:]:
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                    for player in players[:user_index]:
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+
                     self.check_envy_of_heaven()
                     if judgement_card.suit == "Hearts" or "Diamonds":
                         return (True, judgement_card)
@@ -3419,6 +3471,11 @@ class Player(Character):
         if selected_index == None:
             selected_index = 0
         if (self.character_ability1 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability2 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability3 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability4 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability5 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."):
+
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability2 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability3 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability4 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability5 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."):
+                    user_index = player_index
+
             possible_indexes = self.calculate_targets_in_physical_range(0)
             possible_targets = []
             for target in possible_indexes:
@@ -3440,7 +3497,21 @@ class Player(Character):
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
                     print(f"{self.character} flipped a {judgement_card}.")
+
                     # Add checks for Sima Yi and Zhang Jiao
+                    for player in players[user_index:]:
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                    for player in players[:user_index]:
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+
                     if judgement_card.suit == "Spades" or judgement_card.suit == "Clubs" or judgement_card.suit == "Diamonds":
                         players[selected_index].max_health -= 1
                         if players[selected_index].current_health > players[selected_index].max_health:
@@ -3549,11 +3620,221 @@ class Player(Character):
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
 
+    def check_dark_sorcery(self, judgement_card):
+        if (self.character_ability1 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability2 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability3 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability4 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability5 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped."):
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            if cards_discardable > 0:
+                print(' ')
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Dark Sorcery, and exchange the current judgement card: {judgement_card}, with one of your SPADES or CLUBS?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'No':
+                    return [False]
+                if answer.get('Selected') == 'Yes':
+
+                    usable_cards = []
+                    for card in self.hand_cards.contents:
+                        if card.suit == "Spades" or card.suit == "Clubs":
+                            usable_cards.append(card)
+                    for card in self.equipment_weapon:
+                        if card.suit == "Spades" or card.suit == "Clubs":
+                            usable_cards.append(card)
+                    for card in self.equipment_armor:
+                        if card.suit == "Spades" or card.suit == "Clubs":
+                            usable_cards.append(card)
+                    for card in self.equipment_offensive_horse:
+                        if card.suit == "Spades" or card.suit == "Clubs":
+                            usable_cards.append(card)
+                    for card in self.equipment_defensive_horse:
+                        if card.suit == "Spades" or card.suit == "Clubs":
+                            usable_cards.append(card)
+
+                    if len(usable_cards) < 1:
+                        print(
+                            f"{self.character}: You cannot use this ability as you have no black-suited cards.")
+                        return [False]
+
+                    else:
+                        options_str = self.create_str_nonblind_menu()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel ability.")
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a new judgement card to exchange with {judgement_card}:',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+                        if options_str[discarded_index] == "Cancel ability.":
+                            return [False]
+
+                        # Check if hand-card
+                        if discarded_index <= len(self.hand_cards.contents):
+                            new_judgement_card = self.hand_cards.contents[discarded_index - 1]
+                            if new_judgement_card.suit == "Spades" or new_judgement_card.suit == "Clubs":
+                                self.hand_cards.contents.pop(
+                                    discarded_index - 1)
+                                discard_deck.add_to_top(new_judgement_card)
+                                print(
+                                    f"  >> Character Ability: Dark Sorcery; {self.character} has exchanged the judgement card: {judgement_card} with {new_judgement_card} from their hand!")
+                                return [True, new_judgement_card]
+                            else:
+                                print(
+                                    f"{self.character}: You can only exchange SPADES or CLUBS when using Dark Sorcery.")
+                                return self.check_dark_sorcery(judgement_card)
+
+                        # Check if equipment-card
+                        else:
+                            if discarded_index == (len(self.hand_cards.contents) + 2):
+                                if self.equipment_weapon[0].suit == "Spades" or self.equipment_weapon[0] == "Clubs":
+                                    new_judgement_card = self.equipment_weapon.pop()
+                                    discard_deck.add_to_top(new_judgement_card)
+                                    self.weapon_range = 1
+                                    print(
+                                        f"  >> Character Ability: Dark Sorcery; {self.character} has exchanged the judgement card: {judgement_card} with {new_judgement_card} from their weapon-slot!")
+                                    return [True, new_judgement_card]
+                                else:
+                                    print(
+                                        f"{self.character}: You can only exchange SPADES or CLUBS when using Dark Sorcery.")
+                                    return self.check_dark_sorcery(judgement_card)
+
+                            if discarded_index == (len(self.hand_cards.contents) + 3):
+                                if self.equipment_armor[0].suit == "Spades" or self.equipment_armor[0] == "Clubs":
+                                    new_judgement_card = self.equipment_armor.pop()
+                                    discard_deck.add_to_top(new_judgement_card)
+                                    print(
+                                        f"  >> Character Ability: Dark Sorcery; {self.character} has exchanged the judgement card: {judgement_card} with {new_judgement_card} from their armor-slot!")
+                                    return [True, new_judgement_card]
+                                else:
+                                    print(
+                                        f"{self.character}: You can only exchange SPADES or CLUBS when using Dark Sorcery.")
+                                    return self.check_dark_sorcery(judgement_card)
+
+                            if discarded_index == (len(self.hand_cards.contents) + 4):
+                                if self.equipment_offensive_horse[0].suit == "Spades" or self.equipment_offensive_horse[0] == "Clubs":
+                                    new_judgement_card = self.equipment_offensive_horse.pop()
+                                    discard_deck.add_to_top(new_judgement_card)
+                                    print(
+                                        f"  >> Character Ability: Dark Sorcery; {self.character} has exchanged the judgement card: {judgement_card} with {new_judgement_card} from their horse-slot!")
+                                    return [True, new_judgement_card]
+                                else:
+                                    print(
+                                        f"{self.character}: You can only exchange SPADES or CLUBS when using Dark Sorcery.")
+                                    return self.check_dark_sorcery(judgement_card)
+
+                            if discarded_index == (len(self.hand_cards.contents) + 5):
+                                if self.equipment_defensive_horse[0].suit == "Spades" or self.equipment_defensive_horse[0].suit == "Clubs":
+                                    new_judgement_card = self.equipment_defensive_horse.pop()
+                                    discard_deck.add_to_top(new_judgement_card)
+                                    print(
+                                        f"  >> Character Ability: Dark Sorcery; {self.character} has exchanged the judgement card: {judgement_card} with {new_judgement_card} from their horse-slot!")
+                                    return [True, new_judgement_card]
+                                else:
+                                    print(
+                                        f"{self.character}: You can only exchange SPADES or CLUBS when using Dark Sorcery.")
+                                    return self.check_dark_sorcery(judgement_card)
+            else:
+                return [False]
+        return [False]
+
     def check_dashing_hero(self):
         if (self.character_ability1 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability2 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability3 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability4 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability5 == "Dashing Hero: Draw an extra card at the start of your turn."):
             print(
                 f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
+
+    def check_devil(self, judgement_card):
+        if (self.character_ability1 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability2 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability3 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability4 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability5 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card."):
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            if cards_discardable > 0:
+                print(' ')
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Devil, and change the current judgement card: {judgement_card}?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'No':
+                    return [False]
+                if answer.get('Selected') == 'Yes':
+                    options_str = self.create_str_nonblind_menu()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("Cancel ability.")
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a new judgement card to replace {judgement_card}:',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    discarded_index = answer.get('Selected')
+                    if options_str[discarded_index] == "Cancel ability.":
+                        return [False]
+
+                    # Check if hand-card
+                    if discarded_index <= len(self.hand_cards.contents):
+                        new_judgement_card = self.hand_cards.contents.pop(
+                            discarded_index - 1)
+                        discard_deck.add_to_top(new_judgement_card)
+                        print(
+                            f"  >> Character Ability: Devil; {self.character} has replaced the judgement card: {judgement_card} with {new_judgement_card}!")
+                        return [True, new_judgement_card]
+
+                    # Check if equipment-card
+                    else:
+                        if discarded_index == (len(self.hand_cards.contents) + 2):
+                            new_judgement_card = self.equipment_weapon.pop()
+                            discard_deck.add_to_top(new_judgement_card)
+                            self.weapon_range = 1
+                            print(
+                                f"  >> Character Ability: Devil; {self.character} has replaced the judgement card: {judgement_card} with {new_judgement_card}!")
+                            return [True, new_judgement_card]
+
+                        if discarded_index == (len(self.hand_cards.contents) + 3):
+                            new_judgement_card = self.equipment_armor.pop()
+                            discard_deck.add_to_top(new_judgement_card)
+                            print(
+                                f"  >> Character Ability: Devil; {self.character} has replaced the judgement card: {judgement_card} with {new_judgement_card}!")
+                            return [True, new_judgement_card]
+
+                        if discarded_index == (len(self.hand_cards.contents) + 4):
+                            new_judgement_card = self.equipment_offensive_horse.pop()
+                            discard_deck.add_to_top(new_judgement_card)
+                            print(
+                                f"  >> Character Ability: Devil; {self.character} has replaced the judgement card: {judgement_card} with {new_judgement_card}!")
+                            return [True, new_judgement_card]
+
+                        if discarded_index == (len(self.hand_cards.contents) + 5):
+                            new_judgement_card = self.equipment_defensive_horse.pop()
+                            discard_deck.add_to_top(new_judgement_card)
+                            print(
+                                f"  >> Character Ability: Devil; {self.character} has replaced the judgement card: {judgement_card} with {new_judgement_card}!")
+                            return [True, new_judgement_card]
+            else:
+                return [False]
+        return [False]
 
     def check_disintegrate(self):
         if (self.character_ability1 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability2 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability3 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability4 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability5 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit."):
@@ -3656,7 +3937,7 @@ class Player(Character):
                             str(player) + " (+" + str(difference) + ")")
                         options.append(player)
                 options_str.append(
-                    Separator("--------------------OTHER--------------------"))
+                    Separator("--------------------Other--------------------"))
                 options.append("Blank")
                 options_str.append("Cancel")
                 options.append("Cancel")
@@ -3691,9 +3972,11 @@ class Player(Character):
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
         if source_player_index == None:
             source_player_index = 0
+
         for player_index, player in enumerate(players):
             if (player.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
                 retaliator_index = player_index
+
         if (self.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
             if mode == "Activate":
                 print(' ')
@@ -3701,7 +3984,7 @@ class Player(Character):
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f'{self.character}: Choose to activate Eye for an Eye, and and force {players[source_player_index].character} to either take one damage or discard two hand-cards?',
+                        'message': f'{self.character}: Choose to activate Eye for an Eye, and force {players[source_player_index].character} to either take one damage or discard two hand-cards?',
                         'choices': ['Yes', 'No'],
                     },
                 ]
@@ -3713,7 +3996,21 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
+
                 # Add checks for Sima Yi and Zhang Jiao
+                for player in players[retaliator_index:]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                for player in players[:retaliator_index]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+
                 if judgement_card.suit != "Hearts":
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {players[source_player_index].character} must suffer one damage or discard two hand-cards.")
@@ -4069,6 +4366,11 @@ class Player(Character):
         if (self.character_ability1 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability2 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability3 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability4 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability5 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."):
             print(
                 f"  >> Character Ability: Goddess Luo; {self.character} can flip judgement cards until one is red. All black cards are added to their hand.")
+
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability2 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability3 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability4 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability5 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."):
+                    user_index = player_index
+
             activated_goddess_luo = True
             cards_drawn = []
             print(' ')
@@ -4089,7 +4391,21 @@ class Player(Character):
                     judgement_card = main_deck.remove_from_top()
                     print(
                         f"{self.character}'s judgement card is a {judgement_card}.")
+
                     # Add checks for Sima Yi and Zhang Jiao
+                    for player in players[user_index:]:
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                    for player in players[:user_index]:
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+
                     if judgement_card.suit == 'Spades' or judgement_card.suit == 'Clubs':
                         cards_drawn.append(judgement_card)
                     else:
@@ -4128,6 +4444,11 @@ class Player(Character):
     def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0):
         if selected_index == None:
             selected_index = 0
+
+        for player_index, player in enumerate(players):
+            if (player.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
+                user_index = player_index
+
         if (self.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
             question = [
                 {
@@ -4145,7 +4466,21 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
+
                 # Add checks for Sima Yi and Zhang Jiao
+                for player in players[user_index:]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                for player in players[:user_index]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+
                 if judgement_card.suit == "Diamonds" or judgement_card.suit == "Hearts":
                     if self.check_weapon_frost_blade(selected_index, "Check"):
                         return(' ')
@@ -4285,6 +4620,11 @@ class Player(Character):
 
     def check_lightning_strike(self):
         if (self.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
+
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
+                    user_index = player_index
+
             question = [
                 {
                     'type': 'list',
@@ -4315,7 +4655,21 @@ class Player(Character):
                 judgement_card = discard_deck.contents[0]
                 print(
                     f"{players[selected_index].character} flipped a {judgement_card}.")
+
                 # Add checks for Sima Yi and Zhang Jiao
+                for player in players[user_index:]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                for player in players[:user_index]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+
                 players[selected_index].check_envy_of_heaven()
                 if judgement_card.suit == "Spades":
                     damage_dealt = 2
