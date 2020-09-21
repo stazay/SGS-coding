@@ -83,6 +83,18 @@ class Character:
         else:
             return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4} \n   - {self.character_ability5}"
 
+    def list_ability_options(self):
+        if (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None) and (self.character_ability2 == None):
+            return [f"   - {self.character_ability1}"]
+        elif (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None):
+            return [f"   - {self.character_ability1}", f"   - {self.character_ability2}"]
+        elif (self.character_ability5 == None) and (self.character_ability4 == None):
+            return [f"   - {self.character_ability1}", f"   - {self.character_ability2}", f"   - {self.character_ability3}"]
+        elif (self.character_ability5 == None):
+            return [f"   - {self.character_ability1}", f"   - {self.character_ability2}", f"   - {self.character_ability3}", f"   - {self.character_ability4}"]
+        else:
+            return [f"   - {self.character_ability1}", f"   - {self.character_ability2}", f"   - {self.character_ability3}", f"   - {self.character_ability4}", f"   - {self.character_ability5}"]
+
 
 # A class for handling the character-deck (mostly for selection purposes and Zuo Ci)
 class CharacterDeck:
@@ -90,22 +102,16 @@ class CharacterDeck:
         self.contents = []
         self.contents = character_deck
 
-    def list_characters(self):
-        output = []
-        for card in self.contents:
-            output.append(str(card))
-        return output
-
     def add_to_top(self, card):
         self.contents.insert(0, card)
 
+    def remove_from_top(self):
+        card = self.contents[0]
+        self.contents.pop(0)
+        return card
+
     def shuffle(self):
         random.shuffle(self.contents)
-
-    def view(self, num=1):
-        for card in self.contents[:num]:
-            print(' ')
-            print(card)
 
 
 # Emperor Characters
@@ -692,6 +698,7 @@ class Player(Character):
         self.acedia_active = False
         self.rations_depleted_active = False
         self.awakened = False
+        self.forms = CharacterDeck([])
         self.rites = []
         self.terrains = []
         self.previous_turn_health = None
@@ -1182,6 +1189,8 @@ class Player(Character):
                             return "Break"
                     self.check_eternal_loyalty(3)
                     discard_deck.add_to_top(pending_judgement)
+                    self.check_evil_hero(pending_judgement)
+                    self.check_geminate(3)
                 elif len(players[1].pending_judgements) > 0:
                     for possible_lightning in players[1].pending_judgements:
                         if possible_lightning.effect2 == 'Lightning':
@@ -1422,7 +1431,7 @@ class Player(Character):
         else:
             return (False, None)
 
-    def check_weapon_axe(self, target_index=0):
+    def check_weapon_axe(self, card, target_index=0):
         if target_index == None:
             target_index = 0
         if len(self.equipment_weapon) > 0:
@@ -1475,9 +1484,11 @@ class Player(Character):
                                     return "Break"
                         players[target_index].check_eternal_loyalty(
                             damage_dealt)
+                        players[target_index].check_evil_ruler(discarded)
                         if players[target_index].check_eye_for_an_eye(
                                 source_player_index=0, mode="Activate") == "Break":
                             return "Break"
+                        players[target_index].check_geminate(damage_dealt)
                         players[target_index].check_plotting_for_power(
                             damage_dealt, mode="Reaction")
                         players[target_index].check_retaliation(
@@ -2049,11 +2060,13 @@ class Player(Character):
                         # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
                         if player.current_health > 0:
                             players[player_index].check_eternal_loyalty(1)
-                        if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
-                            break
-                        players[player_index].check_plotting_for_power(
-                            1, mode="Reaction")
-                        players[player_index].check_retaliation(0, 1)
+                            players[player_index].check_evil_hero(card)
+                            if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
+                                break
+                            players[player_index].check_geminate(1)
+                            players[player_index].check_plotting_for_power(
+                                1, mode="Reaction")
+                            players[player_index].check_retaliation(0, 1)
 
         elif card.effect2 == 'Granary':
             print(f"{card} - {card.flavour_text}")
@@ -2160,11 +2173,14 @@ class Player(Character):
                         # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
                         if player.current_health > 0:
                             players[player_index].check_eternal_loyalty(1)
-                        if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
-                            break
-                        players[player_index].check_plotting_for_power(
-                            1, mode="Reaction")
-                        players[player_index].check_retaliation(0, 1)
+                            players[player_index].check_evil_hero(
+                                card, secondary_card)
+                            if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
+                                break
+                            players[player_index].check_geminate(1)
+                            players[player_index].check_plotting_for_power(
+                                1, mode="Reaction")
+                            players[player_index].check_retaliation(0, 1)
                 return True
 
         elif card.effect2 == 'Coerce':
@@ -2428,9 +2444,11 @@ class Player(Character):
                             if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                 return "Break"
                         players[selected].check_eternal_loyalty(damage_dealt)
+                        players[selected].check_evil_hero(card)
                         if players[selected].check_eye_for_an_eye(
                                 source_player_index=0, mode="Activate") == "Break":
                             return(' ')
+                        players[selected].check_geminate(damage_dealt)
                         players[selected].check_plotting_for_power(
                             damage_dealt, mode="Reaction")
                         players[selected].check_retaliation(0, damage_dealt)
@@ -2443,9 +2461,11 @@ class Player(Character):
                             if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                 return "Break"
                         self.check_eternal_loyalty(damage_dealt)
+                        self.check_evil_hero(card)
                         if self.check_eye_for_an_eye(
                                 source_player_index=selected, mode="Activate") == "Break":
                             return(' ')
+                        self.check_geminate(damage_dealt)
                         self.check_plotting_for_power(
                             damage_dealt, mode="Reaction")
                         self.check_retaliation(0, damage_dealt)
@@ -2883,7 +2903,7 @@ class Player(Character):
             if (attack_defended.effect == "Defend") or (attack_defended.effect2 == "Defend"):
                 print(
                     f"{players[selected].character} successfully defended the ATTACK with {attack_defended}.")
-                self.check_weapon_axe(selected)
+                self.check_weapon_axe(discarded, selected)
                 self.check_fearsome_advance(
                     discarded, selected)
                 players[selected].check_lightning_strike()
@@ -2893,7 +2913,7 @@ class Player(Character):
         else:
             if self.check_weapon_frost_blade(selected, "Check"):
                 return(' ')
-            if self.check_backstab(discarded, selected):
+            if self.check_backstab(discarded, discarded2, selected):
                 return(' ')
             if (discarded2 == None) or (discarded2.effect2 == "Red Attack"):
                 if players[selected].check_reckless(discarded, 0):
@@ -2913,9 +2933,11 @@ class Player(Character):
                         return "Break"
             players[selected].check_eternal_loyalty(
                 damage_dealt)
+            players[selected].check_evil_hero(discarded, discarded2)
             if players[selected].check_eye_for_an_eye(
                     source_player_index=0, mode="Activate") == "Break":
                 return(' ')
+            players[selected].check_geminate(damage_dealt)
             players[selected].check_plotting_for_power(
                 damage_dealt, mode="Reaction")
             players[selected].check_retaliation(0, damage_dealt)
@@ -3393,7 +3415,7 @@ class Player(Character):
                     f"  >> Character Ability: Ardour; {self.character} used or was target of {card} (a DUEL or red-suited ATTACK). He draws a card.")
                 self.hand_cards.draw(main_deck, 1, False)
 
-    def check_backstab(self, discarded, selected_index=0):
+    def check_backstab(self, discarded, discarded2=None, selected_index=0):
         if selected_index == None:
             selected_index = 0
         if (self.character_ability1 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability2 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability3 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability4 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability5 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."):
@@ -3434,10 +3456,25 @@ class Player(Character):
                         players[selected_index].current_health -= damage_dealt
                         print(
                             f"{self.character}'s judgement card is a {judgement_card} and therefore Backstab does not apply. Damage dealt as normal; {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                        self.check_weapon_huangs_longbow(selected_index)
                         for player_index, player in enumerate(players):
                             if player.current_health < 1:
                                 players[player_index].check_brink_of_death_loop(
                                     player_index, 0)
+                        if player.current_health > 0:
+                            players[selected_index].check_eternal_loyalty(
+                                damage_dealt)
+                            players[selected_index].check_evil_hero(
+                                discarded, discarded2)
+                            if players[selected_index].check_eye_for_an_eye(
+                                    source_player_index=0, mode="Activate") == "Break":
+                                return True
+                            players[selected_index].check_geminate(
+                                damage_dealt)
+                            players[selected_index].check_plotting_for_power(
+                                damage_dealt, mode="Reaction")
+                            players[selected_index].check_retaliation(
+                                0, damage_dealt)
                     return True
 
     def check_bare_chested(self):
@@ -3515,7 +3552,7 @@ class Player(Character):
     def check_dashing_hero(self):
         if (self.character_ability1 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability2 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability3 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability4 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability5 == "Dashing Hero: Draw an extra card at the start of your turn."):
             print(
-                f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck in their drawing phase.")
+                f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
 
     def check_disintegrate(self):
@@ -3710,6 +3747,7 @@ class Player(Character):
                         if players[player_index].check_brink_of_death_loop(player_index, retaliator_index) == "Break":
                             return "Break"
                 self.check_eternal_loyalty(1)
+                self.check_geminate(1)
                 self.check_retaliation(retaliator_index, 1)
                 self.check_plotting_for_power(1, "Reaction")
             if answer.get('Selected') == 'Discard two cards.':
@@ -3717,6 +3755,31 @@ class Player(Character):
                 print(
                     f"{self.character} discarded two hand-cards due to {players[retaliator_index].character}'s an Eye for an Eye.")
                 self.check_one_after_another()
+
+    def check_evil_hero(self, card, card2=None):
+        if (self.character_ability1 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability2 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability3 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability4 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability5 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."):
+            if card in discard_deck.contents:
+                discard_deck.contents.remove(card)
+                self.hand_cards.add_to_top(card)
+                print(
+                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
+            elif card in main_deck.contents:
+                main_deck.contents.remove(card)
+                self.hand_cards.add_to_top(card)
+                print(
+                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
+
+            if card2 != None:
+                if card2 in discard_deck.contents:
+                    discard_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                    print(
+                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
+                elif card2 in main_deck.contents:
+                    main_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                    print(
+                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
 
     def check_false_ruler(self):
         if self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor.":
@@ -3874,13 +3937,17 @@ class Player(Character):
                     else:
                         print(
                             f"  >> Character Ability: Fearsome Archer; {self.character} attacked {players[selected_index].character} with an undodgable ATTACK, dealing {damage_dealt} damage. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                    self.check_weapon_huangs_longbow(selected_index)
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, 0)
-                    players[selected_index].check_eternal_loyalty(1)
+                    players[selected_index].check_eternal_loyalty(damage_dealt)
+                    players[selected_index].check_evil_hero(
+                        discarded, discarded2)
                     players[selected_index].check_eye_for_an_eye(
                         0, "Activate")
+                    players[selected_index].check_geminate(damage_dealt)
                     players[selected_index].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
                     players[selected_index].check_retaliation(0, damage_dealt)
@@ -3982,6 +4049,22 @@ class Player(Character):
                             print(
                                 f"{options[discarded_index]} cannot be used as PEACH as it is NOT red-suited.")
 
+    def check_geminate(self, num=1, message=True):
+        if self.character_ability2 == "Geminate: For every one unit of damage you recieve, you can acquire a new character card for 'Shapeshift'.":
+            if message == True:
+                if num == 1:
+                    print(
+                        f"  >> Character Ability: Geminate; {num} character card has been added to {self.character}'s hand.")
+                else:
+                    print(
+                        f"  >> Character Ability: Geminate; {num} character cards have been added to {self.character}'s hand.")
+            while num > 0:
+                if len(character_card_discard_pile.contents) == 0:
+                    print("There are no more character cards to play with!")
+                card = character_card_discard_pile.remove_from_top()
+                self.forms.add_to_top(card)
+                num -= 1
+
     def check_goddess_luo(self):
         if (self.character_ability1 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability2 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability3 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability4 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability5 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."):
             print(
@@ -4077,13 +4160,17 @@ class Player(Character):
                     else:
                         print(
                             f"{self.character}'s judgement card is a {judgement_card} and therefore the ATTACK cannot be dodged, dealing {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                    self.check_weapon_huangs_longbow(selected_index)
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, 0)
-                    players[selected_index].check_eternal_loyalty(1)
+                    players[selected_index].check_eternal_loyalty(damage_dealt)
+                    players[selected_index].check_evil_hero(
+                        discarded, discarded2)
                     players[selected_index].check_eye_for_an_eye(
                         0, "Activate")
+                    players[selected_index].check_geminate(damage_dealt)
                     players[selected_index].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
                     players[selected_index].check_retaliation(0, damage_dealt)
@@ -4246,6 +4333,7 @@ class Player(Character):
                         damage_dealt)
                     players[selected_index].check_eye_for_an_eye(
                         dodging_player_index, "Activate")
+                    players[selected_index].check_geminate(damage_dealt)
                     players[selected_index].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
                     players[selected_index].check_retaliation(
@@ -4685,6 +4773,143 @@ class Player(Character):
                         self.character_ability2 = "Second Wind (INACTIVE Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes."
             elif phase == "End":
                 self.previous_turn_health = self.current_health
+
+    def check_shapeshift(self, phase="Start Game"):
+        if self.character_ability1 == "Shapeshift: After everyone has selected their character cards, you select two unused character cards at random from the deck. Select one of these two characters and place it before you, then state one of that character's abilities (excluding Single-Use, Awakening, INACTIVE and Ruler abilities). You will obtain the stated ability, the allegiance, and the gender of this character until you have replaced it. At the beginning and end of each turn, you can replace the character with another character and/or re-state another ability.":
+            char_cards_str = list_character_options(self.forms.contents)
+            if phase != "Start Game":
+                char_cards_str.append(
+                    Separator("--------------------Other--------------------"))
+                char_cards_str.append("Cancel ability.")
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Please select a character that you would like to shapeshift into, if any:',
+                    'choices': char_cards_str,
+                    'filter': lambda card: char_cards_str.index(card)
+                },
+            ]
+
+            answer = prompt(question, style=custom_style_2)
+            card_index = answer.get('Selected')
+            if char_cards_str[card_index] == "Cancel ability.":
+                return(' ')
+
+            print(char_cards_str[card_index])
+            print(
+                self.forms.contents[card_index].character_ability_formatting())
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Please confirm you want to shapeshift into the above character, gaining their allegiance, gender, and one of their abilities.',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+                options_str = self.forms.contents[card_index].list_ability_options(
+                )
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Cancel ability.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please confirm which ability you want to acquire:',
+                        'choices': options_str,
+                        'filter': lambda ability: options_str.index(ability)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                chosen = answer.get('Selected')
+                if options_str[chosen] == "Cancel ability.":
+                    if phase == "Start Game":
+                        self.check_shapeshift("Start Game")
+                else:
+                    if chosen == 0:
+                        print(' ')
+                        self.allegiance = self.forms.contents[card_index].allegiance
+                        self.gender = self.forms.contents[card_index].gender
+                        self.character_ability5 = None
+                        self.character_ability4 = None
+                        self.character_ability3 = self.forms.contents[card_index].character_ability1
+                        print(
+                            f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n {self.character_ability3}!")
+                    elif chosen == 1:
+                        print(' ')
+                        if (self.forms.contents[card_index].character_ability2 != "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Escort (Ruler Ability): If you need to use a DEFEND, you can ask any member of Wei to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'." and self.forms.contents[card_index].character_ability2 != "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." and self.forms.contents[card_index].character_ability2 != "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." and self.forms.contents[card_index].character_ability2 != "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'." and self.forms.contents[card_index].character_ability2 != "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes." and self.forms.contents[card_index].character_ability2 != "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'." and self.forms.contents[card_index].character_ability2 != "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'." and self.forms.contents[card_index].character_ability2 != "Descend into Chaos (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right." and self.forms.contents[card_index].character_ability2 != "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."):
+                            self.allegiance = self.forms.contents[card_index].allegiance
+                            self.gender = self.forms.contents[card_index].gender
+                            self.character_ability5 = None
+                            self.character_ability4 = None
+                            self.character_ability3 = self.forms.contents[card_index].character_ability2
+                            print(
+                                f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
+                        else:
+                            print(
+                                f"{self.character}: You cannot take any Awakening, Inactive, Ruler, or Single-Use abilities via Shapeshift.")
+                            if phase == "Start Game":
+                                self.check_shapeshift("Start Game")
+                            else:
+                                self.check_shapeshift("Turn")
+                    elif chosen == 2:
+                        print(' ')
+                        if (self.forms.contents[card_index].character_ability3 != "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'." and self.forms.contents[card_index].character_ability3 != "Exalt (Ruler Ability): Whenever any Wei character (other than yourself) makes a judgement, if the judgement card that takes effect is either CLUBS or SPADES, that character can choose to let you draw one card from the deck." and self.forms.contents[card_index].character_ability3 != "Dashing Hero (INACTIVE Ability): Draw an extra card at the start of your turn." and self.forms.contents[card_index].character_ability3 != "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." and self.forms.contents[card_index].character_ability3 != "Astrology (INACTIVE Ability): Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck." and self.forms.contents[card_index].character_ability3 != "Blitz (INACTIVE Ability): In your action phase, you can use any of your TERRAINS as STEAL." and self.forms.contents[card_index].character_ability3 != "Rejection (INACTIVE Ability): Once per turn, you can discard one RITE and force any character to draw two cards. If after, that character has more hand-cards than you, you then deal one damage to them."):
+                            self.allegiance = self.forms.contents[card_index].allegiance
+                            self.gender = self.forms.contents[card_index].gender
+                            self.character_ability5 = None
+                            self.character_ability4 = None
+                            self.character_ability3 = self.forms.contents[card_index].character_ability3
+                            print(
+                                f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
+                        else:
+                            print(
+                                f"{self.character}: You cannot take any Awakening, Inactive, Ruler, or Single-Use abilities via Shapeshift.")
+                            if phase == "Start Game":
+                                self.check_shapeshift("Start Game")
+                            else:
+                                self.check_shapeshift("Turn")
+                    elif chosen == 3:
+                        print(' ')
+                        if (self.forms.contents[card_index].character_ability4 != "Rouse (INACTIVE Ability): If you need to use an ATTACK, you can ask any member of Shu to play it on your behalf." and self.forms.contents[card_index].character_ability4 != "Lingering Spirit (INACTIVE Ability): If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum." and self.forms.contents[card_index].character_ability4 != "Tyrant (Ruler Ability): Whenever another Hero character causes damage to any other player, you can flip a judgement card. If the judgement card is of the suit SPADES, you can regain one unit of health."):
+                            self.allegiance = self.forms.contents[card_index].allegiance
+                            self.gender = self.forms.contents[card_index].gender
+                            self.character_ability5 = None
+                            self.character_ability4 = None
+                            self.character_ability3 = self.forms.contents[card_index].character_ability4
+                            print(
+                                f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
+                        else:
+                            print(
+                                f"{self.character}: You cannot take any Awakening, Inactive, Ruler, or Single-Use abilities via Shapeshift.")
+                            if phase == "Start Game":
+                                self.check_shapeshift("Start Game")
+                            else:
+                                self.check_shapeshift("Turn")
+                    elif chosen == 4:
+                        print(' ')
+                        if self.forms.contents[card_index].character_ability5 != "Hegemony (Ruler Ability): During the action phase of any other Wu characters, they can choose to COMPETE against you; you both show a card simultaneously, and whoever has the higher value wins. If they do not win, you can take both cards used. After your awakening ability activates, you are able to refuse COMPETE effects.":
+                            self.allegiance = self.forms.contents[card_index].allegiance
+                            self.gender = self.forms.contents[card_index].gender
+                            self.character_ability5 = None
+                            self.character_ability4 = None
+                            self.character_ability3 = self.forms.contents[card_index].character_ability5
+                            print(
+                                f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
+                        else:
+                            print(
+                                f"{self.character}: You cannot take any Awakening, Inactive, Ruler, or Single-Use abilities via Shapeshift.")
+                            if phase == "Start Game":
+                                self.check_shapeshift("Start Game")
+                            else:
+                                self.check_shapeshift("Turn")
+
+            elif phase == "Start Game":
+                self.check_shapeshift("Start Game")
 
     def check_talent(self):
         if (self.character_ability1 == "Talent: You can use tool cards without range restrictions." or self.character_ability2 == "Talent: You can use tool cards without range restrictions." or self.character_ability3 == "Talent: You can use tool cards without range restrictions." or self.character_ability4 == "Talent: You can use tool cards without range restrictions." or self.character_ability5 == "Talent: You can use tool cards without range restrictions."):
@@ -5199,6 +5424,7 @@ class Player(Character):
                         return "Break"
                 else:
                     self.hand_cards.draw(main_deck, 2, False)
+                    self.check_geminate(1)
 
     def activate_warrior_saint(self, mode="Check"):
         if mode == "Check":
@@ -5599,7 +5825,7 @@ class Player(Character):
     def start_beginning_phase(self):
         print(" ")
         self.reset_once_per_turn()
-        # Check for Zuo Ci; Shapeshift
+        self.check_shapeshift("Turn")
         self.check_false_ruler()
         self.check_conduit()
         self.check_divinity()
@@ -5783,7 +6009,7 @@ class Player(Character):
         self.check_disintegrate()
         self.check_eclipse_the_moon()
         self.check_second_wind("End")
-        # Checks for Zuo Ci; Shapeshift
+        self.check_shapeshift("Turn")
         # Cycles to next player
         players.append(players.pop(0))
         # NEEDED FOR LATER to make infinite loop, commenting out for now!
@@ -6051,6 +6277,8 @@ main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
     player.hand_cards.draw(main_deck, 4, False)
+    player.check_geminate(2, False)
+    player.check_shapeshift()
     player.check_false_ruler()
 print("All players have been dealt 4 cards!")
 
@@ -6076,7 +6304,7 @@ game_started = True
 # Gameplay
 print(' ')
 players[0].hand_cards.draw(main_deck, 25)
-players[1].hand_cards.draw(main_deck, 25)
+# players[1].hand_cards.draw(main_deck, 25)
 # players[0].hand_cards.use_card_effect()
 # print(players[0].calculate_targets_in_physical_range(0))
 # print(players[0].calculate_targets_in_weapon_range(0))
@@ -6087,4 +6315,4 @@ players[1].current_health = 60
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
 players[0].start_beginning_phase()
-players[0].start_beginning_phase()
+# players[0].start_beginning_phase()
