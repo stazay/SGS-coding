@@ -30,13 +30,13 @@ def list_character_options(options):
 
 
 def ability_formatting(self):
-    if (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None) and (self.character_ability2 == None):
+    if (self.character_ability5 == "None") and (self.character_ability4 == "None") and (self.character_ability3 == "None") and (self.character_ability2 == "None"):
         return f"   - {self.character_ability1}"
-    elif (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None):
+    elif (self.character_ability5 == "None") and (self.character_ability4 == "None") and (self.character_ability3 == "None"):
         return f"   - {self.character_ability1} \n   - {self.character_ability2}"
-    elif (self.character_ability5 == None) and (self.character_ability4 == None):
+    elif (self.character_ability5 == "None") and (self.character_ability4 == "None"):
         return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3}"
-    elif (self.character_ability5 == None):
+    elif (self.character_ability5 == "None"):
         return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4}"
     else:
         return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4} \n   - {self.character_ability5}"
@@ -52,7 +52,7 @@ def check_allegiances_in_play():
 
 # A class for handling individual characters
 class Character:
-    def __init__(self, character, allegiance, health, gender, character_ability1, character_ability2=None, character_ability3=None, character_ability4=None, character_ability5=None):
+    def __init__(self, character, allegiance, health, gender, character_ability1, character_ability2="None", character_ability3="None", character_ability4="None", character_ability5="None"):
         self.character = character
         self.allegiance = allegiance
         self.health = health
@@ -72,25 +72,25 @@ class Character:
         return character_details
 
     def character_ability_formatting(self):
-        if (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None) and (self.character_ability2 == None):
+        if (self.character_ability5 == "None") and (self.character_ability4 == "None") and (self.character_ability3 == "None") and (self.character_ability2 == "None"):
             return f"   - {self.character_ability1}"
-        elif (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None):
+        elif (self.character_ability5 == "None") and (self.character_ability4 == "None") and (self.character_ability3 == "None"):
             return f"   - {self.character_ability1} \n   - {self.character_ability2}"
-        elif (self.character_ability5 == None) and (self.character_ability4 == None):
+        elif (self.character_ability5 == "None") and (self.character_ability4 == "None"):
             return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3}"
-        elif (self.character_ability5 == None):
+        elif (self.character_ability5 == "None"):
             return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4}"
         else:
             return f"   - {self.character_ability1} \n   - {self.character_ability2} \n   - {self.character_ability3} \n   - {self.character_ability4} \n   - {self.character_ability5}"
 
     def list_ability_options(self):
-        if (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None) and (self.character_ability2 == None):
+        if (self.character_ability5 == "None") and (self.character_ability4 == "None") and (self.character_ability3 == "None") and (self.character_ability2 == "None"):
             return [f"   - {self.character_ability1}"]
-        elif (self.character_ability5 == None) and (self.character_ability4 == None) and (self.character_ability3 == None):
+        elif (self.character_ability5 == "None") and (self.character_ability4 == "None") and (self.character_ability3 == "None"):
             return [f"   - {self.character_ability1}", f"   - {self.character_ability2}"]
-        elif (self.character_ability5 == None) and (self.character_ability4 == None):
+        elif (self.character_ability5 == "None") and (self.character_ability4 == "None"):
             return [f"   - {self.character_ability1}", f"   - {self.character_ability2}", f"   - {self.character_ability3}"]
-        elif (self.character_ability5 == None):
+        elif (self.character_ability5 == "None"):
             return [f"   - {self.character_ability1}", f"   - {self.character_ability2}", f"   - {self.character_ability3}", f"   - {self.character_ability4}"]
         else:
             return [f"   - {self.character_ability1}", f"   - {self.character_ability2}", f"   - {self.character_ability3}", f"   - {self.character_ability4}", f"   - {self.character_ability5}"]
@@ -1051,11 +1051,12 @@ class Player(Character):
             emperor_index = None
             false_ruler_index = None
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
-                    if player.role == "Emperor":
-                        emperor_index = player_index
-                    else:
-                        false_ruler_index = player_index
+                if not isinstance(player, str):
+                    if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
+                        if player.role == "Emperor":
+                            emperor_index = player_index
+                        else:
+                            false_ruler_index = player_index
             if self.allegiance == "Heroes":
                 if (emperor_index != None) and (false_ruler_index != None):
                     char_abils.append(" Ruler Ability >> Amber Sky")
@@ -1095,10 +1096,6 @@ class Player(Character):
             return False
 
     def check_brink_of_death_loop(self, dying_player_index=0, source_player_index=0):
-        if dying_player_index == None:
-            dying_player_index = 0
-        if source_player_index == None:
-            source_player_index = 0
         if self.max_health == 0:
             print(
                 f"{self.character} - Your maximum health has reached 0 and therefore you are dead! - {self.character}'s role was {self.role}!")
@@ -1111,21 +1108,23 @@ class Player(Character):
             print(f"{self.character} - You are on the brink of death ({self.current_health}/{self.max_health} health), and you must be brought back to life with a PEACH or WINE.")
             reacting_player_index = dying_player_index
             for player in players[dying_player_index:]:
-                if players[dying_player_index].current_health > 0:
-                    break
-                self.current_health += player.use_reaction_effect(
-                    "Brink Of Death", None, dying_player_index, reacting_player_index)
-                reacting_player_index += 1
-                if reacting_player_index >= len(players):
-                    reacting_player_index -= len(players)
+                if player != "Placeholder":
+                    if players[dying_player_index].current_health > 0:
+                        break
+                    self.current_health += player.use_reaction_effect(
+                        "Brink Of Death", None, dying_player_index, reacting_player_index)
+                    reacting_player_index += 1
+                    if reacting_player_index >= len(players):
+                        reacting_player_index -= len(players)
             for player in players[:dying_player_index]:
-                if players[dying_player_index].current_health > 0:
-                    break
-                self.current_health += player.use_reaction_effect(
-                    "Brink Of Death", None, dying_player_index, reacting_player_index)
-                reacting_player_index += 1
-                if reacting_player_index >= len(players):
-                    reacting_player_index -= len(players)
+                if player != "Placeholder":
+                    if players[dying_player_index].current_health > 0:
+                        break
+                    self.current_health += player.use_reaction_effect(
+                        "Brink Of Death", None, dying_player_index, reacting_player_index)
+                    reacting_player_index += 1
+                    if reacting_player_index >= len(players):
+                        reacting_player_index -= len(players)
             if self.current_health < 1:
                 players[source_player_index].check_burning_heart(
                     dying_player_index)
@@ -1411,7 +1410,8 @@ class Player(Character):
             print(
                 f"{self.character} discarded {cards_discarded} card(s) upon their death.")
             for player in players:
-                player.check_unnatural_death(cards_discarded)
+                if player != "Placeholder":
+                    player.check_unnatural_death(cards_discarded)
             while len(self.pending_judgements) > 0:
                 discard_deck.add_to_top(self.pending_judgements.pop())
 
@@ -1469,21 +1469,25 @@ class Player(Character):
 
                     # Add checks for Sima Yi and Zhang Jiao
                     for player in players[user_index:]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                        if not isinstance(player, str):
+                            judgement_tinker = player.check_dark_sorcery(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
+                            judgement_tinker = player.check_devil(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                        if not isinstance(player, str):
+                            judgement_tinker = player.check_dark_sorcery(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
+                            judgement_tinker = player.check_devil(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
 
                     self.check_envy_of_heaven()
                     if judgement_card.suit == "Hearts" or "Diamonds":
@@ -1879,7 +1883,7 @@ class Player(Character):
                     if players[selected].check_empty_city():
                         return (' ')
 
-                    print(f"{card} - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                    print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     question = [
                         {
                             'type': 'list',
@@ -1929,7 +1933,7 @@ class Player(Character):
                     if players[selected].check_empty_city():
                         return (' ')
 
-                    print(f"{card} - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                    print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     question = [
                         {
                             'type': 'list',
@@ -1972,7 +1976,7 @@ class Player(Character):
                     if players[selected].check_empty_city():
                         return (' ')
 
-                    print(f"{card} - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                    print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     question = [
                         {
                             'type': 'list',
@@ -2016,7 +2020,7 @@ class Player(Character):
                     if players[selected].check_empty_city():
                         return (' ')
 
-                    print(f"{card} - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                    print(f"{card} - ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     question = [
                         {
                             'type': 'list',
@@ -2061,7 +2065,7 @@ class Player(Character):
 
         elif card.effect2 == 'Peach':
             if self.max_health > self.current_health:
-                print(f"{card} - During your turn, you can use this card to recover one unit of missing health. Additionally, whenever a player is on the brink of death, any player can use a PEACH to make them recover one unit of health.")
+                print(f"{card} - PEACH - During your turn, you can use this card to recover one unit of missing health. Additionally, whenever a player is on the brink of death, any player can use a PEACH to make them recover one unit of health.")
                 question = [
                     {
                         'type': 'list',
@@ -2088,7 +2092,7 @@ class Player(Character):
 
         # card.type == 'Tool':
         elif card.effect2 == 'Barbarians':
-            print(f"{card} - {card.flavour_text}")
+            print(f"{card} - BARBARIANS - {card.flavour_text}")
             question = [
                 {
                     'type': 'list',
@@ -2119,19 +2123,25 @@ class Player(Character):
                         print(
                             f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         players[0].check_insanity(player)
-                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
-                        if player.current_health > 0:
+                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
+                        if player.current_health < 1:
+                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                                players.insert(player_index, "Placeholder")
+                        if player != "Placeholder" and player.current_health > 0:
                             players[player_index].check_eternal_loyalty(1)
                             players[player_index].check_evil_hero(card)
-                            if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
-                                break
+                            players[player_index].check_eye_for_an_eye(
+                                source_player_index=0, mode="Activate")
                             players[player_index].check_geminate(1)
                             players[player_index].check_plotting_for_power(
                                 1, mode="Reaction")
                             players[player_index].check_retaliation(0, 1)
+                for player in players:
+                    if "Placeholder" in players:
+                        players.remove("Placeholder")
 
         elif card.effect2 == 'Granary':
-            print(f"{card} - {card.flavour_text}")
+            print(f"{card} - GRANARY - {card.flavour_text}")
             question = [
                 {
                     'type': 'list',
@@ -2170,7 +2180,7 @@ class Player(Character):
                     print(f"{player.character} has taken {drawn} via GRANARY!")
 
         elif card.effect2 == 'Peach Gardens':
-            print(f"{card} - {card.flavour_text}")
+            print(f"{card} - PEACH GARDENS - {card.flavour_text}")
             question = [
                 {
                     'type': 'list',
@@ -2189,13 +2199,13 @@ class Player(Character):
                 discard_deck.add_to_top(discarded)
                 for player in players:
                     if player.max_health < player.current_health:
-                        current_health += 1
+                        player.current_health += 1
                         print(
                             f"{player.character} has been healed by one. ({player.current_health}/{player.max_health} HP remaining)")
 
         elif card.effect2 == 'Rain of Arrows':
             print(
-                f"{card} - All other players must play a DEFEND or else suffer one damage.")
+                f"{card} - RAIN OF ARROWS - All other players must play a DEFEND or else suffer one damage.")
             question = [
                 {
                     'type': 'list',
@@ -2232,17 +2242,22 @@ class Player(Character):
                         print(
                             f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
                         players[0].check_insanity(player)
-                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE!?!?!?
-                        if player.current_health > 0:
+                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
+                        if player.current_health < 1:
+                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                                players.insert(player_index, "Placeholder")
+                        if player != "Placeholder" and player.current_health > 0:
                             players[player_index].check_eternal_loyalty(1)
-                            players[player_index].check_evil_hero(
-                                card, secondary_card)
-                            if players[player_index].check_eye_for_an_eye(source_player_index=0, mode="Activate") == "Break":
-                                break
+                            players[player_index].check_evil_hero(card)
+                            players[player_index].check_eye_for_an_eye(
+                                source_player_index=0, mode="Activate")
                             players[player_index].check_geminate(1)
                             players[player_index].check_plotting_for_power(
                                 1, mode="Reaction")
                             players[player_index].check_retaliation(0, 1)
+                for player in players:
+                    if "Placeholder" in players:
+                        players.remove("Placeholder")
                 return True
 
         elif card.effect2 == 'Coerce':
@@ -2275,7 +2290,7 @@ class Player(Character):
                 selected = answer.get('Selected')
 
                 print(
-                    f"{card} - Use this card to target any other player that possesses a weapon. Afterwards, you can then select any target within their attacking range. Your target can then ATTACK the victim. If they do not, you will take their weapon and add it to your hand.")
+                    f"{card} - COERCE - Use this card to target any other player that possesses a weapon. Afterwards, you can then select any target within their attacking range. Your target can then ATTACK the victim. If they do not, you will take their weapon and add it to your hand.")
                 question = [
                     {
                         'type': 'list',
@@ -2337,7 +2352,7 @@ class Player(Character):
             selected = answer.get('Selected')
 
             print(
-                f"{card} - You can target any player and discard one of their cards, on-hand or equipped.")
+                f"{card} - DISMANTLE - You can target any player and discard one of their cards, on-hand or equipped.")
             question = [
                 {
                     'type': 'list',
@@ -2471,7 +2486,7 @@ class Player(Character):
             if players[selected].check_empty_city():
                 return (' ')
 
-            print(f"{card} - You can target any player for a duel with this card. If the target does not play an ATTACK, they are damaged. If they do ATTACK, then you must play one in response or take damage. Whoever does not attack, takes damage.")
+            print(f"{card} - DUEL - You can target any player for a duel with this card. If the target does not play an ATTACK, they are damaged. If they do ATTACK, then you must play one in response or take damage. Whoever does not attack, takes damage.")
             question = [
                 {
                     'type': 'list',
@@ -2537,7 +2552,7 @@ class Player(Character):
                 f"{self.character}: {card} can only be played as a reaction.")
 
         elif card.effect2 == 'Greed':
-            print(f"{card} - {card.flavour_text}")
+            print(f"{card} - GREED - {card.flavour_text}")
             question = [
                 {
                     'type': 'list',
@@ -2582,7 +2597,7 @@ class Player(Character):
                 if players[selected].check_humility():
                     return False
 
-                print(f"{card} - You can use this card on a player within physical range to take a card from them (on-hand or equipped) and add it to your hand.")
+                print(f"{card} - STEAL - You can use this card on a player within physical range to take a card from them (on-hand or equipped) and add it to your hand.")
                 question = [
                     {
                         'type': 'list',
@@ -2718,7 +2733,7 @@ class Player(Character):
             if players[selected].check_humility():
                 return (' ')
 
-            print(f"{card} - You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.")
+            print(f"{card} - ACEDIA - You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.")
             question = [
                 {
                     'type': 'list',
@@ -2755,7 +2770,7 @@ class Player(Character):
                         f"{self.character}: You cannot play a LIGHTNING when you already have one active on yourself.")
             else:
 
-                print(f"{card} - {card.flavour_text}")
+                print(f"{card} - LIGHTNING - {card.flavour_text}")
                 question = [
                     {
                         'type': 'list',
@@ -2796,7 +2811,7 @@ class Player(Character):
                 answer = prompt(question, style=custom_style_2)
                 selected = (answer.get('Selected'))
 
-                print(f"{card} - You can place Delay-Tool on any other player in physical range. The target must perform a judgement for this card. If it is not CLUBS, they forfeit their draw-phase.")
+                print(f"{card} - RATIONS DEPLETED - You can place Delay-Tool on any other player in physical range. The target must perform a judgement for this card. If it is not CLUBS, they forfeit their draw-phase.")
                 question = [
                     {
                         'type': 'list',
@@ -2955,7 +2970,7 @@ class Player(Character):
                 return(' ')
         if self.check_iron_cavalry(discarded, discarded2, selected):
             return(' ')
-        if coerced == None:
+        if not coerced:
             attack_defended = players[selected].use_reaction_effect(
                 "Defend", discarded, 0, selected)
         else:
@@ -2989,27 +3004,37 @@ class Player(Character):
             self.check_weapon_huangs_longbow(selected)
             self.check_insanity(selected)
             self.wine_active = False
-            for player_index, player in enumerate(players):
-                if player.current_health < 1:
-                    if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                        return "Break"
-            players[selected].check_eternal_loyalty(
-                damage_dealt)
-            players[selected].check_evil_hero(discarded, discarded2)
-            if players[selected].check_eye_for_an_eye(
-                    source_player_index=0, mode="Activate") == "Break":
-                return(' ')
-            players[selected].check_geminate(damage_dealt)
-            players[selected].check_plotting_for_power(
-                damage_dealt, mode="Reaction")
-            players[selected].check_retaliation(0, damage_dealt)
+            if not coerced:
+                for player_index, player in enumerate(players):
+                    if player.current_health < 1:
+                        if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                            return "Break"
+                players[selected].check_eternal_loyalty(damage_dealt)
+                players[selected].check_evil_hero(discarded, discarded2)
+                if players[selected].check_eye_for_an_eye(
+                        source_player_index=0, mode="Activate") == "Break":
+                    return(' ')
+                players[selected].check_geminate(damage_dealt)
+                players[selected].check_plotting_for_power(
+                    damage_dealt, mode="Reaction")
+                players[selected].check_retaliation(0, damage_dealt)
+            else:
+                for player_index, player in enumerate(players):
+                    if player.current_health < 1:
+                        if players[player_index].check_brink_of_death_loop(player_index, coerced) == "Break":
+                            return "Break"
+                players[selected].check_eternal_loyalty(
+                    damage_dealt)
+                players[selected].check_evil_hero(discarded, discarded2)
+                if players[selected].check_eye_for_an_eye(
+                        source_player_index=coerced, mode="Activate") == "Break":
+                    return(' ')
+                players[selected].check_geminate(damage_dealt)
+                players[selected].check_plotting_for_power(
+                    damage_dealt, mode="Reaction")
+                players[selected].check_retaliation(coerced, damage_dealt)
 
-    def activate_coerce(self, coerced, selected, discarded):
-        if selected == None:
-            selected = 0
-        if coerced == None:
-            coerced = 0
-
+    def activate_coerce(self, coerced, selected=0, discarded=None):
         options_str = []
         options_str.append(
             Separator("--------------------Cards--------------------"))
@@ -3471,20 +3496,21 @@ class Player(Character):
 
 # Ability checks
     def check_ardour(self, card):
-        if (self.character_ability1 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability2 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability3 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability4 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card." or self.character_ability5 == "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card."):
+        # "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card."
+        if (self.character_ability1.startswith("Ardour:") or self.character_ability3.startswith("Ardour:")):
             if (card.effect == "Duel") or (card.effect == "Attack" and (card.suit == "Hearts" or card.suit == "Diamonds")):
                 print(
                     f"  >> Character Ability: Ardour; {self.character} used or was target of {card} (a DUEL or red-suited ATTACK). He draws a card.")
                 self.hand_cards.draw(main_deck, 1, False)
 
     def check_backstab(self, discarded, discarded2=None, selected_index=0):
-        if selected_index == None:
-            selected_index = 0
-        if (self.character_ability1 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability2 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability3 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability4 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or self.character_ability5 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."):
+        # "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."
+        if (self.character_ability2.startswith("Backstab:") or self.character_ability3.startswith("Backstab:")):
 
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability2 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability3 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability4 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1." or player.character_ability5 == "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."):
-                    user_index = player_index
+                if not isinstance(player, str):
+                    if (player.character_ability2.startswith("Backstab:") or player.character_ability3.startswith("Backstab:")):
+                        user_index = player_index
 
             possible_indexes = self.calculate_targets_in_physical_range(0)
             possible_targets = []
@@ -3510,21 +3536,25 @@ class Player(Character):
 
                     # Add checks for Sima Yi and Zhang Jiao
                     for player in players[user_index:]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                        if not isinstance(player, str):
+                            judgement_tinker = player.check_dark_sorcery(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
+                            judgement_tinker = player.check_devil(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                        if not isinstance(player, str):
+                            judgement_tinker = player.check_dark_sorcery(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
+                            judgement_tinker = player.check_devil(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
 
                     if judgement_card.suit == "Spades" or judgement_card.suit == "Clubs" or judgement_card.suit == "Diamonds":
                         players[selected_index].max_health -= 1
@@ -3563,7 +3593,8 @@ class Player(Character):
                     return True
 
     def check_bare_chested(self):
-        if (self.character_ability1 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability2 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability3 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability4 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage." or self.character_ability5 == "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage."):
+        # "Bare-chested: You can choose to draw one less card in your drawing phase. If you do so, any ATTACK or DUEL cards that you you play in your action phase will deal an additional unit of damage."
+        if (self.character_ability1.startswith("Bare-chested:") or self.character_ability3.startswith("Bare-chested:")):
             question = [
                 {
                     'type': 'list',
@@ -3576,19 +3607,22 @@ class Player(Character):
             answer = prompt(question, style=custom_style_2)
             if answer.get('Selected') == 'Yes':
                 print(
-                    f"  >> Character Ability: Bare-chested; {self.character} has activated Bare-chested, and all their ATTACK and DUEL cards will do increased damage for this turn.")
+                    f"  >> Character Ability: Bare-chested; {self.character} has activated Bare-chested, drawing one card only, and all their ATTACK and DUEL cards will do increased damage for this turn.")
                 self.used_bare_chested = True
                 return True
 
     def check_berserk(self):
-        if (self.character_ability1 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability2 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability3 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability4 == "Berserk: There is no limit on how many times you can ATTACK during your turn." or self.character_ability5 == "Berserk: There is no limit on how many times you can ATTACK during your turn."):
+        # "Berserk: There is no limit on how many times you can ATTACK during your turn."
+        if (self.character_ability1.startswith("Berserk:") or self.character_ability3.startswith("Berserk:")):
             print(
                 f"  >> Character Ability: Berserk; {self.character} has no limit to the amount of attacks they can play.")
             return True
 
     def check_bloodline(self):
-        if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor."):
-            if (self.character_ability1 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability2 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability3 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability4 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability5 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."):
+        limit_increase = 0
+        # "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."
+        if (self.role == 'Emperor') or (self.character_ability2.startswith("False Ruler:")) or (self.character_ability3.startswith("False Ruler:")):
+            if (self.character_ability2.startswith("Bloodline:") or self.character_ability3.startswith("Bloodline:") or self.character_ability4.startswith("Bloodline:")):
                 heroes = []
                 for player in players:
                     if player.allegiance == 'Heroes':
@@ -3597,12 +3631,11 @@ class Player(Character):
                 if limit_increase > 0:
                     print(
                         f"  >> Character Ability: Bloodline (Ruler Ability); {self.character}'s hand limit is increased by {limit_increase} (two for every other HERO character still alive).")
-                return limit_increase
+        return limit_increase
 
     def check_burning_heart(self, dying_player_index=0):
-        if dying_player_index == None:
-            dying_player_index = 0
-        if (self.character_ability1 == "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor." or self.character_ability2 == "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor." or self.character_ability3 == "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor." or self.character_ability4 == "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor." or self.character_ability5 == "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."):
+        # "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."
+        if self.character_ability2.startswith("Burning Heart (Single-Use Ability):"):
             if (self.awakened != True) and (self.role != "Emperor") and (players[dying_player_index].role != "Emperor"):
                 question = [
                     {
@@ -3621,7 +3654,8 @@ class Player(Character):
                         f"  >> Character Ability: Burning Heart; {self.character} has swapped role cards with {players[dying_player_index]}")
 
     def check_conduit(self):
-        if self.character_ability2 == "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'.":
+        # "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'."
+        if self.character_ability2.startswith("Conduit (Awakening Ability):"):
             if len(self.terrains) >= 3:
                 self.awakened = True
                 print(
@@ -3635,7 +3669,8 @@ class Player(Character):
                     self.check_brink_of_death_loop()
 
     def check_dark_sorcery(self, judgement_card):
-        if (self.character_ability1 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability2 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability3 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability4 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped." or self.character_ability5 == "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped."):
+        # "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped."
+        if (self.character_ability2.startswith("Dark Sorcery:") or self.character_ability3.startswith("Dark Sorcery:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if cards_discardable > 0:
@@ -3765,13 +3800,15 @@ class Player(Character):
         return [False]
 
     def check_dashing_hero(self):
-        if (self.character_ability1 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability2 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability3 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability4 == "Dashing Hero: Draw an extra card at the start of your turn." or self.character_ability5 == "Dashing Hero: Draw an extra card at the start of your turn."):
+        # "Dashing Hero: Draw an extra card at the start of your turn."
+        if (self.character_ability1.startswith("Dashing Hero:") or self.character_ability2.startswith("Dashing Hero:") or self.character_ability3.startswith("Dashing Hero:") or self.character_ability4.startswith("Dashing Hero:") or self.character_ability1.startswith("Dashing Hero:")):
             print(
                 f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
 
     def check_devil(self, judgement_card):
-        if (self.character_ability1 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability2 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability3 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability4 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card." or self.character_ability5 == "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card."):
+        # "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card."
+        if (self.character_ability2.startswith("Devil:") or self.character_ability3.startswith("Devil:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if cards_discardable > 0:
@@ -3851,7 +3888,8 @@ class Player(Character):
         return [False]
 
     def check_disintegrate(self):
-        if (self.character_ability1 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability2 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability3 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability4 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit." or self.character_ability5 == "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit."):
+        # "Disintegrate: At the end of every turn, if your health is not the least or among the least, you must either lose one unit of health, or reduce your maximum health by one unit."
+        if self.character_ability3.startswith("Disintegrate:"):
             for player in players:
                 if player.current_health > self.current_health:
                     return(' ')
@@ -3877,7 +3915,8 @@ class Player(Character):
                         f"  >> Character Ability: Disintegrate; {self.character}'s health is not among the least, so they lose one maximum-health. ({self.current_health}/{self.max_health} HP remaining)")
 
     def check_divinity(self):
-        if self.character_ability2 == "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'.":
+        # "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'."
+        if self.character_ability2.startswith("Divinity (Awakening Ability):"):
             if self.current_health == 1:
                 self.awakened = True
                 print(
@@ -3890,14 +3929,16 @@ class Player(Character):
                     self.check_brink_of_death_loop()
 
     def check_eclipse_the_moon(self):
-        if (self.character_ability2 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck." or self.character_ability3 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck." or self.character_ability4 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck." or self.character_ability5 == "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck."):
+        # "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck."
+        if (self.character_ability2.startswith("Eclipse the Moon:") or self.character_ability3.startswith("Eclipse the Moon:")):
             print(
                 f"  >> Character Ability: Eclipse the Moon; {self.character} draws an extra card from the deck in their end-phase.")
             self.hand_cards.draw(main_deck, 1, False)
 
     def check_eiron(self):
-        if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor.") or (self.character_ability3 == "False Ruler: You possess the same ruler ability as the current emperor."):
-            if (self.character_ability3 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'." or self.character_ability4 == self.character_ability3 == "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."):
+        # "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'."
+        if (self.role == 'Emperor') or (self.character_ability2.startswith("False Ruler:")) or (self.character_ability3.startswith("False Ruler:")):
+            if (self.character_ability3.startswith("Eiron (Awakening/Ruler Ability):") or self.character_ability4.startswith("Eiron (Awakening/Ruler Ability):")):
                 for player in players:
                     if self.current_health > player.current_health:
                         return(' ')
@@ -3915,20 +3956,23 @@ class Player(Character):
                         self.character_ability4 = "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
 
     def check_empty_city(self):
-        if (self.character_ability1 == "Empty City: When you have no hand-cards, you cannot become the target of an ATTACK or a DUEL." or self.character_ability2 == "Empty City: When you have no hand-cards, you cannot become the target of an ATTACK or a DUEL." or self.character_ability3 == "Empty City: When you have no hand-cards, you cannot become the target of an ATTACK or a DUEL." or self.character_ability4 == "Empty City: When you have no hand-cards, you cannot become the target of an ATTACK or a DUEL." or self.character_ability5 == "Empty City: When you have no hand-cards, you cannot become the target of an ATTACK or a DUEL."):
+        # "Empty City: When you have no hand-cards, you cannot become the target of an ATTACK or a DUEL."
+        if (self.character_ability2.startswith("Empty City:") or self.character_ability3.startswith("Empty City:")):
             if len(self.hand_cards.contents) == 0:
                 print(
                     f"  >> Character Ability; Empty City: {self.character} has no hand-cards, and therefore cannot be targeted by ATTACK or DUEL.")
                 return True
 
     def check_envy_of_heaven(self):
-        if (self.character_ability1 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability2 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability3 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability4 == "Envy of Heaven: You can obtain any judgement card that you flip over." or self.character_ability5 == "Envy of Heaven: You can obtain any judgement card that you flip over."):
+        # "Envy of Heaven: You can obtain any judgement card that you flip over."
+        if (self.character_ability1.startswith("Envy of Heaven:") or self.character_ability3.startswith("Envy of Heaven:")):
             print(
                 f"  >> Character Ability: Envy of Heaven; The top judgement card has been added to {self.character}'s hand before it takes effect.")
             self.hand_cards.draw(discard_deck, 1, False)
 
     def check_eternal_loyalty(self, damage_dealt):
-        if (self.character_ability1 == "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level." or self.character_ability2 == "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level." or self.character_ability3 == "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level." or self.character_ability4 == "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level." or self.character_ability5 == "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level."):
+        # "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level."
+        if (self.character_ability2.startswith("Eternal Loyalty:") or self.character_ability3.startswith("Eternal Loyalty:")):
             while damage_dealt > 0:
                 question = [
                     {
@@ -3984,14 +4028,14 @@ class Player(Character):
                         f"{self.character}: There are no players that you can use this ability against.")
 
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
-        if source_player_index == None:
-            source_player_index = 0
+        # "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."
+        if (self.character_ability1.startswith("Eye for an Eye:") or self.character_ability3.startswith("Eye for an Eye:")):
+            retaliator_index = 0
+            for player_index, player in enumerate(players):
+                if not isinstance(player, str):
+                    if (player.character_ability1.startswith("Eye for an Eye:") or player.character_ability3.startswith("Eye for an Eye:")):
+                        retaliator_index = player_index
 
-        for player_index, player in enumerate(players):
-            if (player.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or player.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
-                retaliator_index = player_index
-
-        if (self.character_ability1 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability2 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability3 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability4 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards." or self.character_ability5 == "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."):
             if mode == "Activate":
                 print(' ')
                 question = [
@@ -4013,21 +4057,23 @@ class Player(Character):
 
                 # Add checks for Sima Yi and Zhang Jiao
                 for player in players[retaliator_index:]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
+                    if not isinstance(player, str):
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                 for player in players[:retaliator_index]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
+                    if not isinstance(player, str):
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
 
                 if judgement_card.suit != "Hearts":
                     print(
@@ -4072,7 +4118,8 @@ class Player(Character):
                 self.check_one_after_another()
 
     def check_evil_hero(self, card, card2=None):
-        if (self.character_ability1 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability2 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability3 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability4 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand." or self.character_ability5 == "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."):
+        # "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."
+        if (self.character_ability1.startswith("Evil Hero:") or self.character_ability3.startswith("Evil Hero:")):
             if card in discard_deck.contents:
                 discard_deck.contents.remove(card)
                 self.hand_cards.add_to_top(card)
@@ -4097,7 +4144,8 @@ class Player(Character):
                         f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
 
     def check_false_ruler(self):
-        if self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor.":
+        # "False Ruler: You possess the same ruler ability as the current emperor."
+        if self.character_ability2.startswith("False Ruler:"):
             for player in players:
                 if player.role == 'Emperor':
                     if player.character == 'Liu Bei':
@@ -4121,7 +4169,7 @@ class Player(Character):
                         self.character_ability3 = "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive."
                     if player.character == 'Zhang Jiao':
                         self.character_ability3 = "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."
-        elif self.character_ability3 == "False Ruler: You possess the same ruler ability as the current emperor.":
+        elif self.character_ability3.startswith("False Ruler:"):
             for player in players:
                 if player.role == 'Emperor':
                     if player.character == 'Liu Bei':
@@ -4147,12 +4195,11 @@ class Player(Character):
                         self.character_ability4 = "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."
 
     def check_fearsome_advance(self, discarded, selected_index=0):
-        if selected_index == None:
-            selected_index = 0
-        cards_discardable = (len(players[selected_index].hand_cards.contents) + len(players[selected_index].equipment_weapon) + len(
-            players[selected_index].equipment_armor) + len(players[selected_index].equipment_offensive_horse) + len(players[selected_index].equipment_defensive_horse))
-        if cards_discardable > 0:
-            if (self.character_ability1 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability2 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability3 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability4 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)." or self.character_ability5 == "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)."):
+        # "Fearsome Advance: Whenever your ATTACK is evaded by a DEFEND, you can discard one of your opponents cards (on-hand or equipped)."
+        if (self.character_ability2.startswith("Fearsome Advance:") or self.character_ability3.startswith("Fearsome Advance:")):
+            cards_discardable = (len(players[selected_index].hand_cards.contents) + len(players[selected_index].equipment_weapon) + len(
+                players[selected_index].equipment_armor) + len(players[selected_index].equipment_offensive_horse) + len(players[selected_index].equipment_defensive_horse))
+            if cards_discardable > 0:
                 question = [
                     {
                         'type': 'list',
@@ -4225,9 +4272,14 @@ class Player(Character):
                             players[selected_index].check_warrior_woman()
 
     def check_fearsome_archer(self, discarded, discarded2=None, selected_index=0):
-        if selected_index == None:
-            selected_index = 0
-        if (self.character_ability1 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability2 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability3 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability4 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining." or self.character_ability5 == "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining."):
+        # "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining."
+        if (self.character_ability1.startswith("Fearsome Archer:") or self.character_ability2.startswith("Fearsome Archer:")):
+            user_index = 0
+            for player_index, player in enumerate(players):
+                if not isinstance(player, str):
+                    if (player.character_ability1.startswith("Fearsome Archer:") or player.character_ability3.startswith("Fearsome Archer:")):
+                        user_index = player_index
+
             if (len(players[selected_index].hand_cards.contents) <= self.weapon_range) or (len(players[selected_index].hand_cards.contents) >= self.current_health):
                 question = [
                     {
@@ -4261,15 +4313,17 @@ class Player(Character):
                     players[selected_index].check_evil_hero(
                         discarded, discarded2)
                     players[selected_index].check_eye_for_an_eye(
-                        0, "Activate")
+                        user_index, "Activate")
                     players[selected_index].check_geminate(damage_dealt)
                     players[selected_index].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
-                    players[selected_index].check_retaliation(0, damage_dealt)
+                    players[selected_index].check_retaliation(
+                        user_index, damage_dealt)
                     return True
 
     def check_first_aid(self, dying_player_index=0, mode="Check"):
-        if (self.character_ability1 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability2 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability3 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability4 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH." or self.character_ability5 == "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH."):
+        # "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH."
+        if (self.character_ability1.startswith("First Aid:") or self.character_ability3.startswith("First Aid:")):
             if mode == "Check":
                 return True
 
@@ -4365,7 +4419,8 @@ class Player(Character):
                                 f"{options[discarded_index]} cannot be used as PEACH as it is NOT red-suited.")
 
     def check_geminate(self, num=1, message=True):
-        if self.character_ability2 == "Geminate: For every one unit of damage you recieve, you can acquire a new character card for 'Shapeshift'.":
+        # "Geminate: For every one unit of damage you recieve, you can acquire a new character card for 'Shapeshift'."
+        if self.character_ability2.startswith("Geminate:"):
             if message == True:
                 if num == 1:
                     print(
@@ -4381,12 +4436,13 @@ class Player(Character):
                 num -= 1
 
     def check_goddess_luo(self):
-        if (self.character_ability1 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability2 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability3 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability4 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or self.character_ability5 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."):
+        # "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."
+        if (self.character_ability2.startswith("Goddess Luo:") or self.character_ability3.startswith("Goddess Luo")):
             print(
                 f"  >> Character Ability: Goddess Luo; {self.character} can flip judgement cards until one is red. All black cards are added to their hand.")
 
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability2 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability3 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability4 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand." or player.character_ability5 == "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."):
+                if (self.character_ability2.startswith("Goddess Luo:") or self.character_ability3.startswith("Goddess Luo")):
                     user_index = player_index
 
             activated_goddess_luo = True
@@ -4412,21 +4468,25 @@ class Player(Character):
 
                     # Add checks for Sima Yi and Zhang Jiao
                     for player in players[user_index:]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                        if not isinstance(player, str):
+                            judgement_tinker = player.check_dark_sorcery(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
+                            judgement_tinker = player.check_devil(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                        if not isinstance(player, str):
+                            judgement_tinker = player.check_dark_sorcery(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
+                            judgement_tinker = player.check_devil(
+                                judgement_card)
+                            if judgement_tinker[0]:
+                                judgement_card = judgement_tinker[1]
 
                     if judgement_card.suit == 'Spades' or judgement_card.suit == 'Clubs':
                         cards_drawn.append(judgement_card)
@@ -4440,38 +4500,40 @@ class Player(Character):
                     self.hand_cards.contents.append(card)
 
     def check_heartbreak(self, source_player_index=0):
-        if source_player_index == None:
-            source_player_index = 0
-        if (self.character_ability1 == "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game." or self.character_ability2 == "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game." or self.character_ability3 == "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game." or self.character_ability4 == "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game." or self.character_ability5 == "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game."):
+        # "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game."
+        if (self.character_ability2.startswith("Heartbreak:") or self.character_ability3.startswith("Heartbreak:")):
+
             print(
                 f"  >> Character Ability: Heartbreak; {players[source_player_index]} loses all their character-abilities after killing {self.character}.")
-            players[source_player_index].character_ability1 = None
-            players[source_player_index].character_ability2 = None
-            players[source_player_index].character_ability3 = None
-            players[source_player_index].character_ability4 = None
-            players[source_player_index].character_ability5 = None
+            players[source_player_index].character_ability1 = "None"
+            players[source_player_index].character_ability2 = "None"
+            players[source_player_index].character_ability3 = "None"
+            players[source_player_index].character_ability4 = "None"
+            players[source_player_index].character_ability5 = "None"
 
     def check_horsemanship(self):
-        if (self.character_ability1 == "Horsemanship: You will always be -1 distance in any range calculations." or self.character_ability2 == "Horsemanship: You will always be -1 distance in any range calculations." or self.character_ability3 == "Horsemanship: You will always be -1 distance in any range calculations." or self.character_ability4 == "Horsemanship: You will always be -1 distance in any range calculations." or self.character_ability5 == "Horsemanship: You will always be -1 distance in any range calculations."):
+        # "Horsemanship: You will always be -1 distance in any range calculations."
+        if (self.character_ability1.startswith("Horsemanship:") or self.character_ability3.startswith("Horsemanship:")):
             return(1)
         else:
             return(0)
 
     def check_humility(self):
-        if (self.character_ability1 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability2 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability3 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability4 == "Humility: You cannot become the target of STEAL or ACEDIA." or self.character_ability5 == "Humility: You cannot become the target of STEAL or ACEDIA."):
+        # "Humility: You cannot become the target of STEAL or ACEDIA."
+        if (self.character_ability1.startswith("Humility") or self.character_ability3.startswith("Humility")):
             print(
                 f"  >> Character Ability: Humility; {self.character} cannot be targeted by STEAL or ACEDIA.")
             return True
 
     def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0):
-        if selected_index == None:
-            selected_index = 0
+        # "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."
+        if (self.character_ability2.startswith("Iron Cavalry:") or self.character_ability3.startswith("Iron Cavalry:")):
+            user_index = 0
+            for player_index, player in enumerate(players):
+                if not isinstance(player, str):
+                    if (player.character_ability2.startswith("Iron Cavalry:") or player.character_ability3.startswith("Iron Cavalry:")):
+                        user_index = player_index
 
-        for player_index, player in enumerate(players):
-            if (player.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or player.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
-                user_index = player_index
-
-        if (self.character_ability1 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability2 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability3 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability4 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged." or self.character_ability5 == "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."):
             question = [
                 {
                     'type': 'list',
@@ -4491,21 +4553,23 @@ class Player(Character):
 
                 # Add checks for Sima Yi and Zhang Jiao
                 for player in players[user_index:]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
+                    if not isinstance(player, str):
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                 for player in players[:user_index]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
+                    if not isinstance(player, str):
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
 
                 if judgement_card.suit == "Diamonds" or judgement_card.suit == "Hearts":
                     if self.check_weapon_frost_blade(selected_index, "Check"):
@@ -4525,23 +4589,25 @@ class Player(Character):
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
-                                player_index, 0)
+                                player_index, user_index)
                     players[selected_index].check_eternal_loyalty(damage_dealt)
                     players[selected_index].check_evil_hero(
                         discarded, discarded2)
                     players[selected_index].check_eye_for_an_eye(
-                        0, "Activate")
+                        user_index, "Activate")
                     players[selected_index].check_geminate(damage_dealt)
                     players[selected_index].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
-                    players[selected_index].check_retaliation(0, damage_dealt)
+                    players[selected_index].check_retaliation(
+                        user_index, damage_dealt)
                     return True
                 else:
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and Iron Cavalry has no effect.")
 
     def check_impetus(self, source_player_index, mode="Check"):
-        if (self.character_ability1 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability2 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability3 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability4 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND." or self.character_ability5 == "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND."):
+        # "Impetus: Every one of your black-suited on-hand cards may be used as DEFEND."
+        if (self.character_ability1.startswith("Impetus:") or self.character_ability3.startswith("Impetus:")):
             if mode == "Check":
                 return True
 
@@ -4594,12 +4660,13 @@ class Player(Character):
                             return None
 
     def check_insanity(self, selected_index=0):
-        if selected_index == None:
-            selected_index = 0
-        if (self.character_ability1 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability2 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability3 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability4 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or self.character_ability5 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."):
+        # "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."
+        if (self.character_ability1.startswith("Insanity:") or self.character_ability3.startswith("Insanity:")):
+
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability2 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability3 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability4 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused." or player.character_ability5 == "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."):
+                if (player.character_ability1.startswith("Insanity:") or player.character_ability3.startswith("Insanity:")):
                     source_index = player_index
+
             possible_indexes = self.calculate_targets_in_physical_range(
                 source_index)
             possible_targets = []
@@ -4612,7 +4679,8 @@ class Player(Character):
                     f"  >> Character Ability: Insanity; {self.character} regains one unit of health for damaging {players[selected_index]}, within their physical range. ({self.current_health}/{self.max_health} HP remaining)")
 
     def check_insurrection(self):
-        if self.character_ability2 == "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'.":
+        # "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'."
+        if self.character_ability2.startswith("Insurrection (Awakening Ability):"):
             if len(self.rites) >= 3:
                 self.awakened = True
                 if self.current_health >= self.max_health:
@@ -4645,11 +4713,13 @@ class Player(Character):
                     self.check_brink_of_death_loop()
 
     def check_lightning_strike(self):
-        if (self.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or self.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
-
+        # "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."
+        if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
+            user_index = 0
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
-                    user_index = player_index
+                if not isinstance(player, str):
+                    if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
+                        user_index = player_index
 
             question = [
                 {
@@ -4684,21 +4754,23 @@ class Player(Character):
 
                 # Add checks for Sima Yi and Zhang Jiao
                 for player in players[user_index:]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
+                    if not isinstance(player, str):
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                 for player in players[:user_index]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
+                    if not isinstance(player, str):
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
 
                 players[selected_index].check_envy_of_heaven()
                 if judgement_card.suit == "Spades":
@@ -4707,27 +4779,25 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
-                        if (player.character_ability1 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability2 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability3 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability4 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage." or player.character_ability5 == "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."):
-                            dodging_player_index = player_index
-                    for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
-                                player_index, dodging_player_index)
+                                player_index, user_index)
                     players[selected_index].check_eternal_loyalty(
                         damage_dealt)
                     players[selected_index].check_eye_for_an_eye(
-                        dodging_player_index, "Activate")
+                        user_index, "Activate")
                     players[selected_index].check_geminate(damage_dealt)
                     players[selected_index].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
                     players[selected_index].check_retaliation(
-                        dodging_player_index, damage_dealt)
+                        user_index, damage_dealt)
                 else:
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
 
     def check_mediocrity(self, phase="Draw"):
-        if (self.character_ability1 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability2 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability3 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability4 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them." or self.character_ability5 == "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."):
+        # "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."
+        if (self.character_ability1.startswith("Mediocrity:") or self.character_ability3.startswith("Mediocrity:")):
             if phase == "Draw":
                 print(
                     f"  >> Character Ability: Mediocrity; {self.character} draws {check_allegiances_in_play()} extra card(s) for every allegiance still in play.")
@@ -4761,14 +4831,17 @@ class Player(Character):
                     return True
 
     def check_one_after_another(self):
-        if (self.character_ability1 == "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck." or self.character_ability2 == "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck." or self.character_ability3 == "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck." or self.character_ability4 == "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck." or self.character_ability5 == "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck."):
+        # "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck."
+        if (self.character_ability2.startswith("One After Another:") or self.character_ability3.startswith("One After Another:")):
             if len(self.hand_cards.contents) == 0:
                 print(
                     f"  >> Character Ability: One After Another; {self.character} can draw a card whenever they use or lose their last on-hand card.")
                 self.hand_cards.draw(main_deck, 1, False)
 
     def check_plotting_for_power(self, damage_dealt, mode="Reaction"):
-        if (self.character_ability1 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability2 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability3 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability4 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE." or self.character_ability5 == "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE."):
+        # "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE."
+        limit_increase = 0
+        if (self.character_ability1.startswith("Plotting for Power:") or self.character_ability3.startswith("Plotting for Power:")):
             if mode == "Reaction":
                 while damage_dealt > 0:
                     self.hand_cards.draw(main_deck, 1, False)
@@ -4798,10 +4871,11 @@ class Player(Character):
                 if limit_increase > 0:
                     print(
                         f"  >> Character Ability: Plotting for Power; {self.character}'s hand limit is increased by {limit_increase} (one for every RITE).")
-                return limit_increase
+        return limit_increase
 
     def check_raid(self):
-        if (self.character_ability1 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability2 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability3 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability4 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players." or self.character_ability5 == "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players."):
+        # "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players."
+        if (self.character_ability1.startswith("Raid:") or self.character_ability2.startswith("Raid:")):
             activated_raid = True
             while activated_raid:
                 print(' ')
@@ -4928,11 +5002,10 @@ class Player(Character):
                             activated_raid = False
                     return True
 
-    def check_reckless(self, card, source_player_index=0):
-        if source_player_index == None:
-            source_player_index = 0
-        if (self.character_ability1 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability2 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability3 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability4 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead." or self.character_ability5 == "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead."):
-            if card.suit == "Hearts" or card.suit == "Diamonds" or card.effect2 == "Wine-Attack":
+    def check_reckless(self, card, source_player_index=0, wine=False):
+        # "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead."
+        if (self.character_ability1.startswith("Reckless:") or self.character_ability3.startswith("Reckless:")):
+            if (card.suit == "Hearts") or (card.suit == "Diamonds") or (players[source_player_index].wine_active):
                 self.max_health -= 1
                 if self.current_health > self.max_health:
                     self.current_health -= 1
@@ -4945,7 +5018,8 @@ class Player(Character):
                 return True
 
     def check_recommence_the_legacy(self):
-        if self.character_ability2 == "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'.":
+        # "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'."
+        if self.character_ability2.startswith("Recommence the Legacy (Awakening Ability):"):
             if len(self.hand_cards.contents) == 0:
                 self.awakened = True
                 if self.current_health >= self.max_health:
@@ -4978,10 +5052,9 @@ class Player(Character):
                     self.check_brink_of_death_loop()
 
     def check_relish(self, source_player_index=0, mode="Activate"):
-        if source_player_index == None:
-            source_player_index = 0
+        # "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."
         if mode == "Activate":
-            if (self.character_ability1 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability2 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability3 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability4 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or self.character_ability5 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."):
+            if (self.character_ability1.startswith("Relish:") or self.character_ability3.startswith("Relish:")):
                 cards_discardable = len(
                     players[source_player_index].hand_cards.contents)
                 if cards_discardable > 0:
@@ -4994,7 +5067,7 @@ class Player(Character):
 
         if mode == "Reaction":
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability2 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability3 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability4 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you." or player.character_ability5 == "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."):
+                if (player.character_ability1.startswith("Relish:") or player.character_ability3.startswith("Relish:")):
                     relish_player_index = player_index
 
             options_str = self.hand_cards.list_cards()
@@ -5032,10 +5105,9 @@ class Player(Character):
                 return False
 
     def check_rescued(self, reacting_player_index):
-        if reacting_player_index == None:
-            reacting_player_index = 0
-        if (self.role == 'Emperor') or (self.character_ability2 == "False Ruler: You possess the same ruler ability as the current emperor."):
-            if (self.character_ability1 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability2 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability3 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability4 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." or self.character_ability5 == "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health."):
+        # "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health."
+        if (self.role == 'Emperor') or (self.character_ability2.startswith("False Ruler:")) or (self.character_ability3.startswith("False Ruler:")):
+            if (self.character_ability2.startswith("Rescued (Ruler Ability):") or self.character_ability3.startswith("Rescued (Ruler Ability):")):
                 if players[reacting_player_index].character != self.character:
                     if players[reacting_player_index].allegiance == "Wu":
                         print(
@@ -5045,16 +5117,16 @@ class Player(Character):
             return (0)
 
     def check_restraint(self):
-        if (self.character_ability1 == "Restraint: If you did not use any ATTACK cards during your action phase, you can skip your discard phase." or self.character_ability2 == "Restraint: If you did not use any ATTACK cards during your action phase, you can skip your discard phase." or self.character_ability3 == "Restraint: If you did not use any ATTACK cards during your action phase, you can skip your discard phase." or self.character_ability4 == "Restraint: If you did not use any ATTACK cards during your action phase, you can skip your discard phase." or self.character_ability5 == "Restraint: If you did not use any ATTACK cards during your action phase, you can skip your discard phase."):
+        # "Restraint: If you did not use any ATTACK cards during your action phase, you can skip your discard phase."
+        if (self.character_ability1.startswith("Restraint:") or self.character_ability3.startswith("Restraint:")):
             if self.attacks_this_turn == 0:
                 print(
                     f"  >> Character Ability; Restraint: {self.character} skips their discard phase.")
                 return True
 
     def check_retaliation(self, source_player_index=0, damage_dealt=1):
-        if source_player_index == None:
-            source_player_index = 0
-        if (self.character_ability1 == "Retaliation: For every one unit of damage you recieve, you can take one card (whether on-hand or equipped) from the player who was the source of that damage." or self.character_ability2 == "Retaliation: For every one unit of damage you recieve, you can take one card (whether on-hand or equipped) from the player who was the source of that damage." or self.character_ability3 == "Retaliation: For every one unit of damage you recieve, you can take one card (whether on-hand or equipped) from the player who was the source of that damage." or self.character_ability4 == "Retaliation: For every one unit of damage you recieve, you can take one card (whether on-hand or equipped) from the player who was the source of that damage." or self.character_ability5 == "Retaliation: For every one unit of damage you recieve, you can take one card (whether on-hand or equipped) from the player who was the source of that damage."):
+        # "Retaliation: For every one unit of damage you recieve, you can take one card (whether on-hand or equipped) from the player who was the source of that damage."
+        if (self.character_ability1.startswith("Retaliation:") or self.character_ability3.startswith("Retaliation:")):
             cards_discardable = (len(players[source_player_index].hand_cards.contents) + len(players[source_player_index].equipment_weapon) + len(
                 players[source_player_index].equipment_armor) + len(players[source_player_index].equipment_offensive_horse) + len(players[source_player_index].equipment_defensive_horse))
             while damage_dealt > 0:
@@ -5131,7 +5203,8 @@ class Player(Character):
                 damage_dealt -= 1
 
     def check_second_wind(self, phase="Beginning"):
-        if (self.character_ability2 == "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes."):
+        # "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes."
+        if self.character_ability2.startswith("Second Wind (Single-Use Ability):"):
             if phase == "Beginning" and self.previous_turn_health != None:
                 if not self.awakened:
                     question = [
@@ -5159,7 +5232,8 @@ class Player(Character):
                 self.previous_turn_health = self.current_health
 
     def check_shapeshift(self, phase="Start Game"):
-        if self.character_ability1 == "Shapeshift: After everyone has selected their character cards, you select two unused character cards at random from the deck. Select one of these two characters and place it before you, then state one of that character's abilities (excluding Single-Use, Awakening, INACTIVE and Ruler abilities). You will obtain the stated ability, the allegiance, and the gender of this character until you have replaced it. At the beginning and end of each turn, you can replace the character with another character and/or re-state another ability.":
+        # "Shapeshift: After everyone has selected their character cards, you select two unused character cards at random from the deck. Select one of these two characters and place it before you, then state one of that character's abilities (excluding Single-Use, Awakening, INACTIVE and Ruler abilities). You will obtain the stated ability, the allegiance, and the gender of this character until you have replaced it. At the beginning and end of each turn, you can replace the character with another character and/or re-state another ability."
+        if self.character_ability1.startswith("Shapeshift:"):
             char_cards_str = list_character_options(self.forms.contents)
             if phase != "Start Game":
                 char_cards_str.append(
@@ -5218,8 +5292,8 @@ class Player(Character):
                         print(' ')
                         self.allegiance = self.forms.contents[card_index].allegiance
                         self.gender = self.forms.contents[card_index].gender
-                        self.character_ability5 = None
-                        self.character_ability4 = None
+                        self.character_ability5 = "None"
+                        self.character_ability4 = "None"
                         self.character_ability3 = self.forms.contents[card_index].character_ability1
                         print(
                             f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n {self.character_ability3}!")
@@ -5228,8 +5302,8 @@ class Player(Character):
                         if (self.forms.contents[card_index].character_ability2 != "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Escort (Ruler Ability): If you need to use a DEFEND, you can ask any member of Wei to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'." and self.forms.contents[card_index].character_ability2 != "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." and self.forms.contents[card_index].character_ability2 != "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." and self.forms.contents[card_index].character_ability2 != "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'." and self.forms.contents[card_index].character_ability2 != "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes." and self.forms.contents[card_index].character_ability2 != "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'." and self.forms.contents[card_index].character_ability2 != "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'." and self.forms.contents[card_index].character_ability2 != "Descend into Chaos (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right." and self.forms.contents[card_index].character_ability2 != "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."):
                             self.allegiance = self.forms.contents[card_index].allegiance
                             self.gender = self.forms.contents[card_index].gender
-                            self.character_ability5 = None
-                            self.character_ability4 = None
+                            self.character_ability5 = "None"
+                            self.character_ability4 = "None"
                             self.character_ability3 = self.forms.contents[card_index].character_ability2
                             print(
                                 f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
@@ -5245,8 +5319,8 @@ class Player(Character):
                         if (self.forms.contents[card_index].character_ability3 != "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'." and self.forms.contents[card_index].character_ability3 != "Exalt (Ruler Ability): Whenever any Wei character (other than yourself) makes a judgement, if the judgement card that takes effect is either CLUBS or SPADES, that character can choose to let you draw one card from the deck." and self.forms.contents[card_index].character_ability3 != "Dashing Hero (INACTIVE Ability): Draw an extra card at the start of your turn." and self.forms.contents[card_index].character_ability3 != "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." and self.forms.contents[card_index].character_ability3 != "Astrology (INACTIVE Ability): Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck." and self.forms.contents[card_index].character_ability3 != "Blitz (INACTIVE Ability): In your action phase, you can use any of your TERRAINS as STEAL." and self.forms.contents[card_index].character_ability3 != "Rejection (INACTIVE Ability): Once per turn, you can discard one RITE and force any character to draw two cards. If after, that character has more hand-cards than you, you then deal one damage to them."):
                             self.allegiance = self.forms.contents[card_index].allegiance
                             self.gender = self.forms.contents[card_index].gender
-                            self.character_ability5 = None
-                            self.character_ability4 = None
+                            self.character_ability5 = "None"
+                            self.character_ability4 = "None"
                             self.character_ability3 = self.forms.contents[card_index].character_ability3
                             print(
                                 f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
@@ -5262,8 +5336,8 @@ class Player(Character):
                         if (self.forms.contents[card_index].character_ability4 != "Rouse (INACTIVE Ability): If you need to use an ATTACK, you can ask any member of Shu to play it on your behalf." and self.forms.contents[card_index].character_ability4 != "Lingering Spirit (INACTIVE Ability): If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum." and self.forms.contents[card_index].character_ability4 != "Tyrant (Ruler Ability): Whenever another Hero character causes damage to any other player, you can flip a judgement card. If the judgement card is of the suit SPADES, you can regain one unit of health."):
                             self.allegiance = self.forms.contents[card_index].allegiance
                             self.gender = self.forms.contents[card_index].gender
-                            self.character_ability5 = None
-                            self.character_ability4 = None
+                            self.character_ability5 = "None"
+                            self.character_ability4 = "None"
                             self.character_ability3 = self.forms.contents[card_index].character_ability4
                             print(
                                 f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
@@ -5279,8 +5353,8 @@ class Player(Character):
                         if self.forms.contents[card_index].character_ability5 != "Hegemony (Ruler Ability): During the action phase of any other Wu characters, they can choose to COMPETE against you; you both show a card simultaneously, and whoever has the higher value wins. If they do not win, you can take both cards used. After your awakening ability activates, you are able to refuse COMPETE effects.":
                             self.allegiance = self.forms.contents[card_index].allegiance
                             self.gender = self.forms.contents[card_index].gender
-                            self.character_ability5 = None
-                            self.character_ability4 = None
+                            self.character_ability5 = "None"
+                            self.character_ability4 = "None"
                             self.character_ability3 = self.forms.contents[card_index].character_ability5
                             print(
                                 f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n  {self.character_ability3}!")
@@ -5296,36 +5370,41 @@ class Player(Character):
                 self.check_shapeshift("Start Game")
 
     def check_talent(self):
-        if (self.character_ability1 == "Talent: You can use tool cards without range restrictions." or self.character_ability2 == "Talent: You can use tool cards without range restrictions." or self.character_ability3 == "Talent: You can use tool cards without range restrictions." or self.character_ability4 == "Talent: You can use tool cards without range restrictions." or self.character_ability5 == "Talent: You can use tool cards without range restrictions."):
+        # "Talent: You can use tool cards without range restrictions."
+        if (self.character_ability2.startswith("Talent:") or self.character_ability3.startswith("Talent:")):
             print(
                 f"  >> Character Ability: Talent; {self.character} has no range restriction on their tool cards.")
             return True
 
     def check_unnatural_death(self, cards_discarded):
+        # "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies."
         if cards_discarded == None:
             return (' ')
         if self.current_health == 0:
             return (' ')
-        if (self.character_ability1 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability2 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability3 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability4 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies." or self.character_ability5 == "Unnatural Death: You can immediately take possession of all cards (both on-hand and equipped) of any player that dies."):
+        if (self.character_ability1.startswith("Unnatural Death:") or self.character_ability3.startswith("Unnatural Death:")):
             print(
                 f"  >> Character Ability: Unnatural Death; All discarded hands are added to the hand of {self.character}.")
             self.hand_cards.draw(discard_deck, cards_discarded, False)
 
     def check_warrior_woman(self):
-        if (self.character_ability1 == "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck." or self.character_ability2 == "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck." or self.character_ability3 == "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck." or self.character_ability4 == "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck." or self.character_ability5 == "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck."):
+        # "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck."
+        if (self.character_ability2.startswith("Warrior Woman:") or self.character_ability3.startswith("Warrior Woman:")):
             print(
-                f"  >> Character Ability: Warrior Woman; {self.character} immediately draws two cards from the deck whenever their equipment card is destroyed/removed/replaced.")
+                f"  >> Character Ability: Warrior Woman; {self.character} immediately draws 2 cards from the deck whenever their equipment card is destroyed/removed/replaced.")
             self.hand_cards.draw(main_deck, 2, False)
 
     def check_wisdom(self):
-        if (self.character_ability1 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability2 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability3 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability4 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck." or self.character_ability5 == "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck."):
+        # "Wisdom: Whenever you use a non-delay tool card, you immediately draw a card from the deck."
+        if (self.character_ability1.startswith("Wisdom:") or self.character_ability3.startswith("Wisdom:")):
             print(
                 f"  >> Character Ability: Wisdom; {self.character} immediately draws a card from the deck after using a non-delay tool card.")
             self.hand_cards.draw(main_deck, 1, False)
 
 # Activatable abilities (reusable)
     def activate_blockade(self):
-        if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
+        # "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."
+        if (self.character_ability1.startswith("Blockade:") or self.character_ability3.startswith("Blockade:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if cards_discardable > 0:
@@ -5440,7 +5519,8 @@ class Player(Character):
                             f"{options[discarded_index]} cannot be used as RATIONS DEPLETED as it is NOT a black-suited, basic/equipment card.")
 
     def activate_drown_in_wine(self, mode="Check"):
-        if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
+        # "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."
+        if (self.character_ability1.startswith("Drown in Wine:") or self.character_ability3.startswith("Drown in Wine:")):
             usable_cards = []
             for card in self.hand_cards.contents:
                 if card.suit == "Spades":
@@ -5497,7 +5577,8 @@ class Player(Character):
                             return True
 
     def activate_national_colours(self):
-        if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
+        # "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."
+        if (self.character_ability1.startswith("National Colours:") or self.character_ability3.startswith("National Colours:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if cards_discardable > 0:
@@ -5612,7 +5693,8 @@ class Player(Character):
                             f"{options[discarded_index]} cannot be used as ACEDIA as is it NOT of suit DIAMONDS.")
 
     def activate_random_strike(self):
-        if (self.character_ability1 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability2 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability3 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability4 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability5 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."):
+        # "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."
+        if (self.character_ability1.startswith("Random Strike:") or self.character_ability3.startswith("Random Strike:")):
             if len(self.hand_cards.contents) > 1:
                 options = get_playing_card_options(self.hand_cards)
                 options.append(
@@ -5674,7 +5756,8 @@ class Player(Character):
                         f"{self.character}: You must use two cards of the SAME suit to use Random Strike!")
 
     def activate_surprise(self):
-        if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
+        # "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."
+        if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if cards_discardable > 0:
@@ -5789,7 +5872,8 @@ class Player(Character):
                             f"{options[discarded_index]} cannot be used as DISMANTLE as it is NOT black-suited.")
 
     def activate_trojan_flesh(self):
-        if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
+        # "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."
+        if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
             question = [
                 {
                     'type': 'list',
@@ -5811,12 +5895,13 @@ class Player(Character):
                     self.check_geminate(1)
 
     def activate_warrior_saint(self, mode="Check"):
+        # "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."
         if mode == "Check":
-            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+            if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 return True
 
         if mode == "Activate" or mode == "Reaction":
-            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+            if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                     self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
                 if cards_discardable > 0:
@@ -5941,13 +6026,14 @@ class Player(Character):
 
 # Activatable abilities (once-per-turn)
     def activate_amber_sky(self):
+        # "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."
         emperor_index = None
         false_ruler_index = None
         if self.used_amber_sky:
             print(f"{self.character}: You can only use Amber Sky once per turn.")
         if not self.used_amber_sky:
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
+                if (player.character_ability3.startswith("Amber Sky (Ruler Ability):") or player.character_ability4.startswith("Amber Sky (Ruler Ability):")):
                     if player.role == "Emperor":
                         emperor_index = player_index
                     else:
@@ -6018,7 +6104,8 @@ class Player(Character):
                             f"{self.character}: You can only give a DEFEND or LIGHTNING CARD with this effect.")
 
     def activate_green_salve(self):
-        if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
+        # "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."
+        if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if self.used_green_salve:
@@ -6112,7 +6199,8 @@ class Player(Character):
                             f"  >> Character Ability: Green Salve; {self.character} discarded {card} to heal {options[player_healed_index].character} by one! ({options[player_healed_index].current_health}/{options[player_healed_index].max_health} HP remaining)")
 
     def activate_marriage(self):
-        if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
+        # "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."
+        if (self.character_ability1.startswith("Marriage:") or self.character_ability3.startswith("Marriage:")):
             if len(self.hand_cards.contents) > 1:
                 if self.used_marriage:
                     print(
@@ -6261,7 +6349,6 @@ class Player(Character):
         if self.check_mediocrity("Draw"):
             cards_drawn += check_allegiances_in_play()
             message = False
-        # Checks for Sun Ce; Dashing Hero
         # Checks for Sun Ce; Lingering Spirit
         # Check for Zhang He; Flexibility
         self.hand_cards.draw(main_deck, cards_drawn, message)
@@ -6370,10 +6457,6 @@ class Player(Character):
             # Check for characters that have increased hand-card limits at end of their turn
             limit_increase1 = self.check_bloodline()
             limit_increase2 = self.check_plotting_for_power(0, "Discard")
-            if limit_increase1 == None:
-                limit_increase1 = 0
-            if limit_increase2 == None:
-                limit_increase2 = 0
             limit_increase = limit_increase1 + limit_increase2
 
             # Discard down to your current health level
@@ -6664,7 +6747,6 @@ for player in players:
     player.check_shapeshift()
     player.check_false_ruler()
 print("All players have been dealt 4 cards!")
-
 game_started = True
 
 
@@ -6694,8 +6776,7 @@ players[0].hand_cards.draw(main_deck, 25)
 # players[0].start_action_phase()
 
 players[0].current_health = 60
-players[1].current_health = 60
 # players[0].role = 'Rebel'
 players[0].start_beginning_phase()
-players[0].start_beginning_phase()
+# players[0].start_beginning_phase()
 # players[0].start_beginning_phase()
