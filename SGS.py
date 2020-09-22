@@ -1,8 +1,266 @@
+"""
+SanGuoSha Coding by Saba Tazayoni
+Started: 21/07/2020
+Latest version: 22/09/2020
+"""
+
 from __future__ import print_function, unicode_literals
 import random
 from pprint import pprint
 from PyInquirer import prompt, Separator
 from examples import custom_style_2
+
+
+# Determine the number of players and roles
+def number_of_players():
+    question = [
+        {
+            'type': 'list',
+            'name': 'Number of Players',
+            'message': 'Please decide how many players will be playing:',
+            'choices': ['3', '4', '5', '6', '7', '8', '9', '10'],
+        },
+    ]
+
+    answer = prompt(question, style=custom_style_2)
+    return int(answer.get('Number of Players'))
+
+
+def format_six_players():
+    question = [
+        {
+            'type': 'list',
+            'name': 'Format with Six Players',
+            'message': 'Please decide how you would like the roles to be distributed:',
+            'choices': [
+                '{"Emperor": 1, "Advisor": 1, "Rebel": 3, "Spy": 1}',
+                '{"Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 2}',
+                '{Random & hidden choice of above options}',
+            ],
+        },
+    ]
+
+    answer = prompt(question, style=custom_style_2)
+    return (answer.get('Format with Six Players'))
+
+
+def format_eight_players():
+    question = [
+        {
+            'type': 'list',
+            'name': 'Format with Eight Players',
+            'message': 'Please decide how you would like the roles to be distributed:',
+            'choices': [
+                '{"Emperor": 1, "Advisor": 2, "Rebel": 4, "Spy": 1}',
+                '{"Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 2}',
+                '{Random & hidden choice of above options}',
+            ],
+        },
+    ]
+
+    answer = prompt(question, style=custom_style_2)
+    return (answer.get('Format with Eight Players'))
+
+
+def generate_roles_dictionary():
+    number_of_players_output = number_of_players()
+    if number_of_players_output == 3:
+        roles_dictionary = {"Emperor": 1, "Advisor": 0, "Rebel": 1, "Spy": 1}
+    if number_of_players_output == 4:
+        roles_dictionary = {"Emperor": 1, "Advisor": 1, "Rebel": 1, "Spy": 1}
+    if number_of_players_output == 5:
+        roles_dictionary = {"Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 1}
+    if number_of_players_output == 6:
+        answer = format_six_players()
+        if answer == '{"Emperor": 1, "Advisor": 1, "Rebel": 3, "Spy": 1}':
+            roles_dictionary = {"Emperor": 1,
+                                "Advisor": 1, "Rebel": 3, "Spy": 1}
+        if answer == '{"Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 2}':
+            roles_dictionary = {"Emperor": 1,
+                                "Advisor": 1, "Rebel": 2, "Spy": 2}
+        if answer == '{Random & hidden choice of above options}':
+            list_for_random = [{"Emperor": 1, "Advisor": 1, "Rebel": 3, "Spy": 1}, {
+                "Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 2}]
+            random.shuffle(list_for_random)
+            roles_dictionary = list_for_random.pop()
+    if number_of_players_output == 7:
+        roles_dictionary = {"Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 1}
+    if number_of_players_output == 8:
+        answer = format_eight_players()
+        if answer == '{"Emperor": 1, "Advisor": 2, "Rebel": 4, "Spy": 1}':
+            roles_dictionary = {"Emperor": 1,
+                                "Advisor": 2, "Rebel": 4, "Spy": 1}
+        if answer == '{"Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 2}':
+            roles_dictionary = {"Emperor": 1,
+                                "Advisor": 2, "Rebel": 3, "Spy": 2}
+        if answer == '{Random & hidden choice of above options}':
+            list_for_random = [{"Emperor": 1, "Advisor": 2, "Rebel": 4, "Spy": 1}, {
+                "Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 2}]
+            random.shuffle(list_for_random)
+            roles_dictionary = list_for_random.pop()
+    if number_of_players_output == 9:
+        roles_dictionary = {"Emperor": 1, "Advisor": 3, "Rebel": 4, "Spy": 1}
+    if number_of_players_output == 10:
+        roles_dictionary = {"Emperor": 1, "Advisor": 3, "Rebel": 4, "Spy": 2}
+    return (number_of_players_output, roles_dictionary)
+
+
+def roles_to_list(roles_dictionary):
+    roles_list = []
+    for key in roles_dictionary.keys():
+        for role in range(0, roles_dictionary[key]):
+            roles_list.append(key)
+    return roles_list
+
+
+def roles_from_list(roles_list):
+    role = roles_list.pop()
+    return role
+
+
+# Select Character-Picking Mode
+def picking_format():
+    question = [
+        {
+            'type': 'list',
+            'name': 'Picking Format',
+            'message': 'Please decide how characters will be selected:',
+            'choices': [
+                'All-Pick',
+                'Banning-Pick',
+                'Draft-Pick',
+                'All-Random',
+            ],
+        },
+    ]
+
+    answer = prompt(question, style=custom_style_2)
+    return (answer.get('Picking Format'))
+
+
+# Game Setup Loop
+def setup_confirmation():
+    question = [
+        {
+            'type': 'list',
+            'name': 'Setup confirmation',
+            'message': 'Please confirm if the above settings are correct?',
+            'choices': [
+                'Yes',
+                'No',
+            ],
+        },
+    ]
+
+    answer = prompt(question, style=custom_style_2)
+    return (answer.get('Setup confirmation'))
+
+
+def setup_loop():
+    print(' ')
+    (number_of_players_output, roles_dictionary) = generate_roles_dictionary()
+    roles_list = roles_to_list(roles_dictionary)
+    picking_format_output = picking_format()
+    setup_confirmation_output = setup_confirmation()
+    if setup_confirmation_output == 'Yes':
+        return [number_of_players_output, roles_dictionary, roles_list, picking_format_output]
+    else:
+        return setup_loop()
+
+
+# Players and win-conditions
+def generate_players():
+    players = [Player(roles_from_list(roles_list))
+               for player_number in range(number_of_players_output)]
+    return players
+
+
+def player_assignment():
+    if picking_format_output == "All-Pick":
+        print("---------------")
+        print("!Picking Phase!")
+        print("---------------")
+        for player in players:
+            player.assign_character_all_pick()
+        for card in all_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        character_card_discard_pile.shuffle()
+    if picking_format_output == "Banning-Pick":
+        print("---------------")
+        print("Banning Phase 1")
+        print("---------------")
+        for player in players[::-1]:
+            player.banning_pick_characters()
+        print("---------------")
+        print("Banning Phase 2")
+        print("---------------")
+        for player in players[::-1]:
+            player.banning_pick_characters()
+        print("---------------")
+        print("!Picking Phase!")
+        print("---------------")
+        for player in players:
+            player.assign_character_all_pick()
+        for card in all_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        character_card_discard_pile.shuffle()
+    if picking_format_output == "Draft-Pick":
+        shu_emperor_cards.shuffle()
+        wei_emperor_cards.shuffle()
+        wu_emperor_cards.shuffle()
+        hero_emperor_cards.shuffle()
+        shu_character_cards.shuffle()
+        wei_character_cards.shuffle()
+        wu_character_cards.shuffle()
+        hero_character_cards.shuffle()
+        for player in players:
+            player.assign_character_single_draft()
+        for card in shu_emperor_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in wei_emperor_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in wu_emperor_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in hero_emperor_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in shu_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in wei_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in wu_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        for card in hero_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        character_card_discard_pile.shuffle()
+    if picking_format_output == "All-Random":
+        all_character_cards.shuffle()
+        for player in players:
+            player.assign_character_all_random()
+        for card in all_character_cards.contents:
+            character_card_discard_pile.add_to_top(card)
+        character_card_discard_pile.shuffle()
+
+
+def check_win_conditions():
+    global game_started
+    if roles_dictionary["Emperor"] == 1 and roles_dictionary["Rebel"] == 0 and roles_dictionary["Spy"] == 0:
+        print("Emperor and Advisor(s) win:")
+        for player in players_at_start:
+            if player.role == "Emperor" or player.role == "Advisor":
+                print(player)
+        game_started = False
+    elif roles_dictionary["Spy"] == 1 and roles_dictionary["Emperor"] == 0 and roles_dictionary["Advisor"] == 0 and roles_dictionary["Rebel"] == 0:
+        print("Spy wins:")
+        for player in players:
+            if player.role == "Spy":
+                print(player)
+        game_started = False
+    elif roles_dictionary["Emperor"] == 0:
+        print("Rebel(s) win:")
+        for player in players_at_start:
+            if player.role == "Rebel":
+                print(player)
+        game_started = False
 
 
 # Loose functions
@@ -950,7 +1208,7 @@ class Player(Character):
         print(self)
         print(' ')
 
-# In-game checks
+# Menu Creation for targeting players
     def calculate_targets_in_physical_range(self, player_index):
         output = []
         for (target_index, target) in enumerate(players):
@@ -1045,50 +1303,145 @@ class Player(Character):
                     players[reachable_index]))
             return (output_str)
 
-    def check_activatable_abilities(self, types=None):
-        char_abils = []
-        if types == None:
-            emperor_index = None
-            false_ruler_index = None
-            for player_index, player in enumerate(players):
-                if not isinstance(player, str):
-                    if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
-                        if player.role == "Emperor":
-                            emperor_index = player_index
-                        else:
-                            false_ruler_index = player_index
-            if self.allegiance == "Heroes":
-                if (emperor_index != None) and (false_ruler_index != None):
-                    char_abils.append(" Ruler Ability >> Amber Sky")
-                elif emperor_index != None:
-                    if self.role != "Emperor":
-                        char_abils.append(" Ruler Ability >> Amber Sky")
+# Menu Creation for cards!
+    def create_actual_menu(self):
+        options = []
+        options.append("HAND")
+        for card in self.hand_cards.contents:
+            options.append(card)
+        options.append("EQUIP")
+        if len(self.equipment_weapon) > 0:
+            options.append(self.equipment_weapon[0])
+        else:
+            options.append("Empty Weapon Slot")
+        if len(self.equipment_armor) > 0:
+            options.append(self.equipment_armor[0])
+        else:
+            options.append("Empty Armor Slot")
+        if len(self.equipment_offensive_horse) > 0:
+            options.append(self.equipment_offensive_horse[0])
+        else:
+            options.append("Empty Horse Slot")
+        if len(self.equipment_defensive_horse) > 0:
+            options.append(self.equipment_defensive_horse[0])
+        else:
+            options.append("Empty Horse Slot")
+        return(options)
 
-            if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
-                char_abils.append(" Character Ability >> Blockade")
-            if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
-                char_abils.append(" Character Ability >> Drown in Wine")
-            if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
-                char_abils.append(" Character Ability >> Green Salve")
-            if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
-                char_abils.append(" Character Ability >> Marriage")
-            if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
-                char_abils.append(" Character Ability >> National Colours")
-            if (self.character_ability1 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability2 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability3 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability4 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability5 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."):
-                char_abils.append(" Character Ability >> Random Strike")
-            if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
-                char_abils.append(" Character Ability >> Surprise")
-            if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
-                char_abils.append(" Character Ability >> Trojan Flesh")
-            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
-                char_abils.append(" Character Ability >> Warrior Saint")
-            return char_abils
+    def create_str_blind_menu(self):
+        cards_discardable = (len(self.hand_cards.contents))
+        if cards_discardable > 0:
+            options_str = []
+            options_str.append(
+                Separator("-----------------HAND--CARDS-----------------"))
+            i = 1
+            for item in self.hand_cards.contents:
+                options_str.append(f"Hand-Card {i}")
+                i += 1
 
-        if types == "Attack":
-            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
-                char_abils.append(" Character Ability >> Warrior Saint")
-            return char_abils
+            return(options_str)
 
+    def create_str_semiblind_menu(self, append_judgements=False):
+        cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        if append_judgements == 1:
+            cards_discardable += len(self.pending_judgements)
+        if cards_discardable > 0:
+            options_str = []
+            options_str.append(
+                Separator("-----------------HAND--CARDS-----------------"))
+            i = 1
+            for item in self.hand_cards.contents:
+                options_str.append(f"Hand-Card {i}")
+                i += 1
+            options_str.append(
+                Separator("---------------EQUIPPED--CARDS---------------"))
+            if len(self.equipment_weapon) > 0:
+                options_str.append(
+                    str(self.equipment_weapon[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Weapon Slot>-----------  "))
+            if len(self.equipment_armor) > 0:
+                options_str.append(
+                    str(self.equipment_armor[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Armor Slot>------------  "))
+            if len(self.equipment_offensive_horse) > 0:
+                options_str.append(
+                    str(self.equipment_offensive_horse[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Horse Slot>------------  "))
+            if len(self.equipment_defensive_horse) > 0:
+                options_str.append(
+                    str(self.equipment_defensive_horse[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Horse Slot>------------  "))
+            if append_judgements:
+                options_str.append(
+                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+                if len(self.pending_judgements) > 0:
+                    for pending_judgement_card in self.pending_judgements:
+                        options_str.append(str(pending_judgement_card))
+
+            return(options_str)
+
+    def create_str_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
+        cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        if append_judgements == 1:
+            cards_discardable += len(self.pending_judgements)
+        if cards_discardable > 0:
+            options_str = []
+            if not only_hand_cards:
+                options_str.append(
+                    Separator("-----------------HAND--CARDS-----------------"))
+            for card in self.hand_cards.contents:
+                options_str.append(str(card))
+            if only_hand_cards:
+                return (options_str)
+            else:
+                options_str.append(
+                    Separator("---------------EQUIPPED--CARDS---------------"))
+            if omit_item == "Weapon":
+                options_str.append(
+                    Separator("    ---------<Cannot use weapon>---------    "))
+            else:
+                if len(self.equipment_weapon) > 0:
+                    options_str.append(str(self.equipment_weapon[0]))
+                else:
+                    options_str.append(
+                        Separator("  -----------<Empty Weapon Slot>-----------  "))
+            if len(self.equipment_armor) > 0:
+                options_str.append(str(self.equipment_armor[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Armor Slot>------------  "))
+            if len(self.equipment_offensive_horse) > 0:
+                options_str.append(
+                    str(self.equipment_offensive_horse[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Horse Slot>------------  "))
+            if len(self.equipment_defensive_horse) > 0:
+                options_str.append(
+                    str(self.equipment_defensive_horse[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Horse Slot>------------  "))
+            if append_judgements:
+                options_str.append(
+                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+                if len(self.pending_judgements) > 0:
+                    for pending_judgement_card in self.pending_judgements:
+                        options_str.append(str(pending_judgement_card))
+
+            return(options_str)
+
+# In-game Checks
     def check_break_brink_loop(self, amount_healed):
         if self.current_health + amount_healed > 0:
             return True
@@ -1254,166 +1607,48 @@ class Player(Character):
                     self.rations_depleted_active = True
                 discard_deck.add_to_top(pending_judgement)
 
-    def create_actual_menu(self):
-        options = []
-        options.append("HAND")
-        for card in self.hand_cards.contents:
-            options.append(card)
-        options.append("EQUIP")
-        if len(self.equipment_weapon) > 0:
-            options.append(self.equipment_weapon[0])
-        else:
-            options.append("Empty Weapon Slot")
-        if len(self.equipment_armor) > 0:
-            options.append(self.equipment_armor[0])
-        else:
-            options.append("Empty Armor Slot")
-        if len(self.equipment_offensive_horse) > 0:
-            options.append(self.equipment_offensive_horse[0])
-        else:
-            options.append("Empty Horse Slot")
-        if len(self.equipment_defensive_horse) > 0:
-            options.append(self.equipment_defensive_horse[0])
-        else:
-            options.append("Empty Horse Slot")
-        return(options)
+    def check_activatable_abilities(self, types=None):
+        char_abils = []
+        if types == None:
+            emperor_index = None
+            false_ruler_index = None
+            for player_index, player in enumerate(players):
+                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
+                    if player.role == "Emperor":
+                        emperor_index = player_index
+                    else:
+                        false_ruler_index = player_index
+            if self.allegiance == "Heroes":
+                if (emperor_index != None) and (false_ruler_index != None):
+                    char_abils.append(" Ruler Ability >> Amber Sky")
+                elif emperor_index != None:
+                    if self.role != "Emperor":
+                        char_abils.append(" Ruler Ability >> Amber Sky")
 
-    def create_str_blind_menu(self):
-        cards_discardable = (len(self.hand_cards.contents))
-        if cards_discardable > 0:
-            options_str = []
-            options_str.append(
-                Separator("-----------------HAND--CARDS-----------------"))
-            i = 1
-            for item in self.hand_cards.contents:
-                options_str.append(f"Hand-Card {i}")
-                i += 1
+            if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
+                char_abils.append(" Character Ability >> Blockade")
+            if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
+                char_abils.append(" Character Ability >> Drown in Wine")
+            if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
+                char_abils.append(" Character Ability >> Green Salve")
+            if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
+                char_abils.append(" Character Ability >> Marriage")
+            if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
+                char_abils.append(" Character Ability >> National Colours")
+            if (self.character_ability1 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability2 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability3 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability4 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability5 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."):
+                char_abils.append(" Character Ability >> Random Strike")
+            if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
+                char_abils.append(" Character Ability >> Surprise")
+            if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
+                char_abils.append(" Character Ability >> Trojan Flesh")
+            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+                char_abils.append(" Character Ability >> Warrior Saint")
+            return char_abils
 
-            return(options_str)
-
-    def create_str_semiblind_menu(self, append_judgements=False):
-        cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
-        if append_judgements == 1:
-            cards_discardable += len(self.pending_judgements)
-        if cards_discardable > 0:
-            options_str = []
-            options_str.append(
-                Separator("-----------------HAND--CARDS-----------------"))
-            i = 1
-            for item in self.hand_cards.contents:
-                options_str.append(f"Hand-Card {i}")
-                i += 1
-            options_str.append(
-                Separator("---------------EQUIPPED--CARDS---------------"))
-            if len(self.equipment_weapon) > 0:
-                options_str.append(
-                    str(self.equipment_weapon[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Weapon Slot>-----------  "))
-            if len(self.equipment_armor) > 0:
-                options_str.append(
-                    str(self.equipment_armor[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Armor Slot>------------  "))
-            if len(self.equipment_offensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_offensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if len(self.equipment_defensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_defensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if append_judgements:
-                options_str.append(
-                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                if len(self.pending_judgements) > 0:
-                    for pending_judgement_card in self.pending_judgements:
-                        options_str.append(str(pending_judgement_card))
-
-            return(options_str)
-
-    def create_str_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
-        cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
-        if append_judgements == 1:
-            cards_discardable += len(self.pending_judgements)
-        if cards_discardable > 0:
-            options_str = []
-            if not only_hand_cards:
-                options_str.append(
-                    Separator("-----------------HAND--CARDS-----------------"))
-            for card in self.hand_cards.contents:
-                options_str.append(str(card))
-            if only_hand_cards:
-                return (options_str)
-            else:
-                options_str.append(
-                    Separator("---------------EQUIPPED--CARDS---------------"))
-            if omit_item == "Weapon":
-                options_str.append(
-                    Separator("    ---------<Cannot use weapon>---------    "))
-            else:
-                if len(self.equipment_weapon) > 0:
-                    options_str.append(str(self.equipment_weapon[0]))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Weapon Slot>-----------  "))
-            if len(self.equipment_armor) > 0:
-                options_str.append(str(self.equipment_armor[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Armor Slot>------------  "))
-            if len(self.equipment_offensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_offensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if len(self.equipment_defensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_defensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if append_judgements:
-                options_str.append(
-                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                if len(self.pending_judgements) > 0:
-                    for pending_judgement_card in self.pending_judgements:
-                        options_str.append(str(pending_judgement_card))
-
-            return(options_str)
-
-    def discard_all_cards(self, death=False):
-        cards_discarded = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
-        while len(self.hand_cards.contents) > 0:
-            discard_deck.add_to_top(self.hand_cards.contents.pop())
-        if len(self.equipment_weapon) == 1:
-            discard_deck.add_to_top(self.equipment_weapon.pop())
-        if len(self.equipment_armor) == 1:
-            discard_deck.add_to_top(self.equipment_armor.pop())
-        if len(self.equipment_offensive_horse) == 1:
-            discard_deck.add_to_top(self.equipment_offensive_horse.pop())
-        if len(self.equipment_defensive_horse) == 1:
-            discard_deck.add_to_top(self.equipment_defensive_horse.pop())
-        if death == False:
-            self.check_one_after_another()
-        if death:
-            print(
-                f"{self.character} discarded {cards_discarded} card(s) upon their death.")
-            for player in players:
-                if player != "Placeholder":
-                    player.check_unnatural_death(cards_discarded)
-            while len(self.pending_judgements) > 0:
-                discard_deck.add_to_top(self.pending_judgements.pop())
+        if types == "Attack":
+            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+                char_abils.append(" Character Ability >> Warrior Saint")
+            return char_abils
 
     def reset_once_per_turn(self):
         self.attacks_this_turn = 0
@@ -1469,25 +1704,23 @@ class Player(Character):
 
                     # Add checks for Sima Yi and Zhang Jiao
                     for player in players[user_index:]:
-                        if not isinstance(player, str):
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
-                        if not isinstance(player, str):
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
 
                     self.check_envy_of_heaven()
                     if judgement_card.suit == "Hearts" or "Diamonds":
@@ -2110,35 +2343,32 @@ class Player(Character):
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
-                for player_index, player in enumerate(players[1:]):
-                    player_index += 1
-                    barb_response = player.use_reaction_effect(
-                        "Attack", discarded, 0, player)
-                    if type(barb_response) == Card:
-                        if (barb_response.effect == "Attack") or (barb_response.effect2 == "Attack"):
+                for player_index, player in enumerate(players):
+                    if (player != players[0]) and (player.current_health > 0):
+                        barb_response = player.use_reaction_effect(
+                            "Attack", discarded, 0, player)
+                        if type(barb_response) == Card:
+                            if (barb_response.effect == "Attack") or (barb_response.effect2 == "Attack"):
+                                print(
+                                    f"{player.character} successfully defended against BARBARIANS with {barb_response}.")
+                        else:
+                            player.current_health -= 1
                             print(
-                                f"{player.character} successfully defended against BARBARIANS with {barb_response}.")
-                    else:
-                        player.current_health -= 1
-                        print(
-                            f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
-                        players[0].check_insanity(player)
-                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
-                        if player.current_health < 1:
-                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                                players.insert(player_index, "Placeholder")
-                        if player != "Placeholder" and player.current_health > 0:
-                            players[player_index].check_eternal_loyalty(1)
-                            players[player_index].check_evil_hero(card)
-                            players[player_index].check_eye_for_an_eye(
-                                source_player_index=0, mode="Activate")
-                            players[player_index].check_geminate(1)
-                            players[player_index].check_plotting_for_power(
-                                1, mode="Reaction")
-                            players[player_index].check_retaliation(0, 1)
-                for player in players:
-                    if "Placeholder" in players:
-                        players.remove("Placeholder")
+                                f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
+                            players[0].check_insanity(player)
+                            # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
+                            if player.current_health < 1:
+                                players[player_index].check_brink_of_death_loop(
+                                    player_index, 0)
+                            if player.current_health > 0:
+                                players[player_index].check_eternal_loyalty(1)
+                                players[player_index].check_evil_hero(card)
+                                players[player_index].check_eye_for_an_eye(
+                                    source_player_index=0, mode="Activate")
+                                players[player_index].check_geminate(1)
+                                players[player_index].check_plotting_for_power(
+                                    1, mode="Reaction")
+                                players[player_index].check_retaliation(0, 1)
 
         elif card.effect2 == 'Granary':
             print(f"{card} - GRANARY - {card.flavour_text}")
@@ -2229,35 +2459,32 @@ class Player(Character):
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
-                for player_index, player in enumerate(players[1:]):
-                    player_index += 1
-                    roa_response = player.use_reaction_effect(
-                        "Defend", discarded, 0, player)
-                    if type(roa_response) == Card:
-                        if (roa_response.effect == "Defend") or (roa_response.effect2 == "Defend"):
+                for player_index, player in enumerate(players):
+                    if (player != players[0]) and (player.current_health > 0):
+                        roa_response = player.use_reaction_effect(
+                            "Defend", discarded, 0, player)
+                        if type(roa_response) == Card:
+                            if (roa_response.effect == "Defend") or (roa_response.effect2 == "Defend"):
+                                print(
+                                    f"{player.character} successfully defended against RAIN OF ARROWS with {roa_response}.")
+                        else:
+                            player.current_health -= 1
                             print(
-                                f"{player.character} successfully defended against RAIN OF ARROWS with {roa_response}.")
-                    else:
-                        player.current_health -= 1
-                        print(
-                            f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
-                        players[0].check_insanity(player)
-                        # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
-                        if player.current_health < 1:
-                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                                players.insert(player_index, "Placeholder")
-                        if player != "Placeholder" and player.current_health > 0:
-                            players[player_index].check_eternal_loyalty(1)
-                            players[player_index].check_evil_hero(card)
-                            players[player_index].check_eye_for_an_eye(
-                                source_player_index=0, mode="Activate")
-                            players[player_index].check_geminate(1)
-                            players[player_index].check_plotting_for_power(
-                                1, mode="Reaction")
-                            players[player_index].check_retaliation(0, 1)
-                for player in players:
-                    if "Placeholder" in players:
-                        players.remove("Placeholder")
+                                f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
+                            players[0].check_insanity(player)
+                            # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
+                            if player.current_health < 1:
+                                players[player_index].check_brink_of_death_loop(
+                                    player_index, 0)
+                            if player.current_health > 0:
+                                players[player_index].check_eternal_loyalty(1)
+                                players[player_index].check_evil_hero(card)
+                                players[player_index].check_eye_for_an_eye(
+                                    source_player_index=0, mode="Activate")
+                                players[player_index].check_geminate(1)
+                                players[player_index].check_plotting_for_power(
+                                    1, mode="Reaction")
+                                players[player_index].check_retaliation(0, 1)
                 return True
 
         elif card.effect2 == 'Coerce':
@@ -3494,6 +3721,30 @@ class Player(Character):
                 self.check_warrior_woman()
             num -= 1
 
+    def discard_all_cards(self, death=False):
+        cards_discarded = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        while len(self.hand_cards.contents) > 0:
+            discard_deck.add_to_top(self.hand_cards.contents.pop())
+        if len(self.equipment_weapon) == 1:
+            discard_deck.add_to_top(self.equipment_weapon.pop())
+        if len(self.equipment_armor) == 1:
+            discard_deck.add_to_top(self.equipment_armor.pop())
+        if len(self.equipment_offensive_horse) == 1:
+            discard_deck.add_to_top(self.equipment_offensive_horse.pop())
+        if len(self.equipment_defensive_horse) == 1:
+            discard_deck.add_to_top(self.equipment_defensive_horse.pop())
+        if death == False:
+            self.check_one_after_another()
+        if death:
+            print(
+                f"{self.character} discarded {cards_discarded} card(s) upon their death.")
+            for player in players:
+                if player != "Placeholder":
+                    player.check_unnatural_death(cards_discarded)
+            while len(self.pending_judgements) > 0:
+                discard_deck.add_to_top(self.pending_judgements.pop())
+
 # Ability checks
     def check_ardour(self, card):
         # "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card."
@@ -3508,9 +3759,8 @@ class Player(Character):
         if (self.character_ability2.startswith("Backstab:") or self.character_ability3.startswith("Backstab:")):
 
             for player_index, player in enumerate(players):
-                if not isinstance(player, str):
-                    if (player.character_ability2.startswith("Backstab:") or player.character_ability3.startswith("Backstab:")):
-                        user_index = player_index
+                if (player.character_ability2.startswith("Backstab:") or player.character_ability3.startswith("Backstab:")):
+                    user_index = player_index
 
             possible_indexes = self.calculate_targets_in_physical_range(0)
             possible_targets = []
@@ -3536,25 +3786,23 @@ class Player(Character):
 
                     # Add checks for Sima Yi and Zhang Jiao
                     for player in players[user_index:]:
-                        if not isinstance(player, str):
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
-                        if not isinstance(player, str):
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
 
                     if judgement_card.suit == "Spades" or judgement_card.suit == "Clubs" or judgement_card.suit == "Diamonds":
                         players[selected_index].max_health -= 1
@@ -4030,11 +4278,10 @@ class Player(Character):
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
         # "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."
         if (self.character_ability1.startswith("Eye for an Eye:") or self.character_ability3.startswith("Eye for an Eye:")):
-            retaliator_index = 0
+            user_index = 0
             for player_index, player in enumerate(players):
-                if not isinstance(player, str):
-                    if (player.character_ability1.startswith("Eye for an Eye:") or player.character_ability3.startswith("Eye for an Eye:")):
-                        retaliator_index = player_index
+                if (player.character_ability1.startswith("Eye for an Eye:") or player.character_ability3.startswith("Eye for an Eye:")):
+                    user_index = player_index
 
             if mode == "Activate":
                 print(' ')
@@ -4056,30 +4303,28 @@ class Player(Character):
                 print(f"{self.character} flipped a {judgement_card}.")
 
                 # Add checks for Sima Yi and Zhang Jiao
-                for player in players[retaliator_index:]:
-                    if not isinstance(player, str):
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                for player in players[:retaliator_index]:
-                    if not isinstance(player, str):
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                for player in players[user_index:]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                for player in players[:user_index]:
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
 
                 if judgement_card.suit != "Hearts":
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {players[source_player_index].character} must suffer one damage or discard two hand-cards.")
                     players[source_player_index].check_eye_for_an_eye(
-                        retaliator_index, "Reaction")
+                        user_index, "Reaction")
                 if judgement_card.suit == "Hearts":
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore has no effect.")
@@ -4102,19 +4347,19 @@ class Player(Character):
             if answer.get('Selected') == 'Suffer one damage.':
                 self.current_health -= 1
                 print(
-                    f"{self.character} suffered one damage from {players[retaliator_index].character}'s an Eye for an Eye ({self.current_health}/{self.max_health} HP remaining).")
+                    f"{self.character} suffered one damage from {players[user_index].character}'s an Eye for an Eye ({self.current_health}/{self.max_health} HP remaining).")
                 for player_index, player in enumerate(players):
                     if player.current_health < 1:
-                        if players[player_index].check_brink_of_death_loop(player_index, retaliator_index) == "Break":
+                        if players[player_index].check_brink_of_death_loop(player_index, user_index) == "Break":
                             return "Break"
                 self.check_eternal_loyalty(1)
                 self.check_geminate(1)
-                self.check_retaliation(retaliator_index, 1)
+                self.check_retaliation(user_index, 1)
                 self.check_plotting_for_power(1, "Reaction")
             if answer.get('Selected') == 'Discard two cards.':
                 self.hand_cards.discard_from_hand(2)
                 print(
-                    f"{self.character} discarded two hand-cards due to {players[retaliator_index].character}'s an Eye for an Eye.")
+                    f"{self.character} discarded two hand-cards due to {players[user_index].character}'s an Eye for an Eye.")
                 self.check_one_after_another()
 
     def check_evil_hero(self, card, card2=None):
@@ -4276,9 +4521,8 @@ class Player(Character):
         if (self.character_ability1.startswith("Fearsome Archer:") or self.character_ability2.startswith("Fearsome Archer:")):
             user_index = 0
             for player_index, player in enumerate(players):
-                if not isinstance(player, str):
-                    if (player.character_ability1.startswith("Fearsome Archer:") or player.character_ability3.startswith("Fearsome Archer:")):
-                        user_index = player_index
+                if (player.character_ability1.startswith("Fearsome Archer:") or player.character_ability3.startswith("Fearsome Archer:")):
+                    user_index = player_index
 
             if (len(players[selected_index].hand_cards.contents) <= self.weapon_range) or (len(players[selected_index].hand_cards.contents) >= self.current_health):
                 question = [
@@ -4468,25 +4712,23 @@ class Player(Character):
 
                     # Add checks for Sima Yi and Zhang Jiao
                     for player in players[user_index:]:
-                        if not isinstance(player, str):
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
                     for player in players[:user_index]:
-                        if not isinstance(player, str):
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_dark_sorcery(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
+                        judgement_tinker = player.check_devil(
+                            judgement_card)
+                        if judgement_tinker[0]:
+                            judgement_card = judgement_tinker[1]
 
                     if judgement_card.suit == 'Spades' or judgement_card.suit == 'Clubs':
                         cards_drawn.append(judgement_card)
@@ -4530,9 +4772,8 @@ class Player(Character):
         if (self.character_ability2.startswith("Iron Cavalry:") or self.character_ability3.startswith("Iron Cavalry:")):
             user_index = 0
             for player_index, player in enumerate(players):
-                if not isinstance(player, str):
-                    if (player.character_ability2.startswith("Iron Cavalry:") or player.character_ability3.startswith("Iron Cavalry:")):
-                        user_index = player_index
+                if (player.character_ability2.startswith("Iron Cavalry:") or player.character_ability3.startswith("Iron Cavalry:")):
+                    user_index = player_index
 
             question = [
                 {
@@ -4553,23 +4794,21 @@ class Player(Character):
 
                 # Add checks for Sima Yi and Zhang Jiao
                 for player in players[user_index:]:
-                    if not isinstance(player, str):
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                 for player in players[:user_index]:
-                    if not isinstance(player, str):
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
 
                 if judgement_card.suit == "Diamonds" or judgement_card.suit == "Hearts":
                     if self.check_weapon_frost_blade(selected_index, "Check"):
@@ -4717,9 +4956,8 @@ class Player(Character):
         if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
             user_index = 0
             for player_index, player in enumerate(players):
-                if not isinstance(player, str):
-                    if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
-                        user_index = player_index
+                if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
+                    user_index = player_index
 
             question = [
                 {
@@ -4754,23 +4992,21 @@ class Player(Character):
 
                 # Add checks for Sima Yi and Zhang Jiao
                 for player in players[user_index:]:
-                    if not isinstance(player, str):
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
                 for player in players[:user_index]:
-                    if not isinstance(player, str):
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_dark_sorcery(
+                        judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
+                    judgement_tinker = player.check_devil(judgement_card)
+                    if judgement_tinker[0]:
+                        judgement_card = judgement_tinker[1]
 
                 players[selected_index].check_envy_of_heaven()
                 if judgement_card.suit == "Spades":
@@ -6292,7 +6528,6 @@ class Player(Character):
                         print(
                             f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
 
-# Game-state
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
@@ -6476,250 +6711,6 @@ class Player(Character):
         self.check_eclipse_the_moon()
         self.check_second_wind("End")
         self.check_shapeshift("Turn")
-        # Cycles to next player
-        players.append(players.pop(0))
-        # NEEDED FOR LATER to make infinite loop, commenting out for now!
-        # return players[0].start_beginning_phase()
-
-
-# Determine the number of players and roles
-def number_of_players():
-    question = [
-        {
-            'type': 'list',
-            'name': 'Number of Players',
-            'message': 'Please decide how many players will be playing:',
-            'choices': ['3', '4', '5', '6', '7', '8', '9', '10'],
-        },
-    ]
-
-    answer = prompt(question, style=custom_style_2)
-    return int(answer.get('Number of Players'))
-
-
-def format_six_players():
-    question = [
-        {
-            'type': 'list',
-            'name': 'Format with Six Players',
-            'message': 'Please decide how you would like the roles to be distributed:',
-            'choices': [
-                '{"Emperor": 1, "Advisor": 1, "Rebel": 3, "Spy": 1}',
-                '{"Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 2}',
-                '{Random & hidden choice of above options}',
-            ],
-        },
-    ]
-
-    answer = prompt(question, style=custom_style_2)
-    return (answer.get('Format with Six Players'))
-
-
-def format_eight_players():
-    question = [
-        {
-            'type': 'list',
-            'name': 'Format with Eight Players',
-            'message': 'Please decide how you would like the roles to be distributed:',
-            'choices': [
-                '{"Emperor": 1, "Advisor": 2, "Rebel": 4, "Spy": 1}',
-                '{"Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 2}',
-                '{Random & hidden choice of above options}',
-            ],
-        },
-    ]
-
-    answer = prompt(question, style=custom_style_2)
-    return (answer.get('Format with Eight Players'))
-
-
-def generate_roles_dictionary():
-    number_of_players_output = number_of_players()
-    if number_of_players_output == 3:
-        roles_dictionary = {"Emperor": 1, "Advisor": 0, "Rebel": 1, "Spy": 1}
-    if number_of_players_output == 4:
-        roles_dictionary = {"Emperor": 1, "Advisor": 1, "Rebel": 1, "Spy": 1}
-    if number_of_players_output == 5:
-        roles_dictionary = {"Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 1}
-    if number_of_players_output == 6:
-        answer = format_six_players()
-        if answer == '{"Emperor": 1, "Advisor": 1, "Rebel": 3, "Spy": 1}':
-            roles_dictionary = {"Emperor": 1,
-                                "Advisor": 1, "Rebel": 3, "Spy": 1}
-        if answer == '{"Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 2}':
-            roles_dictionary = {"Emperor": 1,
-                                "Advisor": 1, "Rebel": 2, "Spy": 2}
-        if answer == '{Random & hidden choice of above options}':
-            list_for_random = [{"Emperor": 1, "Advisor": 1, "Rebel": 3, "Spy": 1}, {
-                "Emperor": 1, "Advisor": 1, "Rebel": 2, "Spy": 2}]
-            random.shuffle(list_for_random)
-            roles_dictionary = list_for_random.pop()
-    if number_of_players_output == 7:
-        roles_dictionary = {"Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 1}
-    if number_of_players_output == 8:
-        answer = format_eight_players()
-        if answer == '{"Emperor": 1, "Advisor": 2, "Rebel": 4, "Spy": 1}':
-            roles_dictionary = {"Emperor": 1,
-                                "Advisor": 2, "Rebel": 4, "Spy": 1}
-        if answer == '{"Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 2}':
-            roles_dictionary = {"Emperor": 1,
-                                "Advisor": 2, "Rebel": 3, "Spy": 2}
-        if answer == '{Random & hidden choice of above options}':
-            list_for_random = [{"Emperor": 1, "Advisor": 2, "Rebel": 4, "Spy": 1}, {
-                "Emperor": 1, "Advisor": 2, "Rebel": 3, "Spy": 2}]
-            random.shuffle(list_for_random)
-            roles_dictionary = list_for_random.pop()
-    if number_of_players_output == 9:
-        roles_dictionary = {"Emperor": 1, "Advisor": 3, "Rebel": 4, "Spy": 1}
-    if number_of_players_output == 10:
-        roles_dictionary = {"Emperor": 1, "Advisor": 3, "Rebel": 4, "Spy": 2}
-    return (number_of_players_output, roles_dictionary)
-
-
-def roles_to_list(roles_dictionary):
-    roles_list = []
-    for key in roles_dictionary.keys():
-        for role in range(0, roles_dictionary[key]):
-            roles_list.append(key)
-    return roles_list
-
-
-def roles_from_list(roles_list):
-    role = roles_list.pop()
-    return role
-
-
-# Select Picking Mode and Characters
-def picking_format():
-    question = [
-        {
-            'type': 'list',
-            'name': 'Picking Format',
-            'message': 'Please decide how characters will be selected:',
-            'choices': [
-                'All-Pick',
-                'Banning-Pick',
-                'Draft-Pick',
-                'All-Random',
-            ],
-        },
-    ]
-
-    answer = prompt(question, style=custom_style_2)
-    return (answer.get('Picking Format'))
-
-
-# Game Setup Loop
-def setup_confirmation():
-    question = [
-        {
-            'type': 'list',
-            'name': 'Setup confirmation',
-            'message': 'Please confirm if the above settings are correct?',
-            'choices': [
-                'Yes',
-                'No',
-            ],
-        },
-    ]
-
-    answer = prompt(question, style=custom_style_2)
-    return (answer.get('Setup confirmation'))
-
-
-def setup_loop():
-    print(' ')
-    (number_of_players_output, roles_dictionary) = generate_roles_dictionary()
-    roles_list = roles_to_list(roles_dictionary)
-    picking_format_output = picking_format()
-    setup_confirmation_output = setup_confirmation()
-    if setup_confirmation_output == 'Yes':
-        return [number_of_players_output, roles_dictionary, roles_list, picking_format_output]
-    else:
-        return setup_loop()
-
-
-# Players and win-conditions
-def generate_players():
-    players = [Player(roles_from_list(roles_list))
-               for player_number in range(number_of_players_output)]
-    return players
-
-
-def player_assignment():
-    if picking_format_output == "All-Pick":
-        print("---------------")
-        print("!Picking Phase!")
-        print("---------------")
-        for player in players:
-            player.assign_character_all_pick()
-        for card in all_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        character_card_discard_pile.shuffle()
-    if picking_format_output == "Banning-Pick":
-        print("---------------")
-        print("Banning Phase 1")
-        print("---------------")
-        for player in players[::-1]:
-            player.banning_pick_characters()
-        print("---------------")
-        print("Banning Phase 2")
-        print("---------------")
-        for player in players[::-1]:
-            player.banning_pick_characters()
-        print("---------------")
-        print("!Picking Phase!")
-        print("---------------")
-        for player in players:
-            player.assign_character_all_pick()
-        for card in all_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        character_card_discard_pile.shuffle()
-    if picking_format_output == "Draft-Pick":
-        shu_emperor_cards.shuffle()
-        wei_emperor_cards.shuffle()
-        wu_emperor_cards.shuffle()
-        hero_emperor_cards.shuffle()
-        shu_character_cards.shuffle()
-        wei_character_cards.shuffle()
-        wu_character_cards.shuffle()
-        hero_character_cards.shuffle()
-        for player in players:
-            player.assign_character_single_draft()
-        for card in shu_emperor_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in wei_emperor_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in wu_emperor_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in hero_emperor_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in shu_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in wei_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in wu_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        for card in hero_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        character_card_discard_pile.shuffle()
-    if picking_format_output == "All-Random":
-        all_character_cards.shuffle()
-        for player in players:
-            player.assign_character_all_random()
-        for card in all_character_cards.contents:
-            character_card_discard_pile.add_to_top(card)
-        character_card_discard_pile.shuffle()
-
-
-def check_win_conditions():
-    if roles_dictionary["Emperor"] == 1 and roles_dictionary["Rebel"] == 0 and roles_dictionary["Spy"] == 0:
-        print("Emperor and Advisor(s) win.")
-    elif roles_dictionary["Spy"] == 1 and roles_dictionary["Emperor"] == 0 and roles_dictionary["Advisor"] == 0 and roles_dictionary["Rebel"] == 0:
-        print("Spy wins.")
-    elif roles_dictionary["Emperor"] == 0:
-        print("Rebel(s) win.")
-    pass
 
 
 # Game-Setup
@@ -6731,11 +6722,13 @@ game_started = False
 random.shuffle(roles_list)
 roles_list.append(roles_list.pop(roles_list.index("Emperor")))
 players = generate_players()
+players_at_start = players
 [shu_emperor_cards, wei_emperor_cards, wu_emperor_cards, hero_emperor_cards, shu_character_cards, wei_character_cards, wu_character_cards,
     hero_character_cards, all_emperor_cards, all_character_cards, character_card_discard_pile] = generate_character_decks()
 player_assignment()
 
 
+# Game-state
 # Card handling
 main_deck = Deck(all_cards)
 discard_deck = Deck([])
@@ -6748,11 +6741,16 @@ for player in players:
     player.check_false_ruler()
 print("All players have been dealt 4 cards!")
 game_started = True
+players[0].current_health = 60
 
-
-# if someone dies~
-# roles_dictionary['Role'] -= 1
-# check_win_conditions()
+while game_started:
+    players[0].start_beginning_phase()
+    # If alive at end of turn
+    if players[0].current_health > 0:
+        players.append(players.pop(0))
+    else:
+        # If dead at end of turn
+        players.pop(0)
 
 # how to reference players~
 # players[0].hand_cards.draw(main_deck, 4)
@@ -6764,19 +6762,3 @@ game_started = True
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Acedia', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Acedia'))
 # players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Lightning', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Lightning'))
 # players[0].start_judgement_phase()
-
-
-# Gameplay
-print(' ')
-players[0].hand_cards.draw(main_deck, 25)
-# players[1].hand_cards.draw(main_deck, 25)
-# players[0].hand_cards.use_card_effect()
-# print(players[0].calculate_targets_in_physical_range(0))
-# print(players[0].calculate_targets_in_weapon_range(0))
-# players[0].start_action_phase()
-
-players[0].current_health = 60
-# players[0].role = 'Rebel'
-players[0].start_beginning_phase()
-# players[0].start_beginning_phase()
-# players[0].start_beginning_phase()
