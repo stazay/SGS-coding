@@ -308,6 +308,28 @@ def check_allegiances_in_play():
     return len(allegiances)
 
 
+def check_judgement_tinkering(judgement_card, targeted_index):
+    for player in players[targeted_index:]:
+        judgement_tinker = player.check_dark_sorcery(
+            judgement_card)
+        if judgement_tinker[0]:
+            judgement_card = judgement_tinker[1]
+        judgement_tinker = player.check_devil(
+            judgement_card)
+        if judgement_tinker[0]:
+            judgement_card = judgement_tinker[1]
+    for player in players[:targeted_index]:
+        judgement_tinker = player.check_dark_sorcery(
+            judgement_card)
+        if judgement_tinker[0]:
+            judgement_card = judgement_tinker[1]
+        judgement_tinker = player.check_devil(
+            judgement_card)
+        if judgement_tinker[0]:
+            judgement_card = judgement_tinker[1]
+    return judgement_card
+
+
 # A class for handling individual characters
 class Character:
     def __init__(self, character, allegiance, health, gender, character_ability1, character_ability2="None", character_ability3="None", character_ability4="None", character_ability5="None"):
@@ -527,7 +549,7 @@ wu_characters = [
     Character("Tai Shi Ci", "Wu", 4, "Male",
               "Heaven's Justice: Once per turn, you can COMPETE with any player; you both show a card simultaneously, and whoever has the higher value wins. If you win, you can use an additional ATTACK, and each ATTACK has unlimited range and can target an additional player. If you lose, you cannot attack this turn."),
     Character("Xiao Qiao", "Wu", 3, "Female",
-              "Heavenly Scent: Whenever you recieve damage, you can choose to pass the damage onto any other player by discarding an on-hand card that has the suit HEARTS. The victim that recieves the damage gets to draw X number of cards from the deck, X being the amount of health missing from the maximum level after damage.",
+              "Fantasy: Whenever you recieve damage, you can choose to pass the damage onto any other player by discarding an on-hand card that has the suit HEARTS. The victim that recieves the damage gets to draw X number of cards from the deck, X being the amount of health missing from the maximum level after damage.",
               "Beauty: All of your SPADES will be regarded as HEARTS."),
     Character("Zhang Zhao and Zhang Hong", "Wu", 3, "Male",
               "Blunt Advice: During your action phase, you can put an on-hand equipment card in the equipment area of another character (you cannot replace something already equipped). If you do so, you draw a card.",
@@ -558,7 +580,7 @@ hero_characters = [
               "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead."),
     Character("Jia Xu", "Heroes", 3, "Male",
               "Unmitigated Murder: During your turn, with the exception of yourself, only characters on the brink of death can use a PEACH.",
-              "Descend into Chaos (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right.",
+              "Upheaval (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right.",
               "Behind the Curtain: You cannot become the target of any black-suited tool cards."),
     Character("Ling Ju", "Heroes", 3, "Female",
               "Deplete Karma: Whenever you are damaged by another player whose health level is greater than your own, you can discard a red-suited hand-card to reduce the damage by one. If you damage another player whose health is no lower than your own, you can discard black-suited hand-card to increase the damage by one.",
@@ -1518,19 +1540,13 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
-
-                # Add checks for Sima Yi and Zhang Jiao
-                for player in players:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-
+                judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
-                if judgement_card.suit == "Hearts":
+                if self.check_beauty(judgement_card):
+                    if judgement_card.suit == "Spades" or judgement_card.suit == "Hearts":
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
+                elif judgement_card.suit == "Hearts":
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
                 else:
@@ -1544,19 +1560,13 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
-
-                # Add checks for Sima Yi and Zhang Jiao
-                for player in players:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-
+                judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
-                if judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
+                if self.check_beauty(judgement_card):
+                    print(
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
+                    players[1].pending_judgements.insert(0, pending_judgement)
+                elif judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
                     self.current_health -= 3
@@ -1590,18 +1600,9 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
-
-                # Add checks for Sima Yi and Zhang Jiao
-                for player in players:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-
+                judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
+                self.check_beauty(judgement_card)
                 if judgement_card.suit == "Clubs":
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
@@ -1617,7 +1618,7 @@ class Player(Character):
             emperor_index = None
             false_ruler_index = None
             for player_index, player in enumerate(players):
-                if (player.character_ability1 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability2 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability3 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability4 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns." or player.character_ability5 == "Amber Sky (Ruler Ability): All Hero characters can give you a DEFEND or LIGHTNING card during their individual turns."):
+                if (player.character_ability3.startswith("Amber Sky (Ruler Ability):")):
                     if player.role == "Emperor":
                         emperor_index = player_index
                     else:
@@ -1629,35 +1630,39 @@ class Player(Character):
                     if self.role != "Emperor":
                         char_abils.append(" Ruler Ability >> Amber Sky")
 
-            if (self.character_ability1 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability2 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability3 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability4 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase." or self.character_ability5 == "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."):
+            if (self.character_ability1.startswith("Blockade:") or self.character_ability3.startswith("Blockade:")):
                 char_abils.append(" Character Ability >> Blockade")
-            if (self.character_ability1 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability2 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability3 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability4 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage." or self.character_ability5 == "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."):
+            if (self.character_ability1.startswith("Dual Heroes:") or self.character_ability3.startswith("Dual Heroes:")):
+                if self.used_dual_heroes != False:
+                    char_abils.append(" Character Ability >> Dual Heroes")
+            if (self.character_ability1.startswith("Drown in Wine:") or self.character_ability3.startswith("Drown in Wine:")):
                 char_abils.append(" Character Ability >> Drown in Wine")
-            if (self.character_ability1 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability2 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability3 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability4 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn." or self.character_ability5 == "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."):
+            if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
                 char_abils.append(" Character Ability >> Green Salve")
-            if (self.character_ability1 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability2 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability3 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability4 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn." or self.character_ability5 == "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."):
+            if (self.character_ability1.startswith("Marriage:") or self.character_ability3.startswith("Marriage:")):
                 char_abils.append(" Character Ability >> Marriage")
-            if (self.character_ability1 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability2 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability3 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability4 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA." or self.character_ability5 == "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."):
+            if (self.character_ability1.startswith("National Colours:") or self.character_ability3.startswith("National Colours:")):
                 char_abils.append(" Character Ability >> National Colours")
-            if (self.character_ability1 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability2 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability3 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability4 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS." or self.character_ability5 == "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."):
+            if (self.character_ability1.startswith("Random Strike:") or self.character_ability3.startswith("Random Strike")):
                 char_abils.append(" Character Ability >> Random Strike")
-            if (self.character_ability1 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability2 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability3 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability4 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE." or self.character_ability5 == "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."):
+            if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
                 char_abils.append(" Character Ability >> Surprise")
-            if (self.character_ability1 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability2 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability3 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability4 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn." or self.character_ability5 == "Trojan Flesh: During your action phase, you can choose to lose one unit of health to draw two more cards from the deck. This ability can be used repeatedly in a turn."):
+            if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
                 char_abils.append(" Character Ability >> Trojan Flesh")
-            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+            if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
             return char_abils
 
         if types == "Attack":
-            if (self.character_ability1 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability2 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability3 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability4 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK." or self.character_ability5 == "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."):
+            if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
             return char_abils
 
     def reset_once_per_turn(self):
         self.attacks_this_turn = 0
-        self.used_bare_chested = False
         self.used_amber_sky = False
+        self.used_bare_chested = False
+        self.used_dual_heroes = False
         self.used_green_salve = False
         self.used_marriage = False
 
@@ -1682,6 +1687,7 @@ class Player(Character):
                             if player.equipment_armor[0].effect == "Eight-Trigrams" and player.equipment_armor[0].suit == "Spades":
                                 user_index = player_index
                                 break
+
                 if self.equipment_armor[0].suit == "Clubs":
                     for player_index, player in enumerate(players):
                         if len(player.equipment_armor) > 0:
@@ -1705,29 +1711,13 @@ class Player(Character):
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
                     print(f"{self.character} flipped a {judgement_card}.")
-
-                    # Add checks for Sima Yi and Zhang Jiao
-                    for player in players[user_index:]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                    for player in players[:user_index]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, user_index)
                     self.check_envy_of_heaven()
-                    if judgement_card.suit == "Hearts" or "Diamonds":
+                    if self.check_beauty(judgement_card):
+                        if judgement_card.suit == "Spades" or judgement_card.suit == "Hearts" or judgement_card.suit == "Diamonds":
+                            return (True, judgement_card)
+                    if judgement_card.suit == "Hearts" or judgement_card.suit == "Diamonds":
                         return (True, judgement_card)
                     else:
                         return (False, None)
@@ -2720,7 +2710,7 @@ class Player(Character):
             selected = answer.get('Selected')
 
             if players[selected].check_empty_city():
-                return (' ')
+                return False
 
             print(f"{card} - DUEL - You can target any player for a duel with this card. If the target does not play an ATTACK, they are damaged. If they do ATTACK, then you must play one in response or take damage. Whoever does not attack, takes damage.")
             question = [
@@ -2732,6 +2722,8 @@ class Player(Character):
                 },
             ]
             answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'No':
+                return False
             if answer.get('Selected') == 'Yes':
                 if card_index == "Special":
                     discarded = card
@@ -2749,9 +2741,9 @@ class Player(Character):
                 if self.used_bare_chested:
                     damage_dealt = 2
                 if duel_won:
+                    players[selected].current_health -= damage_dealt
                     print(
                         f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
-                    players[selected].current_health -= damage_dealt
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
@@ -2766,9 +2758,9 @@ class Player(Character):
                             damage_dealt, mode="Reaction")
                         players[selected].check_retaliation(0, damage_dealt)
                 if not duel_won:
+                    self.current_health -= damage_dealt
                     print(
                         f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
-                    self.current_health -= damage_dealt
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
@@ -2782,6 +2774,7 @@ class Player(Character):
                         self.check_plotting_for_power(
                             damage_dealt, mode="Reaction")
                         self.check_retaliation(0, damage_dealt)
+                return True
 
         elif card.effect2 == 'Negate':
             print(
@@ -3769,6 +3762,7 @@ class Player(Character):
             for player_index, player in enumerate(players):
                 if (player.character_ability2.startswith("Backstab:") or player.character_ability3.startswith("Backstab:")):
                     user_index = player_index
+                    break
 
             possible_indexes = self.calculate_targets_in_physical_range(0)
             possible_targets = []
@@ -3791,27 +3785,8 @@ class Player(Character):
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
                     print(f"{self.character} flipped a {judgement_card}.")
-
-                    # Add checks for Sima Yi and Zhang Jiao
-                    for player in players[user_index:]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                    for player in players[:user_index]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, user_index)
                     if judgement_card.suit == "Spades" or judgement_card.suit == "Clubs" or judgement_card.suit == "Diamonds":
                         players[selected_index].max_health -= 1
                         if players[selected_index].current_health > players[selected_index].max_health:
@@ -3866,6 +3841,14 @@ class Player(Character):
                 print(
                     f"  >> Character Ability: Bare-chested; {self.character} has activated Bare-chested, drawing one card only, and all their ATTACK and DUEL cards will do increased damage for this turn.")
                 self.used_bare_chested = True
+                return True
+
+    def check_beauty(self, card):
+        # "Beauty: All of your SPADES will be regarded as HEARTS."
+        if (self.character_ability2.startswith("Beauty:") or self.character_ability3.startswith("Beauty:")):
+            if card.suit == "Spades":
+                print(
+                    f"  >> Character Ability: Beauty; {self.character}'s SPADES are regarded as HEARTS.")
                 return True
 
     def check_berserk(self):
@@ -4063,10 +4046,6 @@ class Player(Character):
                 f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
 
-    def check_deplete_karma(self):
-        # "Deplete Karma: Whenever you are damaged by another player whose health level is greater than your own, you can discard a red-suited hand-card to reduce the damage by one. If you damage another player whose health is no lower than your own, you can discard black-suited hand-card to increase the damage by one."
-        pass
-
     def check_devil(self, judgement_card):
         # "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card."
         if (self.character_ability2.startswith("Devil:") or self.character_ability3.startswith("Devil:")):
@@ -4182,6 +4161,7 @@ class Player(Character):
             for player_index, player in enumerate(players):
                 if (player.character_ability2.startswith("Displacement:") or player.character_ability3.startswith("Displacement:")):
                     user_index = player_index
+                    break
 
             targets = players[user_index].create_targeting_menu(
                 "Weapon", user_index, source_player_index)
@@ -4300,6 +4280,128 @@ class Player(Character):
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
 
+    def check_dual_heroes(self, phase="Draw"):
+        # "Dual Heroes: At the beginning of your turn, you can choose to forgo your drawing phase and instead flip a judgement. Unlike usual judgement cards, this card will be added to your hand. Note the colour of the suit of this judgement card. For the rest of your action phase, you can choose to use any on-hand card with a different colour suit from this judgement card as a DUEL."
+        if (self.character_ability1.startswith("Dual Heroes:") or self.character_ability3.startswith("Dual Heroes:")):
+
+            user_index = 0
+            for player_index, player in enumerate(players):
+                if (player.character_ability1.startswith("Dual Heroes:") or player.character_ability3.startswith("Dual Heroes:")):
+                    user_index = player_index
+                    break
+
+            if phase == "Draw":
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Choose to activate Dual Heroes, and flip (then draw) a judgement; if yes, all cards of the opposite colour can be used as DUEL?',
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    print(
+                        f"  >> Character Ability: Dual Heroes; {self.character} has/have activated Dual Heroes, flipping a judgement, then adding it to their hand.")
+                    main_deck.check_if_empty(main_deck, discard_deck)
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(f"{self.character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, user_index)
+                    self.hand_cards.draw(discard_deck, 1, False)
+
+                    if judgement_card.suit == "Spades" or judgement_card.suit == "Clubs":
+                        self.used_dual_heroes = "Red"
+                        print(
+                            f"  >> Character Ability: Dual Heroes; {self.character} drew {judgement_card} and can use any on-hand red cards as DUEL!")
+                        return True
+
+                    if judgement_card.suit == "Hearts" or judgement_card.suit == "Diamonds":
+                        self.used_dual_heroes = "Black"
+                        print(
+                            f"  >> Character Ability: Dual Heroes; {self.character} drew {judgement_card} and can use any on-hand black cards as DUEL!")
+                        return True
+
+            if phase == "Activate":
+                if self.used_dual_heroes == "Black":
+                    usable_cards = []
+                    for card in self.hand_cards.contents:
+                        if card.suit == "Spades" or card.suit == "Clubs":
+                            usable_cards.append(card)
+                    if len(usable_cards) > 0:
+                        options = self.create_str_nonblind_menu(True)
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Cancel ability.")
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select any BLACK card to use as DUEL!',
+                                'choices': options,
+                                'filter': lambda card: options.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        card_index = answer.get('Selected')
+
+                        if options[card_index] == "Cancel ability.":
+                            return (' ')
+                        else:
+                            if self.hand_cards.contents[card_index].suit == "Spades" or self.hand_cards.contents[card_index].suit == "Clubs":
+                                card = self.hand_cards.contents.pop(card_index)
+                                discard_deck.add_to_top(card)
+                                card.effect2 = "Duel"
+                                if not self.use_card_effect("Special", card):
+                                    self.hand_cards.draw(
+                                        discard_deck, 1, False)
+                                    print(
+                                        f"{self.character} cancelled using their effect, and {card} was returned.")
+                            else:
+                                print(
+                                    f"{self.hand_cards.contents[card_index]} cannot be used as it is RED-suited!")
+
+                if self.used_dual_heroes == "Red":
+                    usable_cards = []
+                    for card in self.hand_cards.contents:
+                        if card.suit == "Hearts" or card.suit == "Diamonds":
+                            usable_cards.append(card)
+                    if len(usable_cards) > 0:
+                        options = self.create_str_nonblind_menu(True)
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Cancel ability.")
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select any RED card to use as DUEL!',
+                                'choices': options,
+                                'filter': lambda card: options.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        card_index = answer.get('Selected')
+
+                        if options[card_index] == "Cancel ability.":
+                            return (' ')
+                        else:
+                            if self.hand_cards.contents[card_index].suit == "Hearts" or self.hand_cards.contents[card_index].suit == "Diamonds":
+                                card = self.hand_cards.contents.pop(card_index)
+                                discard_deck.add_to_top(card)
+                                card.effect2 = "Duel"
+                                if not self.use_card_effect("Special", card):
+                                    self.hand_cards.draw(
+                                        discard_deck, 1, False)
+                                    print(
+                                        f"{self.character} cancelled using their effect, and {card} was returned.")
+                            else:
+                                print(
+                                    f"{self.hand_cards.contents[card_index]} cannot be used as it is BLACK-suited!")
+
     def check_eclipse_the_moon(self):
         # "Eclipse the Moon: At the end of your turn, you may draw an additional card from the deck."
         if (self.character_ability2.startswith("Eclipse the Moon:") or self.character_ability3.startswith("Eclipse the Moon:")):
@@ -4402,10 +4504,12 @@ class Player(Character):
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
         # "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."
         if (self.character_ability1.startswith("Eye for an Eye:") or self.character_ability3.startswith("Eye for an Eye:")):
+
             user_index = 0
             for player_index, player in enumerate(players):
                 if (player.character_ability1.startswith("Eye for an Eye:") or player.character_ability3.startswith("Eye for an Eye:")):
                     user_index = player_index
+                    break
 
             if mode == "Activate":
                 print(' ')
@@ -4425,25 +4529,8 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
-
-                # Add checks for Sima Yi and Zhang Jiao
-                for player in players[user_index:]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                for player in players[:user_index]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-
+                judgement_card = check_judgement_tinkering(
+                    judgement_card, user_index)
                 if judgement_card.suit != "Hearts":
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {players[source_player_index].character} must suffer one damage or discard two hand-cards.")
@@ -4643,10 +4730,12 @@ class Player(Character):
     def check_fearsome_archer(self, discarded, discarded2=None, selected_index=0):
         # "Fearsome Archer: During your action phase, your ATTACK cards cannot be evaded by a DEFEND under the following two conditions: the number of on-hand cards of the target player is less than or equal to your attacking range; or the number of on-hand cards of the target player is more than or equal to the units of health you have remaining."
         if (self.character_ability1.startswith("Fearsome Archer:") or self.character_ability2.startswith("Fearsome Archer:")):
+
             user_index = 0
             for player_index, player in enumerate(players):
                 if (player.character_ability1.startswith("Fearsome Archer:") or player.character_ability3.startswith("Fearsome Archer:")):
                     user_index = player_index
+                    break
 
             if (len(players[selected_index].hand_cards.contents) <= self.weapon_range) or (len(players[selected_index].hand_cards.contents) >= self.current_health):
                 question = [
@@ -4811,8 +4900,9 @@ class Player(Character):
                 f"  >> Character Ability: Goddess Luo; {self.character} can flip judgement cards until one is red. All black cards are added to their hand.")
 
             for player_index, player in enumerate(players):
-                if (self.character_ability2.startswith("Goddess Luo:") or self.character_ability3.startswith("Goddess Luo")):
+                if (player.character_ability2.startswith("Goddess Luo:") or player.character_ability3.startswith("Goddess Luo")):
                     user_index = player_index
+                    break
 
             activated_goddess_luo = True
             cards_drawn = []
@@ -4834,27 +4924,8 @@ class Player(Character):
                     judgement_card = main_deck.remove_from_top()
                     print(
                         f"{self.character}'s judgement card is a {judgement_card}.")
-
-                    # Add checks for Sima Yi and Zhang Jiao
-                    for player in players[user_index:]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                    for player in players[:user_index]:
-                        judgement_tinker = player.check_dark_sorcery(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-                        judgement_tinker = player.check_devil(
-                            judgement_card)
-                        if judgement_tinker[0]:
-                            judgement_card = judgement_tinker[1]
-
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, user_index)
                     if judgement_card.suit == 'Spades' or judgement_card.suit == 'Clubs':
                         cards_drawn.append(judgement_card)
                     else:
@@ -4895,10 +4966,12 @@ class Player(Character):
     def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0):
         # "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."
         if (self.character_ability2.startswith("Iron Cavalry:") or self.character_ability3.startswith("Iron Cavalry:")):
+
             user_index = 0
             for player_index, player in enumerate(players):
                 if (player.character_ability2.startswith("Iron Cavalry:") or player.character_ability3.startswith("Iron Cavalry:")):
                     user_index = player_index
+                    break
 
             question = [
                 {
@@ -4916,25 +4989,8 @@ class Player(Character):
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
-
-                # Add checks for Sima Yi and Zhang Jiao
-                for player in players[user_index:]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                for player in players[:user_index]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-
+                judgement_card = check_judgement_tinkering(
+                    judgement_card, user_index)
                 if judgement_card.suit == "Diamonds" or judgement_card.suit == "Hearts":
                     if self.check_weapon_frost_blade(selected_index, "Check"):
                         return(' ')
@@ -5079,7 +5135,7 @@ class Player(Character):
 
     def check_lament(self, source_player_index=0, targeted_index=0):
         # "Lament: Whenever any player is damaged by an ATTACK, you can discard any card, on-hand or equipped. The victim must then flip a judgement. If SPADES, the attacker flips their character card. If HEARTS, the victim regains one health. If CLUBS, the attacker discards two cards. If DIAMONDS, the victim draws two cards."
-        for user_index, user in enumerate(players):
+        for user in players:
             if (user.character_ability1.startswith("Lament:") or user.character_ability3.startswith("Lament:")):
                 cards_discardable = (len(user.hand_cards.contents) + len(user.equipment_weapon) + len(
                     user.equipment_armor) + len(user.equipment_offensive_horse) + len(user.equipment_defensive_horse))
@@ -5109,40 +5165,29 @@ class Player(Character):
                         judgement_card = discard_deck.contents[0]
                         print(
                             f"{players[targeted_index].character} flipped a {judgement_card}.")
-
-                        # Add checks for Sima Yi and Zhang Jiao
-                        for player in players[user_index:]:
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                        for player in players[:user_index]:
-                            judgement_tinker = player.check_dark_sorcery(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
-                            judgement_tinker = player.check_devil(
-                                judgement_card)
-                            if judgement_tinker[0]:
-                                judgement_card = judgement_tinker[1]
+                        judgement_card = check_judgement_tinkering(
+                            judgement_card, targeted_index)
 
                         players[targeted_index].check_envy_of_heaven()
-                        if judgement_card.suit == "Spades":
+                        if players[targeted_index].check_beauty(judgement_card):
+                            if judgement_card.suit == "Spades" or judgement_card.suit == "Hearts":
+                                if players[targeted_index].current_health < players[targeted_index].max_health:
+                                    players[targeted_index].current_health += 1
+                                    print(
+                                        f"  >> Character Ability: Lament; {user.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
+
+                        elif judgement_card.suit == "Spades":
                             players[source_player_index].flipped_char_card = True
                             print(
                                 f"  >> Character Ability: Lament; {user.character} has forced {players[source_player_index].character} to flip their character card!")
 
-                        if judgement_card.suit == "Hearts":
+                        elif judgement_card.suit == "Hearts":
                             if players[targeted_index].current_health < players[targeted_index].max_health:
                                 players[targeted_index].current_health += 1
                             print(
                                 f"  >> Character Ability: Lament; {user.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
 
-                        if judgement_card.suit == "Clubs":
+                        elif judgement_card.suit == "Clubs":
                             cards_discardable = (len(players[source_player_index].hand_cards.contents) + len(players[source_player_index].equipment_weapon) + len(
                                 players[source_player_index].equipment_armor) + len(players[source_player_index].equipment_offensive_horse) + len(players[source_player_index].equipment_defensive_horse))
                             print(
@@ -5153,7 +5198,7 @@ class Player(Character):
                                 players[source_player_index].discard_from_equip_or_hand(
                                     2)
 
-                        if judgement_card.suit == "Diamonds":
+                        elif judgement_card.suit == "Diamonds":
                             players[targeted_index].hand_cards.draw(
                                 main_deck, 2, False)
                             print(
@@ -5162,10 +5207,12 @@ class Player(Character):
     def check_lightning_strike(self):
         # "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit SPADES, the target player suffers two points of lightning damage."
         if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
+
             user_index = 0
             for player_index, player in enumerate(players):
                 if (self.character_ability1.startswith("Lightning Strike:") or self.character_ability3.startswith("Lightning Strike:")):
                     user_index = player_index
+                    break
 
             question = [
                 {
@@ -5197,27 +5244,14 @@ class Player(Character):
                 judgement_card = discard_deck.contents[0]
                 print(
                     f"{players[selected_index].character} flipped a {judgement_card}.")
-
-                # Add checks for Sima Yi and Zhang Jiao
-                for player in players[user_index:]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                for player in players[:user_index]:
-                    judgement_tinker = player.check_dark_sorcery(
-                        judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-                    judgement_tinker = player.check_devil(judgement_card)
-                    if judgement_tinker[0]:
-                        judgement_card = judgement_tinker[1]
-
+                judgement_card = check_judgement_tinkering(
+                    judgement_card, user_index)
                 players[selected_index].check_envy_of_heaven()
-                if judgement_card.suit == "Spades":
+                if players[selected_index].check_beauty(judgement_card):
+                    print(
+                        f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
+
+                elif judgement_card.suit == "Spades":
                     damage_dealt = 2
                     players[selected_index].current_health -= damage_dealt
                     print(
@@ -5744,7 +5778,7 @@ class Player(Character):
                             f"  >> Character Ability: Shapeshift; {self.character} has shapeshifted into {self.forms.contents[card_index]}, with the ability:\n {self.character_ability3}!")
                     elif chosen == 1:
                         print(' ')
-                        if (self.forms.contents[card_index].character_ability2 != "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Escort (Ruler Ability): If you need to use a DEFEND, you can ask any member of Wei to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'." and self.forms.contents[card_index].character_ability2 != "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." and self.forms.contents[card_index].character_ability2 != "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." and self.forms.contents[card_index].character_ability2 != "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'." and self.forms.contents[card_index].character_ability2 != "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes." and self.forms.contents[card_index].character_ability2 != "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'." and self.forms.contents[card_index].character_ability2 != "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'." and self.forms.contents[card_index].character_ability2 != "Descend into Chaos (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right." and self.forms.contents[card_index].character_ability2 != "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."):
+                        if (self.forms.contents[card_index].character_ability2 != "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Escort (Ruler Ability): If you need to use a DEFEND, you can ask any member of Wei to play it on your behalf." and self.forms.contents[card_index].character_ability2 != "Divinity (Awakening Ability): If, at the start of your turn, your health is one unit, you must reduce your maximum health by one. After which you permanently gain the abilities 'Dashing Hero' and 'Lingering Spirit'." and self.forms.contents[card_index].character_ability2 != "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health." and self.forms.contents[card_index].character_ability2 != "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." and self.forms.contents[card_index].character_ability2 != "Recommence the Legacy (Awakening Ability): If at the start of your turn, you have no on-hand cards, you must either regain one unit of health or draw two cards, and then reduce your maximum health limit by one. You then permanently gain the ability 'Astrology'." and self.forms.contents[card_index].character_ability2 != "Second Wind (Single-Use Ability): Once per game, at the beginning of your turn, you can return to the same amount of health that you had at the end of your previous turn. You draw a card for each unit of health that changes." and self.forms.contents[card_index].character_ability2 != "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'." and self.forms.contents[card_index].character_ability2 != "Insurrection (Awakening Ability): Whenever you begin your turn with three or more RITES, you must either recover one unit of health or draw two cards. You must then decrease your maximum health by one and permanently gain the ability 'Rejection'." and self.forms.contents[card_index].character_ability2 != "Upheaval (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right." and self.forms.contents[card_index].character_ability2 != "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."):
                             self.allegiance = self.forms.contents[card_index].allegiance
                             self.gender = self.forms.contents[card_index].gender
                             self.character_ability5 = "None"
@@ -6790,6 +6824,9 @@ class Player(Character):
         if self.check_dashing_hero():
             cards_drawn += 1
             message = False
+        if self.check_dual_heroes():
+            cards_drawn = 0
+            message = False
         if self.check_mediocrity("Draw"):
             cards_drawn += check_allegiances_in_play()
             message = False
@@ -6854,6 +6891,8 @@ class Player(Character):
                     self.activate_blockade()
                 if options[action_taken_index] == " Character Ability >> Drown in Wine":
                     self.activate_drown_in_wine("Activate")
+                if options[action_taken_index] == " Character Ability >> Dual Heroes":
+                    self.check_dual_heroes("Activate")
                 if options[action_taken_index] == " Character Ability >> Green Salve":
                     self.activate_green_salve()
                 if options[action_taken_index] == " Character Ability >> Marriage":
@@ -6915,11 +6954,11 @@ class Player(Character):
         print(" ")
         self.acedia_active = False
         self.rations_depleted_active = False
-        self.used_bare_chested = False
         self.check_disintegrate()
         self.check_eclipse_the_moon()
         self.check_second_wind("End")
         self.check_shapeshift("Turn")
+        self.reset_once_per_turn()
 
 
 # Game-Setup
