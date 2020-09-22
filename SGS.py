@@ -1645,6 +1645,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> National Colours")
             if (self.character_ability1.startswith("Random Strike:") or self.character_ability3.startswith("Random Strike")):
                 char_abils.append(" Character Ability >> Random Strike")
+            if (self.character_ability1.startswith("Reconsider:") or self.character_ability3.startswith("Reconsider:")):
+                char_abils.append(" Character Ability >> Reconsider")
             if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
                 char_abils.append(" Character Ability >> Surprise")
             if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
@@ -1665,6 +1667,7 @@ class Player(Character):
         self.used_dual_heroes = False
         self.used_green_salve = False
         self.used_marriage = False
+        self.used_reconsider = False
 
 # Equipment-card checks
     def armor_black_shield(self, attack_card):
@@ -6510,6 +6513,7 @@ class Player(Character):
         false_ruler_index = None
         if self.used_amber_sky:
             print(f"{self.character}: You can only use Amber Sky once per turn.")
+
         if not self.used_amber_sky:
             for player_index, player in enumerate(players):
                 if (player.character_ability3.startswith("Amber Sky (Ruler Ability):") or player.character_ability4.startswith("Amber Sky (Ruler Ability):")):
@@ -6590,6 +6594,7 @@ class Player(Character):
             if self.used_green_salve:
                 print(
                     f"{self.character}: You can only use Green Salve once per turn.")
+
             if not self.used_green_salve:
                 if cards_discardable > 0:
                     options_str = []
@@ -6684,6 +6689,7 @@ class Player(Character):
                 if self.used_marriage:
                     print(
                         f"{self.character}: You can only use Marriage once per turn.")
+
                 if not self.used_marriage:
                     options = [
                         Separator("------<Cannot target yourself>------")]
@@ -6770,6 +6776,78 @@ class Player(Character):
                         players[player_healed_index].current_health += 1
                         print(
                             f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
+
+    def activate_reconsider(self):
+        # "Reconsider: Once per turn, you can discard any number of cards to then draw the same number."
+        if (self.character_ability1.startswith("Reconsider:") or self.character_ability3.startswith("Reconsider:")):
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            total_hand_cards = len(self.hand_cards.contents)
+            if self.used_reconsider:
+                print(
+                    f"{self.character}: You can only use Reconsider once per turn!")
+
+            if not self.used_reconsider:
+                cards_to_replace = 0
+                options = self.create_str_nonblind_menu()
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("No more cards.")
+                options.append("Cancel ability.")
+                selected_cards = []
+                while cards_discardable > 0:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select cards to discard and redraw:',
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options[card_index] == "Cancel ability.":
+                        return (' ')
+                    elif options[card_index] == "No more cards.":
+                        if cards_to_replace == 0:
+                            return (' ')
+                        cards_discardable = 0
+                    else:
+                        selected_cards.append(card_index)
+                        options.pop(card_index)
+                        options.insert(card_index, (Separator(
+                            "------<ALREADY SELECTED>------")))
+                        cards_discardable -= 1
+                        cards_to_replace += 1
+
+                cards_to_draw = len(selected_cards)
+                for card_index in selected_cards:
+                    if card_index <= total_hand_cards:
+                        discard_deck.add_to_top(
+                            self.hand_cards.contents.pop(card_index - 1))
+                        self.hand_cards.contents.insert(
+                            (card_index - 1), "Placeholder")
+                    if card_index == (total_hand_cards + 2):
+                        discard_deck.add_to_top(
+                            self.equipment_weapon.pop())
+                    if card_index == (total_hand_cards + 3):
+                        discard_deck.add_to_top(
+                            self.equipment_armor.pop())
+                    if card_index == (total_hand_cards + 4):
+                        discard_deck.add_to_top(
+                            self.equipment_offensive_horse.pop())
+                    if card_index == (total_hand_cards + 5):
+                        discard_deck.add_to_top(
+                            self.equipment_defensive_horse.pop())
+                self.hand_cards.draw(main_deck, cards_to_draw, False)
+                for item in self.hand_cards.contents:
+                    if "Placeholder" in self.hand_cards.contents:
+                        self.hand_cards.contents.remove("Placeholder")
+                print(
+                    f"  >> Character Ability: Reconsider; {self.character} has discarded {cards_to_draw} cards and redrawn the same amount from the deck.")
+                self.used_reconsider = True
+                return(' ')
 
 # Beginning Phase
     def start_beginning_phase(self):
@@ -6901,6 +6979,8 @@ class Player(Character):
                     self.activate_national_colours()
                 if options[action_taken_index] == " Character Ability >> Random Strike":
                     self.activate_random_strike()
+                if options[action_taken_index] == " Character Ability >> Reconsider":
+                    self.activate_reconsider()
                 if options[action_taken_index] == " Character Ability >> Surprise":
                     self.activate_surprise()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
