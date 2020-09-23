@@ -1475,6 +1475,7 @@ class Player(Character):
             return False
 
     def check_brink_of_death_loop(self, dying_player_index=0, source_player_index=0):
+        # Backstab Kill Loop
         if self.max_health == 0:
             print(
                 f"{self.character} - Your maximum health has reached 0 and therefore you are dead! - {self.character}'s role was {self.role}!")
@@ -1486,8 +1487,18 @@ class Player(Character):
         elif (self.max_health != 0) and (self.current_health < 1):
             print(f"{self.character} - You are on the brink of death ({self.current_health}/{self.max_health} health), and you must be brought back to life with a PEACH or WINE.")
             reacting_player_index = dying_player_index
-            for player in players[dying_player_index:]:
-                if player != "Placeholder":
+
+            # Unmitigated Murder Loop
+            if players[0].check_unmitigated_murder():
+                self.current_health += players[0].use_reaction_effect(
+                    "Brink Of Death", None, dying_player_index, reacting_player_index)
+                if (players[dying_player_index].current_health < 1) and (players[0] != players[dying_player_index]):
+                    self.current_health += players[dying_player_index].use_reaction_effect(
+                        "Brink Of Death", None, dying_player_index, reacting_player_index)
+
+            # Regular Brink of Death Loop
+            else:
+                for player in players[dying_player_index:]:
                     if players[dying_player_index].current_health > 0:
                         break
                     self.current_health += player.use_reaction_effect(
@@ -1495,8 +1506,7 @@ class Player(Character):
                     reacting_player_index += 1
                     if reacting_player_index >= len(players):
                         reacting_player_index -= len(players)
-            for player in players[:dying_player_index]:
-                if player != "Placeholder":
+                for player in players[:dying_player_index]:
                     if players[dying_player_index].current_health > 0:
                         break
                     self.current_health += player.use_reaction_effect(
@@ -1504,6 +1514,8 @@ class Player(Character):
                     reacting_player_index += 1
                     if reacting_player_index >= len(players):
                         reacting_player_index -= len(players)
+
+            # If player died
             if self.current_health < 1:
                 players[source_player_index].check_burning_heart(
                     dying_player_index)
@@ -1525,6 +1537,8 @@ class Player(Character):
                 players.pop(dying_player_index)
                 check_win_conditions()
                 return "Break"
+
+            # If player survived
             else:
                 print(
                     f"{players[dying_player_index].character} has been successfully healed back to {players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP.")
@@ -1580,15 +1594,20 @@ class Player(Character):
                 elif len(players[1].pending_judgements) > 0:
                     for possible_lightning in players[1].pending_judgements:
                         if possible_lightning.effect2 == 'Lightning':
-                            if len(players) < 3:
+                            if (len(players) < 3) and (players[1].check_behind_the_curtain(pending_judgement)):
                                 print(
-                                    f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it gets discarded.")
-                                discard_deck.add_to_top(pending_judgement)
+                                    f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it stays put.")
                             else:
-                                print(
-                                    f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
-                                players[2].pending_judgements.insert(
-                                    0, pending_judgement)
+                                if players[1].check_behind_the_curtain(pending_judgement):
+                                    print(
+                                        f"{self.character} is immune to {pending_judgement} so it passes on to {players[2]}.")
+                                    players[2].pending_judgements.insert(
+                                        0, pending_judgement)
+                                else:
+                                    print(
+                                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
+                                    players[2].pending_judgements.insert(
+                                        0, pending_judgement)
                 else:
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
@@ -1670,9 +1689,15 @@ class Player(Character):
         self.used_reconsider = False
 
 # Equipment-card checks
-    def armor_black_shield(self, attack_card):
+    def armor_black_shield(self, attack_card, source_player_index=0):
         if len(self.equipment_armor) > 0:
             if self.equipment_armor[0].effect == "Black Shield":
+                if players[source_player_index].check_beauty():
+                    if attack_card.suit == "Clubs":
+                        print(
+                            f"  >> {self.character} has {self.equipment_armor[0]} equipped, and therefore CANNOT be affected by black attack cards. ({attack_card} discarded as normal)")
+                        return True
+
                 if attack_card.suit == "Spades" or attack_card.suit == "Clubs":
                     print(
                         f"  >> {self.character} has {self.equipment_armor[0]} equipped, and therefore CANNOT be affected by black attack cards. ({attack_card} discarded as normal)")
@@ -2347,30 +2372,34 @@ class Player(Character):
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player_index, player in enumerate(players):
                     if (player != players[0]) and (player.current_health > 0):
-                        barb_response = player.use_reaction_effect(
-                            "Attack", discarded, 0, player)
-                        if type(barb_response) == Card:
-                            if (barb_response.effect == "Attack") or (barb_response.effect2 == "Attack"):
+                        beauty = self.check_beauty(discarded)
+                        if not player.check_behind_the_curtain(discarded, beauty):
+                            barb_response = player.use_reaction_effect(
+                                "Attack", discarded, 0, player)
+                            if type(barb_response) == Card:
+                                if (barb_response.effect == "Attack") or (barb_response.effect2 == "Attack"):
+                                    print(
+                                        f"{player.character} successfully defended against BARBARIANS with {barb_response}.")
+                            else:
+                                player.current_health -= 1
                                 print(
-                                    f"{player.character} successfully defended against BARBARIANS with {barb_response}.")
-                        else:
-                            player.current_health -= 1
-                            print(
-                                f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
-                            players[0].check_insanity(player)
-                            # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
-                            if player.current_health < 1:
-                                players[player_index].check_brink_of_death_loop(
-                                    player_index, 0)
-                            if player.current_health > 0:
-                                players[player_index].check_eternal_loyalty(1)
-                                players[player_index].check_evil_hero(card)
-                                players[player_index].check_eye_for_an_eye(
-                                    source_player_index=0, mode="Activate")
-                                players[player_index].check_geminate(1)
-                                players[player_index].check_plotting_for_power(
-                                    1, mode="Reaction")
-                                players[player_index].check_retaliation(0, 1)
+                                    f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
+                                players[0].check_insanity(player)
+                                # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
+                                if player.current_health < 1:
+                                    players[player_index].check_brink_of_death_loop(
+                                        player_index, 0)
+                                if player.current_health > 0:
+                                    players[player_index].check_eternal_loyalty(
+                                        1)
+                                    players[player_index].check_evil_hero(card)
+                                    players[player_index].check_eye_for_an_eye(
+                                        source_player_index=0, mode="Activate")
+                                    players[player_index].check_geminate(1)
+                                    players[player_index].check_plotting_for_power(
+                                        1, mode="Reaction")
+                                    players[player_index].check_retaliation(
+                                        0, 1)
 
         elif card.effect2 == 'Granary':
             print(f"{card} - GRANARY - {card.flavour_text}")
@@ -2463,30 +2492,34 @@ class Player(Character):
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player_index, player in enumerate(players):
                     if (player != players[0]) and (player.current_health > 0):
-                        roa_response = player.use_reaction_effect(
-                            "Defend", discarded, 0, player)
-                        if type(roa_response) == Card:
-                            if (roa_response.effect == "Defend") or (roa_response.effect2 == "Defend"):
+                        beauty = self.check_beauty(discarded)
+                        if not player.check_behind_the_curtain(discarded, beauty):
+                            roa_response = player.use_reaction_effect(
+                                "Defend", discarded, 0, player)
+                            if type(roa_response) == Card:
+                                if (roa_response.effect == "Defend") or (roa_response.effect2 == "Defend"):
+                                    print(
+                                        f"{player.character} successfully defended against RAIN OF ARROWS with {roa_response}.")
+                            else:
+                                player.current_health -= 1
                                 print(
-                                    f"{player.character} successfully defended against RAIN OF ARROWS with {roa_response}.")
-                        else:
-                            player.current_health -= 1
-                            print(
-                                f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
-                            players[0].check_insanity(player)
-                            # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
-                            if player.current_health < 1:
-                                players[player_index].check_brink_of_death_loop(
-                                    player_index, 0)
-                            if player.current_health > 0:
-                                players[player_index].check_eternal_loyalty(1)
-                                players[player_index].check_evil_hero(card)
-                                players[player_index].check_eye_for_an_eye(
-                                    source_player_index=0, mode="Activate")
-                                players[player_index].check_geminate(1)
-                                players[player_index].check_plotting_for_power(
-                                    1, mode="Reaction")
-                                players[player_index].check_retaliation(0, 1)
+                                    f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
+                                players[0].check_insanity(player)
+                                # NEED SOME SORT OF BRINK OF DEATH LOOP HERE
+                                if player.current_health < 1:
+                                    players[player_index].check_brink_of_death_loop(
+                                        player_index, 0)
+                                if player.current_health > 0:
+                                    players[player_index].check_eternal_loyalty(
+                                        1)
+                                    players[player_index].check_evil_hero(card)
+                                    players[player_index].check_eye_for_an_eye(
+                                        source_player_index=0, mode="Activate")
+                                    players[player_index].check_geminate(1)
+                                    players[player_index].check_plotting_for_power(
+                                        1, mode="Reaction")
+                                    players[player_index].check_retaliation(
+                                        0, 1)
                 return True
 
         elif card.effect2 == 'Coerce':
@@ -2532,6 +2565,9 @@ class Player(Character):
                 if answer.get('Selected') == 'No':
                     return False
                 if answer.get('Selected') == 'Yes':
+                    beauty = self.check_beauty(card)
+                    if players[selected].check_behind_the_curtain(card, beauty):
+                        return False
                     if len(players[selected].calculate_targets_in_weapon_range(selected)) > 0:
                         options_str = players[selected].create_targeting_menu(
                             "Weapon", selected)
@@ -2592,6 +2628,9 @@ class Player(Character):
             ]
             answer = prompt(question, style=custom_style_2)
             if answer.get('Selected') == 'No':
+                return False
+            beauty = self.check_beauty(card)
+            if players[selected].check_behind_the_curtain(card, beauty):
                 return False
             if answer.get('Selected') == 'Yes':
                 cards_discardable = (len(players[selected].hand_cards.contents) + len(players[selected].equipment_weapon) + len(
@@ -2727,6 +2766,9 @@ class Player(Character):
             answer = prompt(question, style=custom_style_2)
             if answer.get('Selected') == 'No':
                 return False
+            beauty = self.check_beauty(card)
+            if players[selected].check_behind_the_curtain(card, beauty):
+                return False
             if answer.get('Selected') == 'Yes':
                 if card_index == "Special":
                     discarded = card
@@ -2840,6 +2882,9 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'No':
+                    return False
+                beauty = self.check_beauty(card)
+                if players[selected].check_behind_the_curtain(card, beauty):
                     return False
                 if answer.get('Selected') == 'Yes':
                     cards_discardable = (len(players[selected].hand_cards.contents) + len(players[selected].equipment_weapon) + len(
@@ -2977,6 +3022,9 @@ class Player(Character):
             answer = prompt(question, style=custom_style_2)
             if answer.get('Selected') == 'No':
                 return False
+            beauty = self.check_beauty(card)
+            if players[selected].check_behind_the_curtain(card, beauty):
+                return False
             if answer.get('Selected') == 'Yes':
                 for possible_acedia in players[selected].pending_judgements:
                     if possible_acedia.effect2 == 'Acedia':
@@ -3013,8 +3061,9 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'Yes':
-                    if card_index == "Special":
-                        pass
+                    beauty = self.check_beauty(card)
+                    if players[selected].check_behind_the_curtain(card, beauty):
+                        return False
                     else:
                         discarded = self.hand_cards.contents.pop(
                             card_index)
@@ -3054,6 +3103,9 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 if answer.get('Selected') == 'No':
+                    return False
+                beauty = self.check_beauty(card)
+                if players[selected].check_behind_the_curtain(card, beauty):
                     return False
                 if answer.get('Selected') == 'Yes':
                     for possible_rations_depleted in players[selected].pending_judgements:
@@ -3202,7 +3254,7 @@ class Player(Character):
             if self.check_weapon_black_pommel():
                 print(
                     f"  >> {self.character} has {self.equipment_weapon[0]} equipped, and therefore ignores any armor when attacking.")
-            elif players[selected].armor_black_shield(discarded):
+            elif players[selected].armor_black_shield(discarded, coerced):
                 return(' ')
 
         # Undodgeable ATTACK checks
@@ -3358,7 +3410,7 @@ class Player(Character):
             discarded = options.pop(action_taken_index)
             discard_deck.add_to_top(discarded)
             discarded.effect2 = "Attack"
-            self.check_ardour(discarded)
+            self.check_ardour(discarded, coerced)
             self.check_one_after_another()
             extra_targets = self.check_weapon_sky_scorcher_halberd(
                 selected)
@@ -3452,8 +3504,8 @@ class Player(Character):
                         return(output_value)
 
             elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
-                if card_played.effect2 == "Attack" or "Red Attack":
-                    self.check_ardour(card_played)
+                if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
+                    self.check_ardour(card_played, player_index)
 
                 if not players[player_index].check_weapon_black_pommel():
                     armor_check = self.armor_eight_trigrams(
@@ -3750,9 +3802,14 @@ class Player(Character):
                 discard_deck.add_to_top(self.pending_judgements.pop())
 
 # Ability checks
-    def check_ardour(self, card):
+    def check_ardour(self, card, source_player_index=0):
         # "Ardour: Whenever you use or become the target of any DUEL or red-suited ATTACK cards, you can draw a card."
         if (self.character_ability1.startswith("Ardour:") or self.character_ability3.startswith("Ardour:")):
+            if players[source_player_index].check_beauty(card):
+                if (card.effect == "Duel") or (card.effect == "Attack" and (card.suit == "Spades" or card.suit == "Hearts" or card.suit == "Diamonds")):
+                    print(
+                        f"  >> Character Ability: Ardour; {self.character} used or was target of {card} (a DUEL or red-suited ATTACK). He draws a card.")
+                    self.hand_cards.draw(main_deck, 1, False)
             if (card.effect == "Duel") or (card.effect == "Attack" and (card.suit == "Hearts" or card.suit == "Diamonds")):
                 print(
                     f"  >> Character Ability: Ardour; {self.character} used or was target of {card} (a DUEL or red-suited ATTACK). He draws a card.")
@@ -3853,6 +3910,22 @@ class Player(Character):
                 print(
                     f"  >> Character Ability: Beauty; {self.character}'s SPADES are regarded as HEARTS.")
                 return True
+        return False
+
+    def check_behind_the_curtain(self, card, beauty=False):
+        # "Behind the Curtain: You cannot become the target of any black-suited tool cards."
+        if self.character_ability3.startswith("Behind the Curtain:"):
+            if card.suit == "Spades" or card.suit == "Clubs":
+                if card.effect2 == "Barbarians" or card.effect2 == "Rain of Arrows" or card.effect2 == "Coerce" or card.effect2 == "Dismantle" or card.effect2 == "Duel" or card.effect2 == "Steal" or card.effect2 == "Acedia" or card.effect2 == "Lightning" or card.effect2 == "Rations Depleted":
+                    print(
+                        f"  >> Character Ability: Behind the Curtain; {self.character} is immune to the effects of {card} as it is a BLACK tool card.")
+                    return True
+            if beauty and card.suit == "Clubs":
+                if card.effect2 == "Barbarians" or card.effect2 == "Rain of Arrows" or card.effect2 == "Coerce" or card.effect2 == "Dismantle" or card.effect2 == "Duel" or card.effect2 == "Steal" or card.effect2 == "Acedia" or card.effect2 == "Lightning" or card.effect2 == "Rations Depleted":
+                    print(
+                        f"  >> Character Ability: Behind the Curtain; {self.character} is immune to the effects of {card} as it is a BLACK tool card.")
+                    return True
+        return False
 
     def check_berserk(self):
         # "Berserk: There is no limit on how many times you can ATTACK during your turn."
@@ -4901,12 +4974,6 @@ class Player(Character):
         if (self.character_ability2.startswith("Goddess Luo:") or self.character_ability3.startswith("Goddess Luo")):
             print(
                 f"  >> Character Ability: Goddess Luo; {self.character} can flip judgement cards until one is red. All black cards are added to their hand.")
-
-            for player_index, player in enumerate(players):
-                if (player.character_ability2.startswith("Goddess Luo:") or player.character_ability3.startswith("Goddess Luo")):
-                    user_index = player_index
-                    break
-
             activated_goddess_luo = True
             cards_drawn = []
             print(' ')
@@ -4928,7 +4995,7 @@ class Player(Character):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card}.")
                     judgement_card = check_judgement_tinkering(
-                        judgement_card, user_index)
+                        judgement_card, 0)
                     if judgement_card.suit == 'Spades' or judgement_card.suit == 'Clubs':
                         cards_drawn.append(judgement_card)
                     else:
@@ -5486,6 +5553,20 @@ class Player(Character):
     def check_reckless(self, card, source_player_index=0):
         # "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead."
         if (self.character_ability1.startswith("Reckless:") or self.character_ability3.startswith("Reckless:")):
+            if players[source_player_index].check_beauty(card):
+                if (card.suit == "Spades") or (card.suit == "Hearts") or (card.suit == "Diamonds") or (players[source_player_index].wine_active):
+                    players[source_player_index].wine_active = False
+                    self.max_health -= 1
+                    if self.current_health > self.max_health:
+                        self.current_health -= 1
+                    print(
+                        f"  >> Character Ability: Reckless; {self.character} has taken damage from {players[source_player_index].character}'s {card}, and therefore loses a maximum health! ({self.current_health}/{self.max_health} HP remaining)")
+                    for player_index, player in enumerate(players):
+                        if player.current_health < 1:
+                            players[player_index].check_brink_of_death_loop(
+                                player_index, source_player_index)
+                    return True
+
             if (card.suit == "Hearts") or (card.suit == "Diamonds") or (players[source_player_index].wine_active):
                 players[source_player_index].wine_active = False
                 self.max_health -= 1
@@ -5856,6 +5937,13 @@ class Player(Character):
         if (self.character_ability2.startswith("Talent:") or self.character_ability3.startswith("Talent:")):
             print(
                 f"  >> Character Ability: Talent; {self.character} has no range restriction on their tool cards.")
+            return True
+
+    def check_unmitigated_murder(self):
+        # "Unmitigated Murder: During your turn, with the exception of yourself, only characters on the brink of death can use a PEACH."
+        if (self.character_ability1.startswith("Unmitigated Murder:") or self.character_ability3.startswith("Unmitigated Murder:")):
+            print(
+                f"  >> Character Ability: Unmitigated Murder; On his turn, with the exception of {self.character}, only characters on the brink of death can use a PEACH.")
             return True
 
     def check_unnatural_death(self, cards_discarded):
