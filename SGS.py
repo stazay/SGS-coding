@@ -583,7 +583,7 @@ hero_characters = [
               "Upheaval (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right.",
               "Behind the Curtain: You cannot become the target of any black-suited tool cards."),
     Character("Ling Ju", "Heroes", 3, "Female",
-              "Deplete Karma: Whenever you are damaged by another player whose health level is greater than your own, you can discard a red-suited hand-card to reduce the damage by one. If you damage another player whose health is no lower than your own, you can discard black-suited hand-card to increase the damage by one.",
+              "Deplete Karma: Whenever you are damaged by another player whose health level is greater or equal to your own, you can discard a red-suited hand-card to reduce the damage by one. If you damage another player whose health is greater than or equal to your own, you can discard black-suited hand-card to increase the damage by one.",
               "Burning Heart (Single-Use Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."),
     Character("Lu Bu", "Heroes", 4, "Male",
               "Without Equal: Whenever you use ATTACK, your target has to use two DEFEND cards to successfully evade the attack. During a DUEL, your opponent has to use two ATTACK cards for every one ATTACK card that you use."),
@@ -1232,42 +1232,31 @@ class Player(Character):
         print(' ')
 
 # Menu Creation for targeting players
-    def calculate_targets_in_physical_range(self, player_index):
+    def calculate_targets_in_physical_range(self, player_index, modifier=0):
         output = []
         for (target_index, target) in enumerate(players):
             if target_index != player_index:
                 distance = abs(target_index - player_index)
                 if distance > len(players) / 2:
                     distance = len(players) - distance
-                if distance - (players[player_index].check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
+                if distance - (players[player_index].check_horsemanship() + modifier + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
                     output.append(target_index)
         return output
 
-    def calculate_targets_in_extended_physical_range(self, player_index):
+    def calculate_targets_in_weapon_range(self, player_index, modifier=0, omit=None):
         output = []
         for (target_index, target) in enumerate(players):
             if target_index != player_index:
                 distance = abs(target_index - player_index)
                 if distance > len(players) / 2:
                     distance = len(players) - distance
-                if distance - (players[player_index].check_horsemanship() + (len(players[player_index].equipment_offensive_horse) + 2)) + (len(target.equipment_defensive_horse)) <= 0:
-                    output.append(target_index)
-        return output
-
-    def calculate_targets_in_weapon_range(self, player_index, omit=None):
-        output = []
-        for (target_index, target) in enumerate(players):
-            if target_index != player_index:
-                distance = abs(target_index - player_index)
-                if distance > len(players) / 2:
-                    distance = len(players) - distance
-                if distance - (players[player_index].check_horsemanship() + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
+                if distance - (players[player_index].check_horsemanship() + modifier + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
                     output.append(target_index)
         if omit != None:
             output.remove(omit)
         return output
 
-    def create_targeting_menu(self, range_type="Weapon", source_player_index=0, omit=None):
+    def create_targeting_menu(self, range_type="Weapon", source_player_index=0, modifier=0, omit=None):
         if range_type == "Physical":
             if self.check_talent():
                 output_str = [
@@ -1277,29 +1266,7 @@ class Player(Character):
                 return (output_str)
 
             reachable_indexes = self.calculate_targets_in_physical_range(
-                source_player_index)
-            if len(reachable_indexes) == 0:
-                print(
-                    f"{self.character} - You have insufficient range to reach anyone with this card.")
-                return "Break"
-            output_str = []
-            for player in players:
-                output_str.append(Separator("------" + str(player) + "------"))
-            for reachable_index in reachable_indexes:
-                output_str.pop(reachable_index)
-                output_str.insert(reachable_index, str(
-                    players[reachable_index]))
-            return (output_str)
-
-        if range_type == "Extended Physical":
-            reachable_indexes = self.calculate_targets_in_extended_physical_range(
-                source_player_index)
-            if self.check_talent():
-                output_str = [
-                    Separator("------<Cannot target yourself>------")]
-                for player in players[1:]:
-                    output_str.append(str(player))
-                return (output_str)
+                source_player_index, modifier)
             if len(reachable_indexes) == 0:
                 print(
                     f"{self.character} - You have insufficient range to reach anyone with this card.")
@@ -1315,7 +1282,7 @@ class Player(Character):
 
         if range_type == "Weapon":
             reachable_indexes = self.calculate_targets_in_weapon_range(
-                source_player_index, omit)
+                source_player_index, modifier, omit)
             if len(reachable_indexes) == 0:
                 print(
                     f"{self.character} - You have insufficient range to reach anyone with an ATTACK.")
@@ -1578,10 +1545,12 @@ class Player(Character):
                 print(f"{self.character} flipped a {judgement_card}.")
                 judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
+
                 if self.check_beauty(judgement_card):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
                     players[1].pending_judgements.insert(0, pending_judgement)
+
                 elif judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
@@ -1590,22 +1559,27 @@ class Player(Character):
                     if not fantasy[0]:
                         self.current_health -= damage_dealt
                         if self.current_health < 1:
-                            if self.check_brink_of_death_loop(0, "None") == "Break":
+                            if self.check_brink_of_death_loop(0, "Self") == "Break":
                                 return "Break"
-                        self.check_eternal_loyalty(damage_dealt)
                         discard_deck.add_to_top(pending_judgement)
+                        self.check_eternal_loyalty(damage_dealt)
                         self.check_evil_hero(pending_judgement)
+                        self.check_exile()
                         self.check_geminate(damage_dealt)
                     else:
                         redirected = fantasy[1]
                         players[redirected].current_health -= damage_dealt
+
                         if players[redirected].current_health < 1:
-                            if players[redirected].check_brink_of_death_loop(redirected, "None") == "Break":
+                            if players[redirected].check_brink_of_death_loop(redirected, "Self") == "Break":
                                 return "Break"
-                        players[redirected].check_eternal_loyalty(damage_dealt)
+
                         discard_deck.add_to_top(pending_judgement)
+                        players[redirected].check_eternal_loyalty(damage_dealt)
                         players[redirected].check_evil_hero(pending_judgement)
+                        players[redirected].check_exile()
                         players[redirected].check_geminate(damage_dealt)
+
                 elif len(players[1].pending_judgements) > 0:
                     for possible_lightning in players[1].pending_judgements:
                         if possible_lightning.effect2 == 'Lightning':
@@ -1682,6 +1656,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Random Strike")
             if (self.character_ability1.startswith("Reconsider:") or self.character_ability3.startswith("Reconsider:")):
                 char_abils.append(" Character Ability >> Reconsider")
+            if self.character_ability3.startswith("Rejection:"):
+                char_abils.append(" Character Ability >> Rejection")
             if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
                 char_abils.append(" Character Ability >> Surprise")
             if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
@@ -1818,10 +1794,21 @@ class Player(Character):
                         if self.wine_active:
                             damage_dealt = 2
                             self.wine_active = False
+
                         fantasy = players[target_index].check_fantasy(
                             damage_dealt, user_index)
                         if fantasy[0]:
                             target_index = fantasy[1]
+
+                        deplete_karma = self.check_deplete_karma(
+                            damage_dealt, None, target_index)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+                        deplete_karma = players[target_index].check_deplete_karma(
+                            damage_dealt, user_index, None)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+
                         players[target_index].current_health -= damage_dealt
                         print(
                             f"  >> {self.character} has forced the damage to {players[target_index].character}, by using {self.equipment_weapon[0]}, and discarding two cards ({players[target_index].current_health}/{players[target_index].max_health} HP remaining).")
@@ -1841,6 +1828,7 @@ class Player(Character):
                         players[target_index].check_eternal_loyalty(
                             damage_dealt)
                         players[target_index].check_evil_ruler(discarded)
+                        players[target_index].check_exile()
                         if players[target_index].check_eye_for_an_eye(
                                 source_player_index=0, mode="Activate") == "Break":
                             return "Break"
@@ -2412,14 +2400,27 @@ class Player(Character):
                                         f"{player.character} successfully defended against BARBARIANS with {barb_response}.")
                             else:
                                 print(
-                                    f"{player.character} failed to defend from BARBARIANS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
+                                    f"{player.character} failed to defend from BARBARIANS!")
                                 fantasy = players[player_index].check_fantasy(
                                     1, 0)
                                 if fantasy[0]:
                                     player_index = fantasy[1]
                                     player = players[player_index]
-                                player.current_health -= 1
-                                players[0].check_insanity(player)
+
+                                damage_dealt = 1
+                                deplete_karma = self.check_deplete_karma(
+                                    damage_dealt, None, player_index)
+                                if deplete_karma[0]:
+                                    damage_dealt = deplete_karma[1]
+                                deplete_karma = players[player_index].check_deplete_karma(
+                                    damage_dealt, 0, None)
+                                if deplete_karma[0]:
+                                    damage_dealt = deplete_karma[1]
+
+                                player.current_health -= damage_dealt
+                                print(
+                                    f"{player.character} takes {damage_dealt} damage ({player.current_health}/{player.max_health} HP remaining).")
+                                self.check_insanity(player)
 
                                 if player.current_health < 1:
                                     player.check_brink_of_death_loop(
@@ -2433,14 +2434,16 @@ class Player(Character):
                                             f"  >> Character Ability: Fantasy; {player.character} draws {cards_to_draw} from the deck.")
                                         player.hand_cards.draw(
                                             main_deck, cards_to_draw, False)
-                                    player.check_eternal_loyalty(1)
+
+                                    player.check_eternal_loyalty(damage_dealt)
                                     player.check_evil_hero(card)
+                                    player.check_exile()
                                     player.check_eye_for_an_eye(
                                         source_player_index=0, mode="Activate")
-                                    player.check_geminate(1)
+                                    player.check_geminate(damage_dealt)
                                     player.check_plotting_for_power(
-                                        1, mode="Reaction")
-                                    player.check_retaliation(0, 1)
+                                        damage_dealt, mode="Reaction")
+                                    player.check_retaliation(0, damage_dealt)
 
         elif card.effect2 == 'Granary':
             print(f"{card} - GRANARY - {card.flavour_text}")
@@ -2500,7 +2503,7 @@ class Player(Character):
                 self.check_wisdom()
                 discard_deck.add_to_top(discarded)
                 for player in players:
-                    if player.max_health < player.current_health:
+                    if player.max_health > player.current_health:
                         player.current_health += 1
                         print(
                             f"{player.character} has been healed by one. ({player.current_health}/{player.max_health} HP remaining)")
@@ -2543,14 +2546,27 @@ class Player(Character):
                                         f"{player.character} successfully defended against RAIN OF ARROWS with {roa_response}.")
                             else:
                                 print(
-                                    f"{player.character} failed to defend from RAIN OF ARROWS, and takes one damage ({player.current_health}/{player.max_health} HP remaining).")
+                                    f"{player.character} failed to defend from RAIN OF ARROWS.")
                                 fantasy = players[player_index].check_fantasy(
                                     1, 0)
                                 if fantasy[0]:
                                     player_index = fantasy[1]
                                     player = players[player_index]
-                                player.current_health -= 1
-                                players[0].check_insanity(player)
+
+                                damage_dealt = 1
+                                deplete_karma = self.check_deplete_karma(
+                                    damage_dealt, None, player_index)
+                                if deplete_karma[0]:
+                                    damage_dealt = deplete_karma[1]
+                                deplete_karma = players[player_index].check_deplete_karma(
+                                    damage_dealt, 0, None)
+                                if deplete_karma[0]:
+                                    damage_dealt = deplete_karma[1]
+
+                                player.current_health -= damage_dealt
+                                print(
+                                    f"{player.character} takes {damage_dealt} damage ({player.current_health}/{player.max_health} HP remaining).")
+                                self.check_insanity(player)
 
                                 if player.current_health < 1:
                                     player.check_brink_of_death_loop(
@@ -2564,14 +2580,15 @@ class Player(Character):
                                             f"  >> Character Ability: Fantasy; {player.character} draws {cards_to_draw} from the deck.")
                                         player.hand_cards.draw(
                                             main_deck, cards_to_draw, False)
-                                    player.check_eternal_loyalty(1)
+                                    player.check_eternal_loyalty(damage_dealt)
                                     player.check_evil_hero(card)
+                                    player.check_exile()
                                     player.check_eye_for_an_eye(
                                         source_player_index=0, mode="Activate")
-                                    player.check_geminate(1)
+                                    player.check_geminate(damage_dealt)
                                     player.check_plotting_for_power(
-                                        1, mode="Reaction")
-                                    player.check_retaliation(0, 1)
+                                        damage_dealt, mode="Reaction")
+                                    player.check_retaliation(0, damage_dealt)
                 return True
 
         elif card.effect2 == 'Coerce':
@@ -2841,6 +2858,16 @@ class Player(Character):
                     fantasy = players[selected].check_fantasy(damage_dealt, 0)
                     if fantasy[0]:
                         selected = fantasy[1]
+
+                    deplete_karma = self.check_deplete_karma(
+                        damage_dealt, None, selected)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
+                    deplete_karma = players[selected].check_deplete_karma(
+                        damage_dealt, 0, None)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
+
                     players[selected].current_health -= damage_dealt
                     print(
                         f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
@@ -2858,6 +2885,7 @@ class Player(Character):
                             main_deck, cards_to_draw, False)
                     players[selected].check_eternal_loyalty(damage_dealt)
                     players[selected].check_evil_hero(card)
+                    players[selected].check_exile()
                     if players[selected].check_eye_for_an_eye(
                             source_player_index=0, mode="Activate") == "Break":
                         return(' ')
@@ -2865,9 +2893,20 @@ class Player(Character):
                     players[selected].check_plotting_for_power(
                         damage_dealt, mode="Reaction")
                     players[selected].check_retaliation(0, damage_dealt)
+
                 if not duel_won:
                     fantasy = self.check_fantasy(damage_dealt, selected)
                     if not fantasy[0]:
+
+                        deplete_karma = self.check_deplete_karma(
+                            damage_dealt, selected, None)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+                        deplete_karma = players[selected].check_deplete_karma(
+                            damage_dealt, None, 0)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+
                         self.current_health -= damage_dealt
                         print(
                             f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
@@ -2879,6 +2918,7 @@ class Player(Character):
 
                         self.check_eternal_loyalty(damage_dealt)
                         self.check_evil_hero(card)
+                        self.check_exile()
                         if self.check_eye_for_an_eye(
                                 source_player_index=selected, mode="Activate") == "Break":
                             return(' ')
@@ -2886,8 +2926,18 @@ class Player(Character):
                         self.check_plotting_for_power(
                             damage_dealt, mode="Reaction")
                         self.check_retaliation(0, damage_dealt)
+
                     else:
                         redirected = fantasy[1]
+                        deplete_karma = self.check_deplete_karma(
+                            damage_dealt, None, redirected)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+                        deplete_karma = players[redirected].check_deplete_karma(
+                            damage_dealt, 0, None)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+
                         players[redirected].current_health -= damage_dealt
                         print(
                             f"{players[selected].character} has won the DUEL! {players[redirected].character} takes {damage_dealt} damage! ({players[redirected].current_health}/{players[redirected].max_health} HP remaining)")
@@ -2905,6 +2955,7 @@ class Player(Character):
                             main_deck, cards_to_draw, False)
                         players[redirected].check_eternal_loyalty(damage_dealt)
                         players[redirected].check_evil_hero(card)
+                        players[redirected].check_exile()
                         if players[redirected].check_eye_for_an_eye(
                                 source_player_index=selected, mode="Activate") == "Break":
                             return(' ')
@@ -3165,11 +3216,10 @@ class Player(Character):
                     print(f"{self.character} has called {card}.")
 
         elif card.effect2 == 'Rations Depleted':
-            choices_index = self.calculate_targets_in_extended_physical_range(
-                0)
+            choices_index = self.calculate_targets_in_physical_range(0, +1)
 
             if len(choices_index) > 0:
-                options_str = self.create_targeting_menu("Extended Physical")
+                options_str = self.create_targeting_menu("Physical", +1)
                 blockade_possible = True
 
             if blockade_possible:
@@ -3391,6 +3441,15 @@ class Player(Character):
             if fantasy[0]:
                 selected = fantasy[1]
 
+            deplete_karma = self.check_deplete_karma(
+                damage_dealt, None, selected)
+            if deplete_karma[0]:
+                damage_dealt = deplete_karma[1]
+            deplete_karma = players[selected].check_deplete_karma(
+                damage_dealt, 0, None)
+            if deplete_karma[0]:
+                damage_dealt = deplete_karma[1]
+
             players[selected].current_health -= damage_dealt
             print(
                 f"{self.character} attacked {players[selected].character}, dealing {damage_dealt} damage. ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
@@ -3416,6 +3475,7 @@ class Player(Character):
             players[selected].check_eternal_loyalty(
                 damage_dealt)
             players[selected].check_evil_hero(discarded, discarded2)
+            players[selected].check_exile()
             if players[selected].check_eye_for_an_eye(
                     source_player_index=coerced, mode="Activate") == "Break":
                 return(' ')
@@ -3967,10 +4027,17 @@ class Player(Character):
 
                     if judgement_card.suit == "Hearts":
                         damage_dealt = 1
+
                         fantasy = players[selected_index].check_fantasy(
                             damage_dealt, 0)
                         if fantasy[0]:
                             selected_index = fantasy[1]
+
+                        deplete_karma = players[selected_index].check_deplete_karma(
+                            damage_dealt, user_index, None)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+
                         players[selected_index].current_health -= damage_dealt
                         print(
                             f"{self.character}'s judgement card is a {judgement_card} and therefore Backstab does not apply. Damage dealt as normal; {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
@@ -3988,11 +4055,13 @@ class Player(Character):
                                     f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
                                 players[selected_index].hand_cards.draw(
                                     main_deck, cards_to_draw, False)
+
                             self.check_lament(user_index, selected_index)
                             players[selected_index].check_eternal_loyalty(
                                 damage_dealt)
                             players[selected_index].check_evil_hero(
                                 discarded, discarded2)
+                            players[selected_index].check_exile()
                             if players[selected_index].check_eye_for_an_eye(
                                     source_player_index=0, mode="Activate") == "Break":
                                 return True
@@ -4242,6 +4311,114 @@ class Player(Character):
                 f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
 
+    def check_deplete_karma(self, damage_dealt, source_player_index=None, target_player_index=None):
+        # "Deplete Karma: Whenever you are damaged by another player whose health level is greater or equal to your own, you can discard a red-suited hand-card to reduce the damage by one. If you damage another player whose health is greater than or equal to your own, you can discard black-suited hand-card to increase the damage by one."
+        if (self.character_ability1.startswith("Deplete Karma:") or self.character_ability3.startswith("Deplete Karma:")):
+            if source_player_index != None:
+                if players[source_player_index].current_health >= self.current_health:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Choose to activate Deplete Karma, discarding a red card, and reducing your incoming damage from {players[source_player_index].character} by one?',
+                            'choices': ['Yes', 'No'],
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    if answer.get('Selected') == 'Yes':
+                        # Discard red to reduce by one
+                        cards_discardable = []
+                        for card in self.hand_cards.contents:
+                            if card.suit == "Hearts" or card.suit == "Diamonds":
+                                cards_discardable.append(card)
+
+                        if len(cards_discardable) < 1:
+                            print(
+                                f"{self.character}: You cannot activate Deplete Karma as you have no red-cards in your hand.")
+
+                        else:
+                            options = self.create_str_nonblind_menu(True)
+                            options.append(
+                                Separator("--------------------Other--------------------"))
+                            options.append("Cancel ability.")
+
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select any RED card to discard for Deplete Karma!',
+                                    'choices': options,
+                                    'filter': lambda card: options.index(card)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            card_index = answer.get('Selected')
+                            if options[card_index] == "Cancel ability.":
+                                return [False]
+
+                            else:
+                                if self.hand_cards.contents[card_index].suit == "Hearts" or self.hand_cards.contents[card_index].suit == "Diamonds":
+                                    card = self.hand_cards.contents.pop(
+                                        card_index)
+                                    discard_deck.add_to_top(card)
+                                    print(
+                                        f"  >> Character Ability: Deplete Karma; {self.character} has discarded {card} to reduce the incoming damage by one!")
+                                    damage_dealt -= 1
+                                    return [True, damage_dealt]
+
+            elif target_player_index != None:
+                if players[target_player_index].current_health >= self.current_health:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Choose to activate Deplete Karma, discarding a black card, and increasing your outgoing damage to {players[target_player_index].character} by one?',
+                            'choices': ['Yes', 'No'],
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    if answer.get('Selected') == 'Yes':
+                        # Discard black to increase by one
+                        cards_discardable = []
+                        for card in self.hand_cards.contents:
+                            if card.suit == "Spades" or card.suit == "Clubs":
+                                cards_discardable.append(card)
+
+                        if len(cards_discardable) < 1:
+                            print(
+                                f"{self.character}: You cannot activate Deplete Karma as you have no black-cards in your hand.")
+
+                        else:
+                            options = self.create_str_nonblind_menu(True)
+                            options.append(
+                                Separator("--------------------Other--------------------"))
+                            options.append("Cancel ability.")
+
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select any BLACK card to discard for Deplete Karma!',
+                                    'choices': options,
+                                    'filter': lambda card: options.index(card)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            card_index = answer.get('Selected')
+                            if options[card_index] == "Cancel ability.":
+                                return [False]
+
+                            else:
+                                if self.hand_cards.contents[card_index].suit == "Spades" or self.hand_cards.contents[card_index].suit == "Clubs":
+                                    card = self.hand_cards.contents.pop(
+                                        card_index)
+                                    discard_deck.add_to_top(card)
+                                    print(
+                                        f"  >> Character Ability: Deplete Karma; {self.character} has discarded {card} to increase the outgoing damage by one!")
+                                    damage_dealt += 1
+                                    return [True, damage_dealt]
+        return [False]
+
     def check_devil(self, judgement_card):
         # "Devil: After any judgement has been flipped over, you can immediately discard one of your on-hand or equipped cards to replace the judgement card."
         if (self.character_ability2.startswith("Devil:") or self.character_ability3.startswith("Devil:")):
@@ -4360,7 +4537,7 @@ class Player(Character):
                     break
 
             targets = players[user_index].create_targeting_menu(
-                "Weapon", user_index, source_player_index)
+                "Weapon", user_index, 0, source_player_index)
             if len(targets) > 0:
 
                 question = [
@@ -4697,6 +4874,63 @@ class Player(Character):
                     print(
                         f"{self.character}: There are no players that you can use this ability against.")
 
+    def check_exile(self):
+        # "Exile: Every instance that you suffer damage, you can force any other player to draw X number of cards (X being the units of health you have missing from your maximum after damage). By doing so the targeted player will have to flip their character card. Flipped character cards must miss their next turn."
+        if (self.character_ability2.startswith("Exile:") or self.character_ability3.startswith("Exile:")):
+
+            for player_index, player in players:
+                if (player.character_ability2.startswith("Exile:") or player.character_ability3.startswith("Exile:")):
+                    user_index = player_index
+                    break
+
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Choose to activate Exile, making someone miss their next turn, and draw {self.max_health - self.current_health} cards?',
+                    'choices': ['Yes', 'No'],
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            if answer.get('Selected') == 'Yes':
+
+                targets_str = []
+                for player in players:
+                    targets_str.append(str(player))
+                targets_str.pop(user_index)
+                targets_str.insert(user_index, Separator(
+                    f"--{self.character} (Can't target yourself!)--"))
+                targets_str.append(
+                    Separator("--------------------Other--------------------"))
+                targets_str.append("Cancel ability.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to target with Exile:',
+                        'choices': targets_str,
+                        'filter': lambda player: targets_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if targets_str[selected] == "Cancel ability.":
+                    return(' ')
+                else:
+                    cards_to_draw = self.max_health - self.current_health
+                    players[selected].hand_cards.draw(
+                        main_deck, cards_to_draw, True)
+
+                    if players[selected].char_card_flipped == False:
+                        players[selected].char_card_flipped = True
+                        print(
+                            f"  >> Character Ability: Exile; {self.character} has flipped {players[selected].character}'s character card to face-down! They miss their next turn!")
+                    else:
+                        players[selected].char_card_flipped = False
+                        print(
+                            f"  >> Character Ability: Exile; {self.character} has flipped {players[selected].character}'s character card to face-up!")
+
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
         # "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."
         if (self.character_ability1.startswith("Eye for an Eye:") or self.character_ability3.startswith("Eye for an Eye:")):
@@ -4752,31 +4986,48 @@ class Player(Character):
             ]
             answer = prompt(question, style=custom_style_2)
             if answer.get('Selected') == 'Suffer one damage.':
+                damage_dealt = 1
                 fantasy = self.check_fantasy(1, user_index)
                 if not fantasy[0]:
-                    self.current_health -= 1
+
+                    deplete_karma = self.check_deplete_karma(
+                        damage_dealt, user_index, None)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
+
+                    self.current_health -= damage_dealt
                     print(
-                        f"{self.character} suffered one damage from {players[user_index].character}'s an Eye for an Eye ({self.current_health}/{self.max_health} HP remaining).")
+                        f"{self.character} suffered {damage_dealt} damage from {players[user_index].character}'s an Eye for an Eye ({self.current_health}/{self.max_health} HP remaining).")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, user_index) == "Break":
                                 return "Break"
-                    self.check_eternal_loyalty(1)
-                    self.check_geminate(1)
-                    self.check_retaliation(user_index, 1)
-                    self.check_plotting_for_power(1, "Reaction")
+                    self.check_eternal_loyalty(damage_dealt)
+                    self.check_exile()
+                    self.check_geminate(damage_dealt)
+                    self.check_retaliation(user_index, damage_dealt)
+                    self.check_plotting_for_power(damage_dealt, "Reaction")
                 else:
                     redirected = fantasy[1]
-                    players[redirected].current_health -= 1
-                    print(f"{players[redirected].character} suffered one damage from {players[user_index].character}'s an Eye for an Eye ({players[redirected].current_health}/{players[redirected].max_health} HP remaining).")
+
+                    deplete_karma = players[redirected].check_deplete_karma(
+                        damage_dealt, user_index, None)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
+
+                    players[redirected].current_health -= damage_dealt
+                    print(f"{players[redirected].character} suffered {damage_dealt} damage from {players[user_index].character}'s an Eye for an Eye ({players[redirected].current_health}/{players[redirected].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, user_index) == "Break":
                                 return "Break"
-                    players[redirected].check_eternal_loyalty(1)
-                    players[redirected].check_geminate(1)
-                    players[redirected].check_retaliation(user_index, 1)
-                    players[redirected].check_plotting_for_power(1, "Reaction")
+                    players[redirected].check_eternal_loyalty(damage_dealt)
+                    players[redirected].check_exile()
+                    players[redirected].check_geminate(damage_dealt)
+                    players[redirected].check_retaliation(
+                        user_index, damage_dealt)
+                    players[redirected].check_plotting_for_power(
+                        damage_dealt, "Reaction")
 
             if answer.get('Selected') == 'Discard two cards.':
                 self.hand_cards.discard_from_hand(2)
@@ -5038,10 +5289,17 @@ class Player(Character):
                         if players[selected_index].check_reckless(discarded, 0):
                             return(' ')
                     damage_dealt = 1
+
                     fantasy = players[selected_index].check_fantasy(
                         damage_dealt, 0)
                     if fantasy[0]:
                         selected_index = fantasy[1]
+
+                    deplete_karma = players[selected_index].check_deplete_karma(
+                        damage_dealt, user_index, None)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
+
                     players[selected_index].current_health -= damage_dealt
                     if discarded2 == None:
                         print(
@@ -5068,6 +5326,7 @@ class Player(Character):
                             damage_dealt)
                         players[selected_index].check_evil_hero(
                             discarded, discarded2)
+                        players[selected_index].check_exile()
                         players[selected_index].check_eye_for_an_eye(
                             user_index, "Activate")
                         players[selected_index].check_geminate(damage_dealt)
@@ -5291,10 +5550,16 @@ class Player(Character):
                         if players[selected_index].check_reckless(discarded, 0):
                             return(' ')
                     damage_dealt = 1
+
                     fantasy = players[selected_index].check_fantasy(
                         damage_dealt, user_index)
                     if fantasy[0]:
                         selected_index = fantasy[1]
+
+                    deplete_karma = players[selected_index].check_deplete_karma(
+                        damage_dealt, user_index, None)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
 
                     players[selected_index].current_health -= damage_dealt
                     if discarded2 == None:
@@ -5317,11 +5582,13 @@ class Player(Character):
                                 f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
+
                         self.check_lament(user_index, selected_index)
                         players[selected_index].check_eternal_loyalty(
                             damage_dealt)
                         players[selected_index].check_evil_hero(
                             discarded, discarded2)
+                        players[selected_index].check_exile()
                         players[selected_index].check_eye_for_an_eye(
                             user_index, "Activate")
                         players[selected_index].check_geminate(damage_dealt)
@@ -5562,12 +5829,19 @@ class Player(Character):
 
                 elif judgement_card.suit == "Spades":
                     damage_dealt = 2
+
                     fantasy = players[selected_index].check_fantasy()
                     if fantasy[0]:
                         selected_index = fantasy[1]
+
+                    deplete_karma = players[selected_index].check_deplete_karma(
+                        damage_dealt, user_index, None)
+                    if deplete_karma[0]:
+                        damage_dealt = deplete_karma[1]
+
                     players[selected_index].current_health -= damage_dealt
                     print(
-                        f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
+                        f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take {damage_dealt} lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
@@ -5581,10 +5855,12 @@ class Player(Character):
                                 f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
+
                         players[selected_index].check_eternal_loyalty(
                             damage_dealt)
                         players[selected_index].check_eye_for_an_eye(
                             user_index, "Activate")
+                        players[selected_index].check_exile()
                         players[selected_index].check_geminate(damage_dealt)
                         players[selected_index].check_plotting_for_power(
                             damage_dealt, mode="Reaction")
@@ -6576,6 +6852,81 @@ class Player(Character):
                     print(
                         f"{self.character}: You must use two cards of the SAME suit to use Random Strike!")
 
+    def activate_rejection(self):
+        # "Rejection: Once per turn, you can discard one RITE and force any character to draw two cards. If after, that character has more hand-cards than you, you then deal one damage to them."
+        if self.character_ability3.startswith("Rejection:"):
+            if len(self.rites) < 1:
+                print(
+                    f"{self.character}: You do not have enough RITES to perform this ability.")
+
+            else:
+                options_str = []
+                for player in players:
+                    options_str.append(str(player))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Cancel ability.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a target for Rejection; discard a RITE to force anyone to draw two. If they have more hand-cards than you, then you deal one damage to them:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected_index = answer.get('Selected')
+                if options_str[selected_index] == "Cancel ability.":
+                    return(' ')
+                else:
+                    discard_deck.add_to_top(self.rites.pop())
+                    print(
+                        f"  >> Character Ability: Rejection; {self.character} has forced {players[selected_index].character} to draw two cards!")
+                    players[selected_index].hand_cards.draw(
+                        main_deck, 2, False)
+                    if len(players[selected_index].hand_cards.contents) > len(self.hand_cards.contents):
+                        damage_dealt = 1
+
+                        fantasy = players[selected_index].check_fantasy(
+                            damage_dealt, 0)
+                        if fantasy[0]:
+                            selected_index = fantasy[1]
+
+                        deplete_karma = players[selected_index].check_deplete_karma(
+                            damage_dealt, 0, None)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+
+                        players[selected_index].current_health -= damage_dealt
+                        print(
+                            f"  >> Character Ability: Rejection; {players[selected_index].character} has more cards than {self.character}, so they take {damage_dealt} damage! ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
+                        for player_index, player in enumerate(players):
+                            if player.current_health < 1:
+                                players[player_index].check_brink_of_death_loop(
+                                    player_index, 0)
+
+                        if players[selected_index].current_health > 0:
+                            if fantasy[0]:
+                                cards_to_draw = (
+                                    players[selected_index].max_health - players[selected_index].current_health)
+                                print(
+                                    f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
+                                players[selected_index].hand_cards.draw(
+                                    main_deck, cards_to_draw, False)
+                            players[selected_index].check_eternal_loyalty(
+                                damage_dealt)
+                            players[selected_index].check_exile()
+                            players[selected_index].check_eye_for_an_eye(
+                                0, "Activate")
+                            players[selected_index].check_geminate(
+                                damage_dealt)
+                            players[selected_index].check_plotting_for_power(
+                                damage_dealt, mode="Reaction")
+                            players[selected_index].check_retaliation(
+                                0, damage_dealt)
+
     def activate_surprise(self):
         # "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."
         if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
@@ -7320,6 +7671,8 @@ class Player(Character):
                     self.activate_random_strike()
                 if options[action_taken_index] == " Character Ability >> Reconsider":
                     self.activate_reconsider()
+                if options[action_taken_index] == " Character Ability >> Rejection":
+                    self.activate_rejection()
                 if options[action_taken_index] == " Character Ability >> Surprise":
                     self.activate_surprise()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
