@@ -1517,8 +1517,9 @@ class Player(Character):
 
             # If player died
             if self.current_health < 1:
-                players[source_player_index].check_burning_heart(
-                    dying_player_index)
+                if source_player_index != "Self":
+                    players[source_player_index].check_burning_heart(
+                        dying_player_index)
                 print(
                     f"{self.character} wasn't saved from the brink of death! - {self.character}'s role was {self.role}!")
                 self.discard_all_cards(death=True)
@@ -1568,6 +1569,7 @@ class Player(Character):
                         f"{self.character}'s judgement card is a {judgement_card} and thus they miss their action-phase of this turn.")
                     self.acedia_active = True
                 discard_deck.add_to_top(pending_judgement)
+
             if pending_judgement.effect2 == 'Lightning':
                 print(
                     f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of SPADES or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto {players[1].character}.")
@@ -1583,14 +1585,27 @@ class Player(Character):
                 elif judgement_card.suit == "Spades" and (10 > judgement_card.rank > 1):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
-                    self.current_health -= 3
-                    if self.current_health < 1:
-                        if self.check_brink_of_death_loop(0, "None") == "Break":
-                            return "Break"
-                    self.check_eternal_loyalty(3)
-                    discard_deck.add_to_top(pending_judgement)
-                    self.check_evil_hero(pending_judgement)
-                    self.check_geminate(3)
+                    damage_dealt = 3
+                    fantasy = self.check_fantasy(damage_dealt)
+                    if not fantasy[0]:
+                        self.current_health -= damage_dealt
+                        if self.current_health < 1:
+                            if self.check_brink_of_death_loop(0, "None") == "Break":
+                                return "Break"
+                        self.check_eternal_loyalty(damage_dealt)
+                        discard_deck.add_to_top(pending_judgement)
+                        self.check_evil_hero(pending_judgement)
+                        self.check_geminate(damage_dealt)
+                    else:
+                        redirected = fantasy[1]
+                        players[redirected].current_health -= damage_dealt
+                        if players[redirected].current_health < 1:
+                            if players[redirected].check_brink_of_death_loop(redirected, "None") == "Break":
+                                return "Break"
+                        players[redirected].check_eternal_loyalty(damage_dealt)
+                        discard_deck.add_to_top(pending_judgement)
+                        players[redirected].check_evil_hero(pending_judgement)
+                        players[redirected].check_geminate(damage_dealt)
                 elif len(players[1].pending_judgements) > 0:
                     for possible_lightning in players[1].pending_judgements:
                         if possible_lightning.effect2 == 'Lightning':
@@ -1613,6 +1628,7 @@ class Player(Character):
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
                     players[1].pending_judgements.insert(
                         0, pending_judgement)
+
             if pending_judgement.effect2 == 'Rations Depleted':
                 print(
                     f"{self.character} must face judgement for RATIONS DEPLETED; (needs CLUBS to pass, or else misses drawing-phase of turn).")
@@ -5539,12 +5555,16 @@ class Player(Character):
                 judgement_card = check_judgement_tinkering(
                     judgement_card, user_index)
                 players[selected_index].check_envy_of_heaven()
+
                 if players[selected_index].check_beauty(judgement_card):
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
 
                 elif judgement_card.suit == "Spades":
                     damage_dealt = 2
+                    fantasy = players[selected_index].check_fantasy()
+                    if fantasy[0]:
+                        selected_index = fantasy[1]
                     players[selected_index].current_health -= damage_dealt
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take two lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
@@ -5552,15 +5572,24 @@ class Player(Character):
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, user_index)
-                    players[selected_index].check_eternal_loyalty(
-                        damage_dealt)
-                    players[selected_index].check_eye_for_an_eye(
-                        user_index, "Activate")
-                    players[selected_index].check_geminate(damage_dealt)
-                    players[selected_index].check_plotting_for_power(
-                        damage_dealt, mode="Reaction")
-                    players[selected_index].check_retaliation(
-                        user_index, damage_dealt)
+
+                    if players[selected_index].current_health > 0:
+                        if fantasy[0]:
+                            cards_to_draw = (
+                                players[selected_index].max_health - players[selected_index].current_health)
+                            print(
+                                f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
+                            players[selected_index].hand_cards.draw(
+                                main_deck, cards_to_draw, False)
+                        players[selected_index].check_eternal_loyalty(
+                            damage_dealt)
+                        players[selected_index].check_eye_for_an_eye(
+                            user_index, "Activate")
+                        players[selected_index].check_geminate(damage_dealt)
+                        players[selected_index].check_plotting_for_power(
+                            damage_dealt, mode="Reaction")
+                        players[selected_index].check_retaliation(
+                            user_index, damage_dealt)
                 else:
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
