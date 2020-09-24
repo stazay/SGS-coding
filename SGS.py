@@ -1812,7 +1812,8 @@ class Player(Character):
                         players[target_index].current_health -= damage_dealt
                         print(
                             f"  >> {self.character} has forced the damage to {players[target_index].character}, by using {self.equipment_weapon[0]}, and discarding two cards ({players[target_index].current_health}/{players[target_index].max_health} HP remaining).")
-                        self.check_insanity(target_index)
+                        self.check_insanity(target_index, damage_dealt)
+                        self.check_tyrant()
                         for player_index, player in enumerate(players):
                             if player.current_health < 1:
                                 if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
@@ -2420,7 +2421,8 @@ class Player(Character):
                                 player.current_health -= damage_dealt
                                 print(
                                     f"{player.character} takes {damage_dealt} damage ({player.current_health}/{player.max_health} HP remaining).")
-                                self.check_insanity(player)
+                                self.check_insanity(player, damage_dealt)
+                                self.check_tyrant()
 
                                 if player.current_health < 1:
                                     player.check_brink_of_death_loop(
@@ -2566,7 +2568,8 @@ class Player(Character):
                                 player.current_health -= damage_dealt
                                 print(
                                     f"{player.character} takes {damage_dealt} damage ({player.current_health}/{player.max_health} HP remaining).")
-                                self.check_insanity(player)
+                                self.check_insanity(player, damage_dealt)
+                                self.check_tyrant()
 
                                 if player.current_health < 1:
                                     player.check_brink_of_death_loop(
@@ -2873,6 +2876,8 @@ class Player(Character):
                         damage_dealt = deplete_karma[1]
 
                     players[selected].current_health -= damage_dealt
+                    self.check_insanity(selected, damage_dealt)
+                    self.check_tyrant()
                     print(
                         f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
                     for player_index, player in enumerate(players):
@@ -2912,6 +2917,8 @@ class Player(Character):
                             damage_dealt = deplete_karma[1]
 
                         self.current_health -= damage_dealt
+                        players[selected].check_insanity(0, damage_dealt)
+                        players[selected].check_tyrant()
                         print(
                             f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
 
@@ -2943,6 +2950,9 @@ class Player(Character):
                             damage_dealt = deplete_karma[1]
 
                         players[redirected].current_health -= damage_dealt
+                        players[selected].check_insanity(
+                            redirected, damage_dealt)
+                        players[selected].check_tyrant()
                         print(
                             f"{players[selected].character} has won the DUEL! {players[redirected].character} takes {damage_dealt} damage! ({players[redirected].current_health}/{players[redirected].max_health} HP remaining)")
 
@@ -3464,7 +3474,8 @@ class Player(Character):
             print(
                 f"{self.character} attacked {players[selected].character}, dealing {damage_dealt} damage. ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
             self.check_weapon_huangs_longbow(selected)
-            self.check_insanity(selected)
+            self.check_insanity(selected, damage_dealt)
+            self.check_tyrant()
             self.wine_active = False
 
             # DAMAGED - post-damage abilities and brink of death
@@ -5660,7 +5671,7 @@ class Player(Character):
                                 f"{self.hand_cards.contents[discarded_index]} cannot be used as DEFEND as it is NOT black-suited.")
                             return None
 
-    def check_insanity(self, selected_index=0):
+    def check_insanity(self, selected_index=0, damage_dealt=1):
         # "Insanity: Whenever you cause damage to any player within your physical range, you regain one unit of health for every unit of damage caused."
         if (self.character_ability1.startswith("Insanity:") or self.character_ability3.startswith("Insanity:")):
 
@@ -5675,7 +5686,10 @@ class Player(Character):
                 possible_targets.append(players[target])
             if (players[selected_index]) in possible_targets:
                 if self.max_health > self.current_health:
-                    self.current_health += 1
+                    self.current_health += damage_dealt
+
+                if self.current_health > self.max_health:
+                    self.current_health = self.max_health
                 print(
                     f"  >> Character Ability: Insanity; {self.character} regains one unit of health for damaging {players[selected_index]}, within their physical range. ({self.current_health}/{self.max_health} HP remaining)")
 
@@ -5845,6 +5859,7 @@ class Player(Character):
                         damage_dealt = deplete_karma[1]
 
                     players[selected_index].current_health -= damage_dealt
+                    self.check_tyrant()
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take {damage_dealt} lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
@@ -5880,7 +5895,7 @@ class Player(Character):
         if (self.character_ability1.startswith("Mediocrity:") or self.character_ability3.startswith("Mediocrity:")):
             if phase == "Draw":
                 print(
-                    f"  >> Character Ability: Mediocrity; {self.character} draws {check_allegiances_in_play()} extra card(s)! (one for every allegiance still in play)")
+                    f"  >> Character Ability: Mediocrity; {self.character} draws {check_allegiances_in_play()} extra card(s) (one for every allegiance still in play)!")
                 return True
             if phase == "Discard":
                 if check_allegiances_in_play() >= (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse)):
@@ -6470,6 +6485,90 @@ class Player(Character):
             print(
                 f"  >> Character Ability: Talent; {self.character} has no range restriction on their tool cards.")
             return True
+
+    def check_tyrant(self):
+        # "Tyrant (Ruler Ability): Whenever another Hero character causes damage to any other player, you can flip a judgement card. If the judgement card is of the suit SPADES, you can regain one unit of health."
+        if self.allegiance == "Heroes":
+            emperor_index = None
+            false_ruler_index = None
+            for player_index, player in enumerate(players):
+                if (player.character_ability3.startswith("Tyrant (Ruler Ability):") or player.character_ability4.startswith("Tyrant (Ruler Ability):")):
+                    if (player.role == "Emperor"):
+                        emperor_index = player_index
+                    else:
+                        false_ruler_index = player_index
+
+            if emperor_index != None:
+                if false_ruler_index != None:
+                    message = f'{self.character}: Choose to activate Tyrant (Ruler Ability), to allow the emperor (or false-ruler) to flip a judgement card? If SPADES, they heal one!'
+                elif self.role != "Emperor":
+                    message = f'{self.character}: Choose to activate Tyrant (Ruler Ability), to allow the emperor to flip a judgement card? If SPADES, they heal one!'
+                else:
+                    return(' ')
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': message,
+                        'choices': ['Yes', 'No'],
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                if answer.get('Selected') == 'Yes':
+                    target_index = emperor_index
+                    target = players[emperor_index]
+                    if self.role == "Emperor":
+                        if (false_ruler_index != None):
+                            target = players[false_ruler_index]
+
+                    elif self.role != "Emperor":
+                        if false_ruler_index == None:
+                            target = players[emperor_index]
+
+                        elif (false_ruler_index != None) and (self.character == players[false_ruler_index].character):
+                            target = players[emperor_index]
+
+                        else:
+                            options = [str(players[emperor_index]),
+                                       str(players[false_ruler_index])]
+
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select which target will flip a judgement (Tyrant):',
+                                    'choices': options,
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            selected = answer.get('Selected')
+                            if selected == str(players[emperor_index]):
+                                target = players[emperor_index]
+                                target_index = emperor_index
+                            else:
+                                target = players[false_ruler_index]
+                                target_index = false_ruler_index
+
+                    print(
+                        f"  >> Ruler Ability: Tyrant; {self.character} has allowed {target.character} to flip a judgement! If SPADES, they heal by one!")
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(
+                        f"{target.character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, target_index)
+
+                    if judgement_card.suit == "Spades":
+                        if target.max_health > target.current_health:
+                            target.current_health += 1
+                            print(
+                                f"  >> Ruler Ability: Tyrant; {target.character} flipped a SPADES and therefore heals by one ({target.current_health}/{target.max_health} HP remaining)!")
+                        else:
+                            print(
+                                f"  >> Ruler Ability: Tyrant; {target.character} is already at full health, and the judgement has no effect ({target.current_health}/{target.max_health} HP remaining)!")
+                    else:
+                        print(
+                            f"  >> Ruler Ability: Tyrant; {target.character} did not flip a SPADES, so no effect!")
 
     def check_unmitigated_murder(self):
         # "Unmitigated Murder: During your turn, with the exception of yourself, only characters on the brink of death can use a PEACH."
@@ -7772,8 +7871,7 @@ discard_deck = Deck([])
 main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
-    player.hand_cards.draw(main_deck, 15, False)
-    player.current_health = 15
+    player.hand_cards.draw(main_deck, 4, False)
     player.check_geminate(2, False)
     player.check_shapeshift()
     player.check_false_ruler()
