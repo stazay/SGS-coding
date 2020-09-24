@@ -1658,6 +1658,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Reconsider")
             if self.character_ability3.startswith("Rejection:"):
                 char_abils.append(" Character Ability >> Rejection")
+            if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
+                char_abils.append(" Character Ability >> Seed of Animosity")
             if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
                 char_abils.append(" Character Ability >> Surprise")
             if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
@@ -1679,6 +1681,7 @@ class Player(Character):
         self.used_green_salve = False
         self.used_marriage = False
         self.used_reconsider = False
+        self.used_seed_of_animosity = False
 
 # Equipment-card checks
     def armor_black_shield(self, attack_card, source_player_index=0):
@@ -2851,132 +2854,9 @@ class Player(Character):
                 print(
                     f"{self.character} has challenged {players[selected].character} to a DUEL! Players must play ATTACK cards in turn, until one doesn't. The loser of the DUEL, takes one damage!")
                 self.check_ardour(discarded)
+                players[selected].check_ardour(discarded)
                 self.check_one_after_another()
-
-                attack_required = 1
-                if self.check_without_equal("Duel"):
-                    attack_required = 2
-                duel_won = players[selected].use_reaction_effect(
-                    "Attack", attack_required, discarded, 0, selected)
-                damage_dealt = 1
-                if self.used_bare_chested:
-                    damage_dealt = 2
-                if duel_won:
-                    fantasy = players[selected].check_fantasy(damage_dealt, 0)
-                    if fantasy[0]:
-                        selected = fantasy[1]
-
-                    deplete_karma = self.check_deplete_karma(
-                        damage_dealt, None, selected)
-                    if deplete_karma[0]:
-                        damage_dealt = deplete_karma[1]
-                    deplete_karma = players[selected].check_deplete_karma(
-                        damage_dealt, 0, None)
-                    if deplete_karma[0]:
-                        damage_dealt = deplete_karma[1]
-
-                    players[selected].current_health -= damage_dealt
-                    self.check_insanity(selected, damage_dealt)
-                    self.check_tyrant()
-                    print(
-                        f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
-                    for player_index, player in enumerate(players):
-                        if player.current_health < 1:
-                            if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                                return "Break"
-
-                    if fantasy[0]:
-                        cards_to_draw = (
-                            players[selected].max_health - players[selected].current_health)
-                        print(
-                            f"  >> Character Ability: Fantasy; {self.character} draws {cards_to_draw} from the deck.")
-                        players[selected].hand_cards.draw(
-                            main_deck, cards_to_draw, False)
-                    players[selected].check_eternal_loyalty(damage_dealt)
-                    players[selected].check_evil_hero(card)
-                    players[selected].check_exile()
-                    if players[selected].check_eye_for_an_eye(
-                            source_player_index=0, mode="Activate") == "Break":
-                        return(' ')
-                    players[selected].check_geminate(damage_dealt)
-                    players[selected].check_plotting_for_power(
-                        damage_dealt, mode="Reaction")
-                    players[selected].check_retaliation(0, damage_dealt)
-
-                if not duel_won:
-                    fantasy = self.check_fantasy(damage_dealt, selected)
-                    if not fantasy[0]:
-
-                        deplete_karma = self.check_deplete_karma(
-                            damage_dealt, selected, None)
-                        if deplete_karma[0]:
-                            damage_dealt = deplete_karma[1]
-                        deplete_karma = players[selected].check_deplete_karma(
-                            damage_dealt, None, 0)
-                        if deplete_karma[0]:
-                            damage_dealt = deplete_karma[1]
-
-                        self.current_health -= damage_dealt
-                        players[selected].check_insanity(0, damage_dealt)
-                        players[selected].check_tyrant()
-                        print(
-                            f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
-
-                        for player_index, player in enumerate(players):
-                            if player.current_health < 1:
-                                if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                                    return "Break"
-
-                        self.check_eternal_loyalty(damage_dealt)
-                        self.check_evil_hero(card)
-                        self.check_exile()
-                        if self.check_eye_for_an_eye(
-                                source_player_index=selected, mode="Activate") == "Break":
-                            return(' ')
-                        self.check_geminate(damage_dealt)
-                        self.check_plotting_for_power(
-                            damage_dealt, mode="Reaction")
-                        self.check_retaliation(0, damage_dealt)
-
-                    else:
-                        redirected = fantasy[1]
-                        deplete_karma = self.check_deplete_karma(
-                            damage_dealt, None, redirected)
-                        if deplete_karma[0]:
-                            damage_dealt = deplete_karma[1]
-                        deplete_karma = players[redirected].check_deplete_karma(
-                            damage_dealt, 0, None)
-                        if deplete_karma[0]:
-                            damage_dealt = deplete_karma[1]
-
-                        players[redirected].current_health -= damage_dealt
-                        players[selected].check_insanity(
-                            redirected, damage_dealt)
-                        players[selected].check_tyrant()
-                        print(
-                            f"{players[selected].character} has won the DUEL! {players[redirected].character} takes {damage_dealt} damage! ({players[redirected].current_health}/{players[redirected].max_health} HP remaining)")
-
-                        for player_index, player in enumerate(players):
-                            if player.current_health < 1:
-                                if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
-                                    return "Break"
-
-                        cards_to_draw = (
-                            players[redirected].max_health - players[redirected].current_health)
-                        print(
-                            f"  >> Character Ability: Fantasy; {players[redirected].character} draws {cards_to_draw} from the deck.")
-                        players[redirected].hand_cards.draw(
-                            main_deck, cards_to_draw, False)
-                        players[redirected].check_eternal_loyalty(damage_dealt)
-                        players[redirected].check_evil_hero(card)
-                        players[redirected].check_exile()
-                        if players[redirected].check_eye_for_an_eye(
-                                source_player_index=selected, mode="Activate") == "Break":
-                            return(' ')
-                        players[redirected].check_geminate(damage_dealt)
-                        players[redirected].check_plotting_for_power(
-                            damage_dealt, mode="Reaction")
-                        players[redirected].check_retaliation(0, damage_dealt)
+                self.activate_duel(discarded, selected)
                 return True
 
         elif card.effect2 == 'Negate':
@@ -3615,6 +3495,133 @@ class Player(Character):
                 self.activate_attack(
                     discarded, extra_targets[2], coerced)
 
+    def activate_duel(self, discarded, selected, selected2=0):
+        attack_required = 1
+        if self.check_without_equal("Duel"):
+            attack_required = 2
+        duel_won = players[selected].use_reaction_effect(
+            "Attack", attack_required, discarded, selected2, selected)
+        damage_dealt = 1
+        if self.used_bare_chested:
+            damage_dealt = 2
+        if duel_won:
+            fantasy = players[selected].check_fantasy(damage_dealt, 0)
+            if fantasy[0]:
+                selected = fantasy[1]
+
+            deplete_karma = self.check_deplete_karma(
+                damage_dealt, None, selected)
+            if deplete_karma[0]:
+                damage_dealt = deplete_karma[1]
+            deplete_karma = players[selected].check_deplete_karma(
+                damage_dealt, 0, None)
+            if deplete_karma[0]:
+                damage_dealt = deplete_karma[1]
+
+            players[selected].current_health -= damage_dealt
+            self.check_insanity(selected, damage_dealt)
+            self.check_tyrant()
+            print(
+                f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
+            for player_index, player in enumerate(players):
+                if player.current_health < 1:
+                    if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                        return (' ')
+
+            if fantasy[0]:
+                cards_to_draw = (
+                    players[selected].max_health - players[selected].current_health)
+                print(
+                    f"  >> Character Ability: Fantasy; {self.character} draws {cards_to_draw} from the deck.")
+                players[selected].hand_cards.draw(
+                    main_deck, cards_to_draw, False)
+            players[selected].check_eternal_loyalty(damage_dealt)
+            players[selected].check_evil_hero(discarded)
+            players[selected].check_exile()
+            if players[selected].check_eye_for_an_eye(
+                    source_player_index=0, mode="Activate") == "Break":
+                return (' ')
+            players[selected].check_geminate(damage_dealt)
+            players[selected].check_plotting_for_power(
+                damage_dealt, mode="Reaction")
+            players[selected].check_retaliation(0, damage_dealt)
+
+        if not duel_won:
+            fantasy = self.check_fantasy(damage_dealt, selected)
+            if not fantasy[0]:
+
+                deplete_karma = self.check_deplete_karma(
+                    damage_dealt, selected, None)
+                if deplete_karma[0]:
+                    damage_dealt = deplete_karma[1]
+                deplete_karma = players[selected].check_deplete_karma(
+                    damage_dealt, None, 0)
+                if deplete_karma[0]:
+                    damage_dealt = deplete_karma[1]
+
+                self.current_health -= damage_dealt
+                players[selected].check_insanity(0, damage_dealt)
+                players[selected].check_tyrant()
+                print(
+                    f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
+
+                for player_index, player in enumerate(players):
+                    if player.current_health < 1:
+                        if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                            return (' ')
+
+                self.check_eternal_loyalty(damage_dealt)
+                self.check_evil_hero(discarded)
+                self.check_exile()
+                if self.check_eye_for_an_eye(
+                        source_player_index=selected, mode="Activate") == "Break":
+                    return (' ')
+                self.check_geminate(damage_dealt)
+                self.check_plotting_for_power(
+                    damage_dealt, mode="Reaction")
+                self.check_retaliation(0, damage_dealt)
+
+            else:
+                redirected = fantasy[1]
+                deplete_karma = self.check_deplete_karma(
+                    damage_dealt, None, redirected)
+                if deplete_karma[0]:
+                    damage_dealt = deplete_karma[1]
+                deplete_karma = players[redirected].check_deplete_karma(
+                    damage_dealt, 0, None)
+                if deplete_karma[0]:
+                    damage_dealt = deplete_karma[1]
+
+                players[redirected].current_health -= damage_dealt
+                players[selected].check_insanity(
+                    redirected, damage_dealt)
+                players[selected].check_tyrant()
+                print(
+                    f"{players[selected].character} has won the DUEL! {players[redirected].character} takes {damage_dealt} damage! ({players[redirected].current_health}/{players[redirected].max_health} HP remaining)")
+
+                for player_index, player in enumerate(players):
+                    if player.current_health < 1:
+                        if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
+                            return (' ')
+
+                cards_to_draw = (
+                    players[redirected].max_health - players[redirected].current_health)
+                print(
+                    f"  >> Character Ability: Fantasy; {players[redirected].character} draws {cards_to_draw} from the deck.")
+                players[redirected].hand_cards.draw(
+                    main_deck, cards_to_draw, False)
+                players[redirected].check_eternal_loyalty(damage_dealt)
+                players[redirected].check_evil_hero(discarded)
+                players[redirected].check_exile()
+                if players[redirected].check_eye_for_an_eye(
+                        source_player_index=selected, mode="Activate") == "Break":
+                    return (' ')
+                players[redirected].check_geminate(damage_dealt)
+                players[redirected].check_plotting_for_power(
+                    damage_dealt, mode="Reaction")
+                players[redirected].check_retaliation(0, damage_dealt)
+        return (' ')
+
     def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=None, reacting_player_index=None, ):
         if player_index == None:
             player_index = 0
@@ -3838,7 +3845,6 @@ class Player(Character):
             elif response_required == "Attack" and card_played.effect2 == "Duel":
                 enemy_attack_required = 1
                 while required > 0:
-                    self.check_ardour(card_played)
 
                     options_str = self.hand_cards.list_cards()
                     options_str.append(
@@ -7321,7 +7327,7 @@ class Player(Character):
         if self.used_amber_sky:
             print(f"{self.character}: You can only use Amber Sky once per turn.")
 
-        if not self.used_amber_sky:
+        else:
             for player_index, player in enumerate(players):
                 if (player.character_ability3.startswith("Amber Sky (Ruler Ability):") or player.character_ability4.startswith("Amber Sky (Ruler Ability):")):
                     if player.role == "Emperor":
@@ -7402,7 +7408,7 @@ class Player(Character):
                 print(
                     f"{self.character}: You can only use Green Salve once per turn.")
 
-            if not self.used_green_salve:
+            else:
                 if cards_discardable > 0:
                     options_str = []
                     options = []
@@ -7497,7 +7503,7 @@ class Player(Character):
                     print(
                         f"{self.character}: You can only use Marriage once per turn.")
 
-                if not self.used_marriage:
+                else:
                     options = [
                         Separator("------<Cannot target yourself>------")]
                     for player in players[1:]:
@@ -7594,7 +7600,7 @@ class Player(Character):
                 print(
                     f"{self.character}: You can only use Reconsider once per turn!")
 
-            if not self.used_reconsider:
+            else:
                 cards_to_replace = 0
                 options = self.create_str_nonblind_menu()
                 options.append(
@@ -7655,6 +7661,124 @@ class Player(Character):
                     f"  >> Character Ability: Reconsider; {self.character} has discarded {cards_to_draw} cards and redrawn the same amount from the deck.")
                 self.used_reconsider = True
                 return(' ')
+
+    def activate_seed_of_animosity(self):
+        # "Seed of Animosity: During your action phase, you can discard one card (on-hand or equipped) and select two male characters to undergo a DUEL with eachother. This ability cannot be prevented using NEGATE, and is limited to one use per turn."
+        if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+
+            targetable = []
+            for player in players:
+                if player.gender == "Male":
+                    targetable.append(player)
+
+            if (len(targetable) > 1) and (cards_discardable > 0):
+                if self.used_seed_of_animosity:
+                    print(
+                        f"{self.character}: You can only use Seed of Animosity once per turn.")
+
+                else:
+                    options_str = self.create_str_nonblind_menu()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("Cancel ability.")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a card to discard for Seed of Animosity:',
+                            'choices': options_str,
+                            'filter': lambda player: options_str.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    discarded_index = answer.get('Selected')
+
+                    options_str = []
+                    for player in players:
+                        if player.gender == "Male":
+                            options_str.append(str(player))
+                        else:
+                            options_str.append(
+                                Separator("------" + str(player) + "------"))
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("Cancel ability.")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select two targets to DUEL eachother:',
+                            'choices': options_str,
+                            'filter': lambda player: options_str.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    target1_index = answer.get('Selected')
+                    if options_str[target1_index] == "Cancel ability.":
+                        return(' ')
+
+                    options_str.pop(target1_index)
+                    options_str.insert(target1_index, Separator(
+                        f"--{players[target1_index].character} (Already selected)--"))
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a second target to DUEL {players[target1_index].character}:',
+                            'choices': options_str,
+                            'filter': lambda player: options_str.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    target2_index = answer.get('Selected')
+                    if options_str[target2_index] == "Cancel ability.":
+                        return(' ')
+
+                    if players[target2_index].check_empty_city():
+                        return (' ')
+
+                    # Check if hand-card
+                    elif discarded_index <= len(self.hand_cards.contents):
+                        card = self.hand_cards.contents.pop(
+                            discarded_index - 1)
+                        discard_deck.add_to_top(card)
+
+                    # Check if equipment-card
+                    else:
+                        if discarded_index == (len(self.hand_cards.contents) + 2):
+                            card = self.equipment_weapon.pop()
+                            discard_deck.add_to_top(card)
+                            self.weapon_range = 1
+                            print(
+                                f"{self.character} has discarded {card} from their weapon-slot.")
+
+                        if discarded_index == (len(self.hand_cards.contents) + 3):
+                            card = self.equipment_armor.pop()
+                            discard_deck.add_to_top(card)
+                            print(
+                                f"{self.character} has discarded {card} from their armor-slot.")
+
+                        if discarded_index == (len(self.hand_cards.contents) + 4):
+                            card = self.equipment_offensive_horse.pop()
+                            discard_deck.add_to_top(card)
+                            print(
+                                f"{self.character} has discarded {card} from their horse-slot.")
+
+                        if discarded_index == (len(self.hand_cards.contents) + 5):
+                            card = self.equipment_defensive_horse.pop()
+                            discard_deck.add_to_top(card)
+                            print(
+                                f"{self.character} has discarded {card} from their horse-slot.")
+
+                    print(
+                        f"  >> Character Ability: Seed of Animosity; {self.character} has forced {players[target1_index].character} to DUEL vs {players[target2_index].character}!")
+                    card.effect2 = "Duel"
+                    players[target1_index].check_ardour(card)
+                    players[target1_index].activate_duel(
+                        card, target2_index, target1_index)
 
 # Beginning Phase
     def start_beginning_phase(self):
@@ -7789,6 +7913,8 @@ class Player(Character):
                     self.activate_reconsider()
                 if options[action_taken_index] == " Character Ability >> Rejection":
                     self.activate_rejection()
+                if options[action_taken_index] == " Character Ability >> Seed of Animosity":
+                    self.activate_seed_of_animosity()
                 if options[action_taken_index] == " Character Ability >> Surprise":
                     self.activate_surprise()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
@@ -7871,7 +7997,8 @@ discard_deck = Deck([])
 main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
-    player.hand_cards.draw(main_deck, 4, False)
+    player.hand_cards.draw(main_deck, 15, False)
+    player.current_health = 15
     player.check_geminate(2, False)
     player.check_shapeshift()
     player.check_false_ruler()
