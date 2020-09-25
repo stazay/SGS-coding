@@ -2498,7 +2498,12 @@ class Player(Character):
                 if len(player.equipment_weapon) > 0:
                     possible_targets += 1
 
-            if possible_targets > 0:
+            if possible_targets == 0:
+                print(
+                    f"{self.character}: There are no possible targets with weapons.")
+                return False
+
+            elif possible_targets > 0:
                 options_str = []
                 options_str.append(
                     Separator("------<Cannot target yourself>------"))
@@ -2565,6 +2570,7 @@ class Player(Character):
                         self.check_wisdom()
                         players[selected].activate_coerce(
                             card, selected, attacked)
+                        return True
 
         elif card.effect2 == 'Dismantle':
             options_str = list_character_options(players)
@@ -2604,8 +2610,11 @@ class Player(Character):
                 return False
 
             if cards_discardable > 0:
-                discard_deck.add_to_top(
-                    self.hand_cards.contents.pop(card_index))
+                if card_index == "Special":
+                    pass
+                else:
+                    discard_deck.add_to_top(
+                        self.hand_cards.contents.pop(card_index))
                 self.check_one_after_another()
                 self.check_wisdom()
                 self.activate_dismantle(card, selected)
@@ -2783,12 +2792,11 @@ class Player(Character):
                     print(
                         f"{self.character}: You cannot play a LIGHTNING when you already have one active on yourself.")
             else:
-
                 print(f"{card} - LIGHTNING - {card.flavour_text}")
                 message = f"{self.character}: Please confirm you would like to use the delay-tool card: {card.effect}."
                 if question_yes_no(message):
                     beauty = self.check_beauty(card)
-                    if players[selected].check_behind_the_curtain(card, beauty):
+                    if self.check_behind_the_curtain(card, beauty):
                         return False
                     else:
                         self.pending_judgements.append(
@@ -3927,7 +3935,7 @@ class Player(Character):
             for target in possible_indexes:
                 possible_targets.append(players[target])
             if (players[selected_index]) in possible_targets:
-                message = "f{self.character}: Choose to activate Backstab against {players[selected_index].character}, causing you to flip a judgement; if not HEARTS, the attack will instead reduce their maximum health by 1."
+                message = f"{self.character}: Choose to activate Backstab against {players[selected_index].character}, causing you to flip a judgement; if not HEARTS, the attack will instead reduce their maximum health by 1."
                 if question_yes_no(message):
                     print(
                         f"  >> Character Ability: Backstab; {self.character} has activated Backstab, forcing a judgement card to be flipped. If not HEARTS, {players[selected_index].character} loses a maximum health instead of a health.")
@@ -4140,8 +4148,9 @@ class Player(Character):
                     if discarded_index <= len(self.hand_cards.contents):
                         new_judgement_card = self.hand_cards.contents[discarded_index - 1]
                         if new_judgement_card.suit == "Spades" or new_judgement_card.suit == "Clubs":
+                            self.hand_cards.draw(discard_deck, 1)
                             new_judgement_card = self.hand_cards.contents.pop(
-                                discarded_index - 1)
+                                discarded_index)
                             discard_deck.add_to_top(new_judgement_card)
                             print(
                                 f"  >> Character Ability: Dark Sorcery; {self.character} has exchanged the judgement card: {judgement_card} with {new_judgement_card} from their hand!")
@@ -4155,6 +4164,7 @@ class Player(Character):
                     else:
                         if discarded_index == (len(self.hand_cards.contents) + 2):
                             if self.equipment_weapon[0].suit == "Spades" or self.equipment_weapon[0] == "Clubs":
+                                self.hand_cards.draw(discard_deck, 1)
                                 new_judgement_card = self.equipment_weapon.pop()
                                 discard_deck.add_to_top(new_judgement_card)
                                 self.weapon_range = 1
@@ -4168,6 +4178,7 @@ class Player(Character):
 
                         if discarded_index == (len(self.hand_cards.contents) + 3):
                             if self.equipment_armor[0].suit == "Spades" or self.equipment_armor[0] == "Clubs":
+                                self.hand_cards.draw(discard_deck, 1)
                                 new_judgement_card = self.equipment_armor.pop()
                                 discard_deck.add_to_top(new_judgement_card)
                                 print(
@@ -4180,6 +4191,7 @@ class Player(Character):
 
                         if discarded_index == (len(self.hand_cards.contents) + 4):
                             if self.equipment_offensive_horse[0].suit == "Spades" or self.equipment_offensive_horse[0] == "Clubs":
+                                self.hand_cards.draw(discard_deck, 1)
                                 new_judgement_card = self.equipment_offensive_horse.pop()
                                 discard_deck.add_to_top(new_judgement_card)
                                 print(
@@ -4192,6 +4204,7 @@ class Player(Character):
 
                         if discarded_index == (len(self.hand_cards.contents) + 5):
                             if self.equipment_defensive_horse[0].suit == "Spades" or self.equipment_defensive_horse[0].suit == "Clubs":
+                                self.hand_cards.draw(discard_deck, 1)
                                 new_judgement_card = self.equipment_defensive_horse.pop()
                                 discard_deck.add_to_top(new_judgement_card)
                                 print(
@@ -4838,17 +4851,42 @@ class Player(Character):
                         print(
                             f"  >> Character Ability: Exile; {self.character} has flipped {players[selected].character}'s character card to face-up!")
 
+    def check_evil_hero(self, card, card2=None):
+        # "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."
+        if (self.character_ability1.startswith("Evil Hero:") or self.character_ability3.startswith("Evil Hero:")):
+            if card in discard_deck.contents:
+                discard_deck.contents.remove(card)
+                self.hand_cards.add_to_top(card)
+                print(
+                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
+            elif card in main_deck.contents:
+                main_deck.contents.remove(card)
+                self.hand_cards.add_to_top(card)
+                print(
+                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
+
+            if card2 != None:
+                if card2 in discard_deck.contents:
+                    discard_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                    print(
+                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
+                elif card2 in main_deck.contents:
+                    main_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                    print(
+                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
+
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
         # "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."
-        if (self.character_ability1.startswith("Eye for an Eye:") or self.character_ability3.startswith("Eye for an Eye:")):
+        user_index = 0
+        for player_index, player in enumerate(players):
+            if (player.character_ability1.startswith("Eye for an Eye:") or player.character_ability3.startswith("Eye for an Eye:")):
+                user_index = player_index
+                break
 
-            user_index = 0
-            for player_index, player in enumerate(players):
-                if (player.character_ability1.startswith("Eye for an Eye:") or player.character_ability3.startswith("Eye for an Eye:")):
-                    user_index = player_index
-                    break
-
-            if mode == "Activate":
+        if mode == "Activate":
+            if (self.character_ability1.startswith("Eye for an Eye:") or self.character_ability3.startswith("Eye for an Eye:")):
                 print(' ')
                 message = f"{self.character}: Choose to activate Eye for an Eye, and force {players[source_player_index].character} to either take one damage or discard two hand-cards?"
                 if question_yes_no(message):
@@ -4935,32 +4973,6 @@ class Player(Character):
                 print(
                     f"{self.character} discarded two hand-cards due to {players[user_index].character}'s an Eye for an Eye.")
                 self.check_one_after_another()
-
-    def check_evil_hero(self, card, card2=None):
-        # "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."
-        if (self.character_ability1.startswith("Evil Hero:") or self.character_ability3.startswith("Evil Hero:")):
-            if card in discard_deck.contents:
-                discard_deck.contents.remove(card)
-                self.hand_cards.add_to_top(card)
-                print(
-                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
-            elif card in main_deck.contents:
-                main_deck.contents.remove(card)
-                self.hand_cards.add_to_top(card)
-                print(
-                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
-
-            if card2 != None:
-                if card2 in discard_deck.contents:
-                    discard_deck.contents.remove(card2)
-                    self.hand_cards.add_to_top(card2)
-                    print(
-                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
-                elif card2 in main_deck.contents:
-                    main_deck.contents.remove(card2)
-                    self.hand_cards.add_to_top(card2)
-                    print(
-                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
 
     def check_false_ruler(self):
         # "False Ruler: You possess the same ruler ability as the current emperor."
@@ -5749,7 +5761,8 @@ class Player(Character):
                 elif judgement_card.suit == "Spades":
                     damage_dealt = 2
 
-                    fantasy = players[selected_index].check_fantasy()
+                    fantasy = players[selected_index].check_fantasy(
+                        damage_dealt)
                     if fantasy[0]:
                         selected_index = fantasy[1]
 
