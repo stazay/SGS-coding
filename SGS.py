@@ -4,9 +4,9 @@
   / //_______  /  ||   / /| || / // / // ____   / //   / // / //   / // / //_______  / //__/ // /  ||    / //
  /_______  // / ` ||  / //| ||/ // / // /_  // / //   / // / //   / // /_______  // / ____  // / ` ||   /_//
  _______/ // / /| || / // | |/ // / //___/ // / //___/ // / //___/ //  _______/ // / //  / // / /| ||  ___
-/________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//|_|| /_//
-                                SanGuoSha Coding by Saba Tazayoni
-                    Started: 21/07/2020                  
+/________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//| || /_//
+                                SanGuoSha Coding by Saba Tazayoni               /||______________| ||
+                    Started: 21/07/2020                                        /___________________||
 Current Version: 25/09/2020
 """
 
@@ -512,7 +512,7 @@ wei_characters = [
               "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'.",
               "Blitz (INACTIVE Ability): In your action phase, you can use any of your TERRAINS as STEAL."),
     Character("Dian Wei", "Wei", 4, "Male",
-              "Ferocious Assault: During your action phase, you can inflict one unit of damage to any player within your attacking range by either; reducing one unit of your own health, or discarding one weapon card (on-hand or equipped)."),
+              "Ferocious Assault: During your action phase, you can inflict one unit of damage to any player within your attacking range by either; reducing one unit of your own health, or discarding one weapon card (on-hand or equipped). Limited to one use per turn."),
     Character("Guo Jia", "Wei", 3, "Male",
               "Envy of Heaven: You can obtain any judgement card that you flip over.",
               "Bequeathed Strategy: For every one unit of damage you recieve, you can draw two cards from the deck. You can then choose to give away one, two or none of these cards to any player."),
@@ -528,7 +528,7 @@ wei_characters = [
     Character("Xu Huang", "Wei", 4, "Male",
               "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."),
     Character("Xun Yu", "Wei", 3, "Male",
-              "Rouse The Tiger: Once per turn, during your action phase, you can choose to COMPETE with any character with more health than you; you both show a card simultaneously, and whoever has the higher value wins. If you win, that player will cause one unit of damage to another player within their attacking range of your choosing. If you lose, the target causes one unit of damage to you.",
+              "Rouse The Tiger: During your action phase, you can choose to COMPETE with any character with more health than you; you both show a card simultaneously, and whoever has the higher value wins. If you win, that player will cause one unit of damage to another player within their attacking range of your choosing. If you lose, the target causes one unit of damage to you. Limited to one use per turn.",
               "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level."),
     Character("Zhang He", "Wei", 4, "Male",
               "Flexibility: You can discard one on-hand card to skip any of your phases (excluding the beginning and end phases). If you skip your drawing phase using this method, you can draw one on-hand card from a maximum of two other players. If you skip your action phase using this method, you can relocate a card (in the equipment area or pending time-delay tool card area) from its original location to an identical location."),
@@ -579,7 +579,7 @@ wu_characters = [
               "Exertion: Whenever another player has cards taken or discarded by another player, you can lose one health to let that player draw two cards."),
     Character("Zhou Yu", "Wu", 3, "Male",
               "Dashing Hero: Draw an extra card at the start of your turn.",
-              "Sow Dissension: During your action phase, you can show an on-hand card and give it to any other player. They must either choose to lose one unit of health or show their entire hand and discard all cards of the same suit as the card you showed them.")
+              "Sow Dissension: During your action phase, you can show an on-hand card and give it to any other player. They must either choose to lose one unit of health or show their entire hand and discard all cards of the same suit as the card you showed them. Limited to one use per turn.")
 ]
 
 # Hero Characters
@@ -588,7 +588,7 @@ hero_characters = [
               "Lament: Whenever any player is damaged by an ATTACK, you can discard any card, on-hand or equipped. The victim must then flip a judgement. If SPADES, the attacker flips their character card. If HEARTS, the victim regains one health. If CLUBS, the attacker discards two cards. If DIAMONDS, the victim draws two cards.",
               "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game."),
     Character("Chen Gong", "Heroes", 3, "Male",
-              "Brilliant Scheme: Once per turn, you can give another player an ATTACK or equipment card. The player can then choose to draw one card or allow you to choose one character within their attacking range. This character is ATTACKed by the player that recieved the card.",
+              "Brilliant Scheme: Once per turn, you can give another player an ATTACK or equipment card. The player can then choose to draw one card or allow you to choose one character within their attacking range. This character is ATTACKed by the player that recieved the card. Limited to one use per turn.",
               "Delayed Wisdom: Whenever you are damaged outside of your turn, you become immune to all ATTACKs and non-delay tool cards for the rest of that turn."),
     Character("Diao Chan", "Heroes", 3, "Female",
               "Seed of Animosity: During your action phase, you can discard one card (on-hand or equipped) and select two male characters to undergo a DUEL with eachother. This ability cannot be prevented using NEGATE, and is limited to one use per turn.",
@@ -1626,6 +1626,8 @@ class Player(Character):
 
             if (self.character_ability2.startswith("Alliance:") or self.character_ability3.startswith("Alliance:")):
                 char_abils.append(" Character Ability >> Alliance")
+            if self.character_ability3.startswith("Blitz:"):
+                char_abils.append(" Character Ability >> Blitz")
             if (self.character_ability1.startswith("Blockade:") or self.character_ability3.startswith("Blockade:")):
                 char_abils.append(" Character Ability >> Blockade")
             if (self.character_ability1.startswith("Brilliant Scheme:") or self.character_ability3.startswith("Brilliant Scheme")):
@@ -1649,6 +1651,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Rejection")
             if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
                 char_abils.append(" Character Ability >> Seed of Animosity")
+            if (self.character_ability2.startswith("Sow Dissension:") or self.character_ability3.startswith("Sow Dissension:")):
+                char_abils.append(" Character Ability >> Sow Dissension")
             if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
                 char_abils.append(" Character Ability >> Surprise")
             if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
@@ -1677,6 +1681,7 @@ class Player(Character):
         self.used_marriage = False
         self.used_reconsider = False
         self.used_seed_of_animosity = False
+        self.used_sow_dissension = False
 
         for player in players:
             player.used_delayed_wisdom = False
@@ -3091,6 +3096,7 @@ class Player(Character):
 
         if options[action_taken_index] == (f"Don't attack {players[selected]}!"):
             weapon = self.equipment_weapon.pop()
+            self.weapon_range = 1
             players[0].hand_cards.add_to_top(weapon)
             print(
                 f"{self.character}: Your weapon has been stolen by {players[0].character} for not attacking {players[selected].character}!")
@@ -3121,6 +3127,7 @@ class Player(Character):
             if attack_played[0] != None:
                 print(
                     f"{self.character} was coerced into attacking {players[selected]}.")
+                self.check_amassing_terrain()
                 discarded1 = self.hand_cards.contents.pop(
                     attack_played[1])
                 self.hand_cards.contents.insert(
@@ -3142,6 +3149,7 @@ class Player(Character):
             discard_deck.add_to_top(discarded)
             discarded.effect2 = "Attack"
             self.check_ardour(discarded, coerced)
+            self.check_amassing_terrain()
             self.check_one_after_another()
             extra_targets = self.check_weapon_sky_scorcher_halberd(
                 selected)
@@ -3178,7 +3186,7 @@ class Player(Character):
                 card_dismantled_index - 1)
             discard_deck.add_to_top(card_dismantled)
             print(
-                f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s hand by using {discarded}.")
+                f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s hand by using DISMANTLE.")
             players[selected].check_one_after_another()
 
         # Check if equipment-card
@@ -3189,7 +3197,7 @@ class Player(Character):
                 discard_deck.add_to_top(card_dismantled)
                 players[selected].weapon_range = 1
                 print(
-                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s weapon-slot by using {discarded}.")
+                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s weapon-slot by using DISMANTLE.")
                 players[selected].check_warrior_woman()
 
             elif card_dismantled_index == (len(players[selected].hand_cards.contents) + 3):
@@ -3197,7 +3205,7 @@ class Player(Character):
                 )
                 discard_deck.add_to_top(card_dismantled)
                 print(
-                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s armor-slot by using {discarded}.")
+                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s armor-slot by using DISMANTLE.")
                 players[selected].check_warrior_woman()
 
             elif card_dismantled_index == (len(players[selected].hand_cards.contents) + 4):
@@ -3205,7 +3213,7 @@ class Player(Character):
                 )
                 discard_deck.add_to_top(card_dismantled)
                 print(
-                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s horse-slot by using {discarded}.")
+                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s horse-slot by using DISMANTLE.")
                 players[selected].check_warrior_woman()
 
             elif card_dismantled_index == (len(players[selected].hand_cards.contents) + 5):
@@ -3213,7 +3221,7 @@ class Player(Character):
                 )
                 discard_deck.add_to_top(card_dismantled)
                 print(
-                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s horse-slot by using {discarded}.")
+                    f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s horse-slot by using DISMANTLE.")
                 players[selected].check_warrior_woman()
 
             # Check if pending-time-delay-tool-card
@@ -3223,21 +3231,22 @@ class Player(Character):
                     discard_deck.add_to_top(
                         card_dismantled)
                     print(
-                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using {discarded}.")
+                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using DISMANTLE.")
 
                 if card_dismantled_index == (len(players[selected].hand_cards.contents) + 8):
                     card_dismantled = players[selected].pending_judgements[1]
                     discard_deck.add_to_top(
                         card_dismantled)
                     print(
-                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using {discarded}.")
+                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using DISMANTLE.")
 
                 if card_dismantled_index == (len(players[selected].hand_cards.contents) + 9):
                     card_dismantled = players[selected].pending_judgements[2]
                     discard_deck.add_to_top(
                         card_dismantled)
                     print(
-                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using {discarded}.")
+                        f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using DISMANTLE.")
+        players[selected].check_amassing_terrain()
         players[selected].check_one_after_another()
 
     def activate_duel(self, discarded, selected, selected2=0):
@@ -3402,7 +3411,7 @@ class Player(Character):
                 card_stolen_index - 1)
             self.hand_cards.add_to_top(card_stolen)
             print(
-                f"{self.character} has taken {card_stolen} from {players[selected].character}'s hand by using {discarded}.")
+                f"{self.character} has taken {card_stolen} from {players[selected].character}'s hand by using STEAL.")
             players[selected].check_one_after_another()
 
         # Check if equipment-card
@@ -3413,7 +3422,7 @@ class Player(Character):
                 players[selected].weapon_range = 1
                 self.hand_cards.add_to_top(card_stolen)
                 print(
-                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s weapon-slot by using {discarded}.")
+                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s weapon-slot by using STEAL.")
                 players[selected].check_warrior_woman()
 
             elif card_stolen_index == (len(players[selected].hand_cards.contents) + 3):
@@ -3421,7 +3430,7 @@ class Player(Character):
                 )
                 self.hand_cards.add_to_top(card_stolen)
                 print(
-                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s armor-slot by using {discarded}.")
+                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s armor-slot by using STEAL.")
                 players[selected].check_warrior_woman()
 
             elif card_stolen_index == (len(players[selected].hand_cards.contents) + 4):
@@ -3429,7 +3438,7 @@ class Player(Character):
                 )
                 self.hand_cards.add_to_top(card_stolen)
                 print(
-                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s horse-slot by using {discarded}.")
+                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s horse-slot by using STEAL.")
                 players[selected].check_warrior_woman()
 
             elif card_stolen_index == (len(players[selected].hand_cards.contents) + 5):
@@ -3437,7 +3446,7 @@ class Player(Character):
                 )
                 self.hand_cards.add_to_top(card_stolen)
                 print(
-                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s horse-slot by using {discarded}.")
+                    f"{self.character} has taken {card_stolen} from {players[selected].character}'s horse-slot by using STEAL.")
                 players[selected].check_warrior_woman()
 
             # Check if pending-time-delay-tool-card
@@ -3446,19 +3455,20 @@ class Player(Character):
                     card_stolen = players[selected].pending_judgements[0]
                     self.hand_cards.add_to_top(card_stolen)
                     print(
-                        f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using {discarded}.")
+                        f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using STEAL.")
 
                 if card_stolen_index == (len(players[selected].hand_cards.contents) + 8):
                     card_stolen = players[selected].pending_judgements[1]
                     self.hand_cards.add_to_top(card_stolen)
                     print(
-                        f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using {discarded}.")
+                        f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using STEAL.")
 
                 if card_stolen_index == (len(players[selected].hand_cards.contents) + 9):
                     card_stolen = players[selected].pending_judgements[2]
                     self.hand_cards.add_to_top(card_stolen)
                     print(
-                        f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using {discarded}.")
+                        f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using STEAL.")
+        players[selected].check_amassing_terrain()
         players[selected].check_one_after_another()
 
     def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=None, reacting_player_index=None, assistance=False):
@@ -3520,6 +3530,7 @@ class Player(Character):
 
                 elif self.hand_cards.contents[card_index].effect == "Peach":
                     discarded = self.hand_cards.contents.pop(card_index)
+                    self.check_amassing_terrain()
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     output_value += 1
@@ -3539,6 +3550,7 @@ class Player(Character):
 
             elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
                 discarded = None
+                amassed = False
                 while required > 0:
                     if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
                         self.check_ardour(card_played, player_index)
@@ -3579,14 +3591,16 @@ class Player(Character):
                         return None
 
                     elif options_str[card_index] == " Ruler Ability >> Escort":
-                        defender_index = (self.check_escort("Activate"))
-                        if defender_index[0]:
-                            discarded = players[defender_index[1]].use_reaction_effect(
+                        defender = self.check_escort("Activate")
+                        if defender[0]:
+                            discarded = players[defender[1]].use_reaction_effect(
                                 "Defend", 1, card_played, player_index, reacting_player_index, True)
                             if type(discarded) == Card:
                                 if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                     print(
-                                        f"  >> Ruler Ability: Escort; {players[defender_index[1]].character} has played a DEFEND on {self.character}'s behalf!")
+                                        f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
+                                    players[defender[1]
+                                            ].check_amassing_terrain()
                                     required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Impetus":
@@ -3598,6 +3612,10 @@ class Player(Character):
 
                     elif self.hand_cards.contents[card_index].effect == "Defend":
                         discarded = self.hand_cards.contents.pop(card_index)
+                        if not amassed:
+                            self.check_amassing_terrain()
+                            amassed = True
+                        self.check_amassing_terrain()
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
                         discarded.effect2 = "Defend"
@@ -3647,14 +3665,15 @@ class Player(Character):
                         discarded2 = self.hand_cards.contents.pop(
                             attack_played[3])
                         self.hand_cards.contents.remove("Placeholder")
+                        self.check_amassing_terrain()
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded2)
-
                         discarded2.effect2 == "Attack"
                         return(discarded2)
 
                 elif self.hand_cards.contents[card_index].effect == "Attack":
                     discarded = self.hand_cards.contents.pop(card_index)
+                    self.check_amassing_terrain()
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Attack"
@@ -3690,14 +3709,15 @@ class Player(Character):
                     return(0)
 
                 elif options_str[card_index] == " Ruler Ability >> Escort":
-                    defender_index = (self.check_escort("Activate"))
-                    if defender_index[0]:
-                        discarded = players[defender_index[1]].use_reaction_effect(
+                    defender = (self.check_escort("Activate"))
+                    if defender[0]:
+                        discarded = players[defender[1]].use_reaction_effect(
                             "Defend", 1, card_played, player_index, reacting_player_index, True)
                         if type(discarded) == Card:
                             if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                 print(
-                                    f"  >> Ruler Ability: Escort; {players[defender_index[1]].character} has played a DEFEND on {self.character}'s behalf!")
+                                    f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
+                                players[defender[1]].check_amassing_terrain()
                                 return(discarded)
 
                 elif options_str[card_index] == " Character Ability >> Impetus":
@@ -3708,6 +3728,7 @@ class Player(Character):
 
                 elif self.hand_cards.contents[card_index].effect == "Defend":
                     discarded = self.hand_cards.contents.pop(card_index)
+                    self.check_amassing_terrain()
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Defend"
@@ -3760,12 +3781,14 @@ class Player(Character):
                             discarded2 = self.hand_cards.contents.pop(
                                 attack_played[3])
                             self.hand_cards.contents.remove("Placeholder")
+                            self.check_amassing_terrain()
                             self.check_one_after_another()
                             discard_deck.add_to_top(discarded2)
                             required -= 1
 
                     elif self.hand_cards.contents[card_index].effect == "Attack":
                         discarded = self.hand_cards.contents.pop(card_index)
+                        self.check_amassing_terrain()
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
                         discarded.effect2 = "Attack"
@@ -3843,6 +3866,7 @@ class Player(Character):
         if len(self.equipment_defensive_horse) == 1:
             discard_deck.add_to_top(self.equipment_defensive_horse.pop())
         if death == False:
+            self.check_amassing_terrain()
             self.check_one_after_another()
         if death:
             print(
@@ -3912,6 +3936,36 @@ class Player(Character):
                         given = self.hand_cards.contents.pop(given_index)
                         players[selected_index].hand_cards.add_to_top(given)
                         cards_to_give -= 1
+                return True
+
+    def check_amassing_terrain(self):
+        # "Amassing Terrain: Every instance that you use or lose cards outside of your turn, you can flip a judgement card. If the judgement is not HEARTS, you can place the judgement card (referred to as a TERRAIN) atop your character card. For every TERRAIN that you gain, your physical distance to other players is considered -1."
+        if (self.character_ability1.startswith("Amassing Terrain:") or self.character_ability3.startswith("Amassing Terrain:")):
+
+            for player_index, player in enumerate(players):
+                if (player.character_ability1.startswith("Amassing Terrain:") or player.character_ability3.startswith("Amassing Terrain:")):
+                    user_index = player_index
+                    break
+
+            if self.character != players[0].character:
+                message = f"{self.character}: You used or lost a card outside of your turn; flip a judgement with a chance to gain a TERRAIN?"
+                if question_yes_no(message):
+                    print(
+                        f"  >> Character Ability: Amassing Terrain; {self.character} has used or lost a card outside their turn. They can flip a judgement. If HEARTS, they gain a TERRAIN!")
+                    main_deck.check_if_empty()
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(f"{self.character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, user_index)
+                    if judgement_card.suit != "Hearts":
+                        terrain = discard_deck.remove_from_top()
+                        self.terrains.append(terrain)
+                        print(
+                            f"  >> Character Ability: Amassing Terrain; {self.character} has gained a TERRAIN: {terrain}!")
+                    else:
+                        print(
+                            f"  >> Character Ability: Amassing Terrain; Nothing happens...")
                 return True
 
     def check_ardour(self, card, source_player_index=0):
@@ -4978,6 +5032,7 @@ class Player(Character):
                 self.hand_cards.discard_from_hand(2)
                 print(
                     f"{self.character} discarded two hand-cards due to {players[user_index].character}'s an Eye for an Eye.")
+                self.check_amassing_terrain()
                 self.check_one_after_another()
 
     def check_false_ruler(self):
@@ -5128,6 +5183,7 @@ class Player(Character):
                         discard_deck.add_to_top(card_discarded)
                         print(
                             f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their hand.")
+                        players[selected_index].check_amassing_terrain()
                         players[selected_index].check_one_after_another()
 
                     # Check if equipment-card
@@ -5810,6 +5866,73 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and thus nothing happens.")
 
+    def check_lingering_spirit(self):
+        # "Lingering Spirit: If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum."
+        if self.character_ability4.startswith("Lingering Spirit:"):
+            if self.max_health > self.current_health:
+                difference = (self.max_health - self.current_health)
+                message = f"{self.character}: Activate Lingering Spirit, forcing anyone to draw 1, then discard {difference} cards; OR draw {difference} cards then discard 1?"
+                if question_yes_no(message):
+                    options = [
+                        Separator("------<Cannot target yourself>------")]
+                    for player in players[1:]:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    options.append(
+                        Separator("--------------------Other--------------------"))
+                    options.append("Cancel ability.")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a player to target with Lingering Spirit:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    selected_index = answer.get('Selected')
+                    if difference != 1:
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Make {players[selected_index].character} draw 1, then discard {difference}; or draw {difference} and then discard 1?',
+                                'choices': [f"Draw 1, discard {difference}", f"Draw {difference}, discard 1"]
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        option_chosen = answer.get('Selected')
+                        if option_chosen == f"Draw 1, discard {difference}":
+                            cards_discardable = (len(players[selected_index].hand_cards.contents) + len(players[selected_index].equipment_weapon) + len(players[selected_index].equipment_armor) + len(
+                                players[selected_index].equipment_offensive_horse) + len(players[selected_index].equipment_defensive_horse) + len(players[selected_index].pending_judgements))
+                            print(
+                                f"  >> Character Ability: Lingering Spirit; {self.character} has forced {players[selected_index].character} to draw 1, discard {difference}!")
+                            players[selected_index].hand_cards.draw(
+                                main_deck, 1, False)
+                            if difference > cards_discardable:
+                                players[selected_index].discard_all_cards()
+                                players[selected_index].check_amassing_terrain()
+                            else:
+                                players[selected_index].discard_from_hand_or_equip(
+                                    difference)
+                                players[selected_index].check_amassing_terrain()
+                        elif option_chosen == f"Draw {difference}, discard 1":
+                            print(
+                                f"  >> Character Ability: Lingering Spirit; {self.character} has forced {players[selected_index].character} to draw {difference}, discard 1!")
+                            players[selected_index].hand_cards.draw(
+                                main_deck, difference, False)
+                            players[selected_index].discard_from_hand_or_equip(
+                                1)
+                            players[selected_index].check_amassing_terrain()
+                    else:
+                        print(
+                            f"  >> Character Ability: Lingering Spirit; {self.character} has forced {players[selected_index].character} to draw 1, discard 1!")
+                        players[selected_index].hand_cards.draw(
+                            main_deck, 1, False)
+                        players[selected_index].discard_from_hand_or_equip(1)
+                        players[selected_index].check_amassing_terrain()
+
     def check_mediocrity(self, phase="Draw"):
         # "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."
         if (self.character_ability1.startswith("Mediocrity:") or self.character_ability3.startswith("Mediocrity:")):
@@ -5986,6 +6109,7 @@ class Player(Character):
                             self.hand_cards.add_to_top(card_stolen)
                             print(
                                 f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target1.character}'s hand.")
+                            target1.check_amassing_terrain()
                             target1.check_one_after_another()
                             activated_raid = False
 
@@ -6011,6 +6135,7 @@ class Player(Character):
                             self.hand_cards.add_to_top(card_stolen)
                             print(
                                 f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target2.character}'s hand.")
+                            target2.check_amassing_terrain()
                             target2.check_one_after_another()
                             activated_raid = False
                     return True
@@ -6157,6 +6282,7 @@ class Player(Character):
         if (self.character_ability1.startswith("Retaliation:") or self.character_ability3.startswith("Retaliation:")):
             cards_discardable = (len(players[source_player_index].hand_cards.contents) + len(players[source_player_index].equipment_weapon) + len(
                 players[source_player_index].equipment_armor) + len(players[source_player_index].equipment_offensive_horse) + len(players[source_player_index].equipment_defensive_horse))
+            amassed = False
             while damage_dealt > 0:
                 print(' ')
                 if cards_discardable > 0:
@@ -6183,6 +6309,9 @@ class Player(Character):
                             self.hand_cards.add_to_top(card_stolen)
                             print(
                                 f"  >> Character Ability: Retaliation; {self.character} has taken {card_stolen} from {players[source_player_index].character}'s hand.")
+                            if not amassed:
+                                players[source_player_index].check_amassing_terrain()
+                                amassed = True
                             players[source_player_index].check_one_after_another()
 
                         # Check if equipment-card
@@ -6540,6 +6669,45 @@ class Player(Character):
                 return True
 
 # Activatable abilities (reusable)
+    def activate_blitz(self):
+        # "Blitz: In your action phase, you can use any of your TERRAINS as STEAL."
+        if self.character_ability3.startswith("Blitz:"):
+            if len(self.terrains) < 1:
+                print(
+                    f"{self.character}: You do not have enough TERRAINS to perform this ability.")
+
+            else:
+                options_str = []
+                for card in self.terrains:
+                    options_str.append(str(card))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a TERRAIN to use as STEAL:',
+                        'choices': options_str,
+                        'filter': lambda card: options_str.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                terrain_index = answer.get('Selected')
+                if options_str[terrain_index] == "Cancel ability.":
+                    return (' ')
+                else:
+                    card = self.terrains.pop(terrain_index)
+                    card.effect2 = "Steal"
+                    print(
+                        f"  >> Character Ability: Blitz; {self.character} has discarded a TERRAIN: {card} to use as STEAL!")
+                    if not self.use_card_effect("Special", card):
+                        self.terrains.append(card)
+                        print(
+                            f"{self.character} cancelled using their effect, and their TERRAIN: {card} was returned.")
+                    else:
+                        discard_deck.add_to_top(card)
+
     def activate_blockade(self):
         # "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit CLUBS or SPADES as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than CLUBS, the target fails the judgement and must skip their drawing phase."
         if (self.character_ability1.startswith("Blockade:") or self.character_ability3.startswith("Blockade:")):
@@ -6598,7 +6766,6 @@ class Player(Character):
                         if discarded_index <= len(self.hand_cards.contents):
                             card = self.hand_cards.contents.pop(
                                 discarded_index - 1)
-                            discard_deck.add_to_top(card)
                             print(
                                 f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their hand to use as RATIONS DEPLETED.")
 
@@ -6606,7 +6773,6 @@ class Player(Character):
                         else:
                             if discarded_index == (len(self.hand_cards.contents) + 2):
                                 card = self.equipment_weapon.pop()
-                                discard_deck.add_to_top(card)
                                 self.weapon_range = 1
                                 weapon_popped = True
                                 print(
@@ -6614,21 +6780,18 @@ class Player(Character):
 
                             if discarded_index == (len(self.hand_cards.contents) + 3):
                                 card = self.equipment_armor.pop()
-                                discard_deck.add_to_top(card)
                                 armor_popped = True
                                 print(
                                     f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their armor-slot to use as RATIONS DEPLETED.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 4):
                                 card = self.equipment_offensive_horse.pop()
-                                discard_deck.add_to_top(card)
                                 off_horse_popped = True
                                 print(
                                     f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their horse-slot to use as RATIONS DEPLETED.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 5):
                                 card = self.equipment_defensive_horse.pop()
-                                discard_deck.add_to_top(card)
                                 def_horse_popped = True
                                 print(
                                     f"  >> Character Ability: Blockade; {self.character} has discarded {card} from their horse-slot to use as RATIONS DEPLETED.")
@@ -6637,21 +6800,19 @@ class Player(Character):
                         if not self.use_card_effect("Special", card):
                             if weapon_popped:
                                 discard_deck.contents.pop(0)
-                                self.equipment_weapon.append(card)
                                 self.weapon_range = card.weapon_range
                             if armor_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_armor.append(card)
                             if off_horse_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_offensive_horse.append(card)
                             if def_horse_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_defensive_horse.append(card)
                             else:
                                 self.hand_cards.draw(discard_deck, 1, False)
                             print(
                                 f"{self.character} cancelled using their effect, and {card} was returned.")
+                        else:
+                            discard_deck.add_to_top(card)
                     else:
                         print(
                             f"{options[discarded_index]} cannot be used as RATIONS DEPLETED as it is NOT a black-suited, basic/equipment card.")
@@ -6772,7 +6933,6 @@ class Player(Character):
                         if discarded_index <= len(self.hand_cards.contents):
                             card = self.hand_cards.contents.pop(
                                 discarded_index - 1)
-                            discard_deck.add_to_top(card)
                             print(
                                 f"  >> Character Ability: National Colours; {self.character} has discarded {card} from their hand to use as ACEDIA.")
 
@@ -6780,7 +6940,6 @@ class Player(Character):
                         else:
                             if discarded_index == (len(self.hand_cards.contents) + 2):
                                 card = self.equipment_weapon.pop()
-                                discard_deck.add_to_top(card)
                                 self.weapon_range = 1
                                 weapon_popped = True
                                 print(
@@ -6788,21 +6947,18 @@ class Player(Character):
 
                             if discarded_index == (len(self.hand_cards.contents) + 3):
                                 card = self.equipment_armor.pop()
-                                discard_deck.add_to_top(card)
                                 armor_popped = True
                                 print(
                                     f"  >> Character Ability: National Colours; {self.character} has discarded {card} from their armor-slot to use as ACEDIA.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 4):
                                 card = self.equipment_offensive_horse.pop()
-                                discard_deck.add_to_top(card)
                                 off_horse_popped = True
                                 print(
                                     f"  >> Character Ability: National Colours; {self.character} has discarded {card} from their horse-slot to use as ACEDIA.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 5):
                                 card = self.equipment_defensive_horse.pop()
-                                discard_deck.add_to_top(card)
                                 def_horse_popped = True
                                 print(
                                     f"  >> Character Ability: National Colours; {self.character} has discarded {card} from their horse-slot to use as ACEDIA.")
@@ -6810,22 +6966,20 @@ class Player(Character):
                         card.effect2 = "Acedia"
                         if not self.use_card_effect("Special", card):
                             if weapon_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_weapon.append(card)
                                 self.weapon_range = card.weapon_range
                             if armor_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_armor.append(card)
                             if off_horse_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_offensive_horse.append(card)
                             if def_horse_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_defensive_horse.append(card)
                             else:
-                                self.hand_cards.draw(discard_deck, 1, False)
+                                self.hand_cards.add_to_top(card)
                             print(
                                 f"{self.character} cancelled using their effect, and {card} was returned.")
+                        else:
+                            discard_deck.add_to_top(card)
                     else:
                         print(
                             f"{options[discarded_index]} cannot be used as ACEDIA as is it NOT of suit DIAMONDS.")
@@ -7027,7 +7181,6 @@ class Player(Character):
                         if discarded_index <= len(self.hand_cards.contents):
                             card = self.hand_cards.contents.pop(
                                 discarded_index - 1)
-                            discard_deck.add_to_top(card)
                             print(
                                 f"  >> Character Ability: Surprise; {self.character} has discarded {card} from their hand to use as DISMANTLE.")
 
@@ -7035,7 +7188,6 @@ class Player(Character):
                         else:
                             if discarded_index == (len(self.hand_cards.contents) + 2):
                                 card = self.equipment_weapon.pop()
-                                discard_deck.add_to_top(card)
                                 self.weapon_range = 1
                                 weapon_popped = True
                                 print(
@@ -7043,21 +7195,18 @@ class Player(Character):
 
                             if discarded_index == (len(self.hand_cards.contents) + 3):
                                 card = self.equipment_armor.pop()
-                                discard_deck.add_to_top(card)
                                 armor_popped = True
                                 print(
                                     f"  >> Character Ability: Surprise; {self.character} has discarded {card} from their armor-slot to use as DISMANTLE.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 4):
                                 card = self.equipment_offensive_horse.pop()
-                                discard_deck.add_to_top(card)
                                 off_horse_popped = True
                                 print(
                                     f"  >> Character Ability: Surprise; {self.character} has discarded {card} from their horse-slot to use as DISMANTLE.")
 
                             if discarded_index == (len(self.hand_cards.contents) + 5):
                                 card = self.equipment_defensive_horse.pop()
-                                discard_deck.add_to_top(card)
                                 def_horse_popped = True
                                 print(
                                     f"  >> Character Ability: Surprise; {self.character} has discarded {card} from their horse-slot to use as DISMANTLE.")
@@ -7065,22 +7214,20 @@ class Player(Character):
                         card.effect2 = "Dismantle"
                         if not self.use_card_effect("Special", card):
                             if weapon_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_weapon.append(card)
                                 self.weapon_range = card.weapon_range
                             if armor_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_armor.append(card)
                             if off_horse_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_offensive_horse.append(card)
                             if def_horse_popped:
-                                discard_deck.contents.pop(0)
                                 self.equipment_defensive_horse.append(card)
                             else:
-                                self.hand_cards.draw(discard_deck, 1, False)
+                                self.hand_cards.add_to_top(card)
                             print(
                                 f"{self.character} cancelled using their effect, and {card} was returned.")
+                        else:
+                            discard_deck.add_to_top(card)
                     else:
                         print(
                             f"{options[discarded_index]} cannot be used as DISMANTLE as it is NOT black-suited.")
@@ -7163,7 +7310,6 @@ class Player(Character):
                             if discarded_index <= len(self.hand_cards.contents):
                                 card = self.hand_cards.contents.pop(
                                     discarded_index - 1)
-                                discard_deck.add_to_top(card)
                                 print(
                                     f"  >> Character Ability: Warrior Saint; {self.character} has discarded {card} from their hand to use as ATTACK.")
 
@@ -7171,7 +7317,6 @@ class Player(Character):
                             else:
                                 if discarded_index == (len(self.hand_cards.contents) + 2):
                                     card = self.equipment_weapon.pop()
-                                    discard_deck.add_to_top(card)
                                     self.weapon_range = 1
                                     weapon_popped = True
                                     print(
@@ -7179,21 +7324,18 @@ class Player(Character):
 
                                 if discarded_index == (len(self.hand_cards.contents) + 3):
                                     card = self.equipment_armor.pop()
-                                    discard_deck.add_to_top(card)
                                     armor_popped = True
                                     print(
                                         f"  >> Character Ability: Warrior Saint; {self.character} has discarded {card} from their armor-slot to use as ATTACK.")
 
                                 if discarded_index == (len(self.hand_cards.contents) + 4):
                                     card = self.equipment_offensive_horse.pop()
-                                    discard_deck.add_to_top(card)
                                     off_horse_popped = True
                                     print(
                                         f"  >> Character Ability: Warrior Saint; {self.character} has discarded {card} from their horse-slot to use as ATTACK.")
 
                                 if discarded_index == (len(self.hand_cards.contents) + 5):
                                     card = self.equipment_defensive_horse.pop()
-                                    discard_deck.add_to_top(card)
                                     def_horse_popped = True
                                     print(
                                         f"  >> Character Ability: Warrior Saint; {self.character} has discarded {card} from their horse-slot to use as ATTACK.")
@@ -7202,27 +7344,25 @@ class Player(Character):
                                 card.effect2 = "Attack"
                                 if not self.use_card_effect("Special", card):
                                     if weapon_popped:
-                                        discard_deck.contents.pop(0)
                                         self.equipment_weapon.append(card)
                                         self.weapon_range = card.weapon_range
                                     if armor_popped:
-                                        discard_deck.contents.pop(0)
                                         self.equipment_armor.append(card)
                                     if off_horse_popped:
-                                        discard_deck.contents.pop(0)
                                         self.equipment_offensive_horse.append(
                                             card)
                                     if def_horse_popped:
-                                        discard_deck.contents.pop(0)
                                         self.equipment_defensive_horse.append(
                                             card)
                                     else:
-                                        self.hand_cards.draw(
-                                            discard_deck, 1, False)
+                                        self.hand_cards.contents.append(card)
                                     print(
                                         f"{self.character} cancelled using their effect, and {card} was returned.")
+                                else:
+                                    discard_deck.add_to_top(card)
 
                             if mode == "Reaction":
+                                discard_deck.add_to_top(card)
                                 card.effect2 == "Attack"
                                 return (card)
 
@@ -7466,7 +7606,7 @@ class Player(Character):
                     self.used_brilliant_scheme = True
                     print(
                         f"  >> Character Ability: Brilliant Scheme; {self.character} gave {players[scheme_index].character} a {card}!")
-                    if players[scheme_index].activate_brilliant_scheme("Check"):
+                    if players[scheme_index].activate_brilliant_scheme("Reaction"):
                         options = players[scheme_index].create_targeting_menu(
                             "Weapon", scheme_index)
                         question = [
@@ -7486,7 +7626,7 @@ class Player(Character):
                         players[scheme_index].activate_attack(
                             attack_card, target_index, scheme_index)
 
-        if mode == "Check":
+        if mode == "Reaction":
             # Draw a card or allow Chen Gong to choose a target in your attack range. You then attack them with a colourless attack!
             question = [
                 {
@@ -7569,35 +7709,31 @@ class Player(Character):
                     elif discarded_index <= len(self.hand_cards.contents):
                         card = self.hand_cards.contents.pop(
                             discarded_index - 1)
-                        discard_deck.add_to_top(card)
 
                     # Check if equipment-card
                     else:
                         if discarded_index == (len(self.hand_cards.contents) + 2):
                             card = self.equipment_weapon.pop()
-                            discard_deck.add_to_top(card)
                             self.weapon_range = 1
                             print(
                                 f"{self.character} has discarded {card} from their weapon-slot.")
 
                         if discarded_index == (len(self.hand_cards.contents) + 3):
                             card = self.equipment_armor.pop()
-                            discard_deck.add_to_top(card)
                             print(
                                 f"{self.character} has discarded {card} from their armor-slot.")
 
                         if discarded_index == (len(self.hand_cards.contents) + 4):
                             card = self.equipment_offensive_horse.pop()
-                            discard_deck.add_to_top(card)
                             print(
                                 f"{self.character} has discarded {card} from their horse-slot.")
 
                         if discarded_index == (len(self.hand_cards.contents) + 5):
                             card = self.equipment_defensive_horse.pop()
-                            discard_deck.add_to_top(card)
                             print(
                                 f"{self.character} has discarded {card} from their horse-slot.")
 
+                    discard_deck.add_to_top(card)
                     options[player_healed_index].current_health += 1
                     self.used_green_salve = True
                     print(
@@ -7889,6 +8025,121 @@ class Player(Character):
                     players[target1_index].activate_duel(
                         card, target2_index, target1_index)
 
+    def activate_sow_dissension(self, mode="Activate", given_card=None):
+        # "Sow Dissension: During your action phase, you can show an on-hand card and give it to any other player. They must either choose to lose one unit of health or show their entire hand and discard all cards of the same suit as the card you showed them. Limited to one use per turn."
+        if mode == "Activate":
+            if (self.character_ability2.startswith("Sow Dissension:") or self.character_ability3.startswith("Sow Dissension:")):
+                if self.used_sow_dissension:
+                    print(
+                        f"{self.character}: You can only use Sow Dissension once per turn.")
+
+                elif len(self.hand_cards.contents) < 1:
+                    print(
+                        f"{self.character}: You need at least one hand-card to use Sow Dissension.")
+
+                else:
+                    options = [
+                        Separator("------<Cannot target yourself>------")]
+                    for player in players[1:]:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    options.append(
+                        Separator("--------------------Other--------------------"))
+                    options.append("Cancel ability.")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a target to give a card to for Sow Dissension:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    target_index = answer.get('Selected')
+                    if options[target_index] == "Cancel ability.":
+                        return(' ')
+                    else:
+                        options = self.create_str_nonblind_menu(True)
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Cancel ability.")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a card to give to {players[target_index].character} for Sow Dissension:',
+                                'choices': options,
+                                'filter': lambda card: options.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+                        if options[discarded_index] == "Cancel ability.":
+                            return(' ')
+                        else:
+                            self.used_sow_dissension = True
+                            given_card = self.hand_cards.contents.pop(
+                                discarded_index)
+                            players[target_index].hand_cards.add_to_top(
+                                given_card)
+                            print(
+                                f"  >> Character Ability: Sow Dissension; {self.character} has given {given_card} to {players[target_index]}!")
+                            players[target_index].activate_sow_dissension(
+                                "Reaction", given_card)
+
+        if mode == "Reaction":
+            suit = given_card.suit
+            if self.check_beauty(given_card):
+                suit = "Hearts"
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: You have been given {given_card}; lose one health; or show entire hand, and discard all cards of suit {suit}?',
+                    'choices': ["Lose one health", f"Discard all {suit}"]
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            chosen = answer.get('Selected')
+            if chosen == "Lose one health":
+                self.current_health -= 1
+                print(
+                    f"  >> Character Ability: Sow Dissension; {self.character} kept their given card, and lost one health ({self.current_health}/{self.max_health} HP remaining)!")
+                if self.current_health < 1:
+                    if self.check_brink_of_death_loop(0, "Self") == "Break":
+                        return "Break"
+            else:
+                print(
+                    f"  >> Character Ability: Sow Dissension; {self.character} has shown their entire hand, and discards all cards of suit {suit}!")
+                print(f"The following cards are in {self.character}'s hand:")
+                for card in self.hand_cards.contents:
+                    print(card)
+                same_suits = []
+                if (self.character_ability2.startswith("Beauty:") or self.character_ability3.startswith("Beauty:")):
+                    if self.check_beauty(given_card) or suit == "Hearts":
+                        for card_index, card in enumerate(self.hand_cards.contents):
+                            if (card.suit == "Spades") or (card.suit == "Hearts"):
+                                same_suits.append(card_index)
+                else:
+                    for card_index, card in enumerate(self.hand_cards.contents):
+                        if card.suit == suit:
+                            same_suits.append(card_index)
+
+                cards_to_parse = len(self.hand_cards.contents)
+                for card_index in same_suits:
+                    discard_deck.add_to_top(
+                        self.hand_cards.contents.pop(card_index))
+                    self.hand_cards.contents.insert(card_index, "Placeholder")
+
+                while cards_to_parse > 0:
+                    if "Placeholder" in self.hand_cards.contents:
+                        self.hand_cards.contents.remove("Placeholder")
+                    cards_to_parse -= 1
+
+                self.check_amassing_terrain()
+                self.check_one_after_another()
+
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
@@ -7903,6 +8154,7 @@ class Player(Character):
         self.check_second_wind("Beginning")
         # Check for Jiang Wei/Zhuge Liang; Astrology
         self.check_goddess_luo()
+        self.check_lingering_spirit()
         return self.start_judgement_phase()
 
 # Judgement Phase
@@ -7945,7 +8197,6 @@ class Player(Character):
         if mediocrity[0]:
             cards_drawn += check_allegiances_in_play()
             message = False
-        # Checks for Sun Ce; Lingering Spirit
         self.hand_cards.draw(main_deck, cards_drawn, message)
         if self.acedia_active:
             return self.start_discard_phase()
@@ -8005,6 +8256,8 @@ class Player(Character):
             else:
                 if options[action_taken_index] == " Character Ability >> Alliance":
                     self.activate_alliance()
+                if options[action_taken_index] == " Character Ability >> Blitz":
+                    self.activate_blitz()
                 if options[action_taken_index] == " Character Ability >> Blockade":
                     self.activate_blockade()
                 if options[action_taken_index] == " Character Ability >> Brilliant Scheme":
@@ -8027,6 +8280,8 @@ class Player(Character):
                     self.activate_rejection()
                 if options[action_taken_index] == " Character Ability >> Seed of Animosity":
                     self.activate_seed_of_animosity()
+                if options[action_taken_index] == " Character Ability >> Sow Dissension":
+                    self.activate_sow_dissension()
                 if options[action_taken_index] == " Character Ability >> Surprise":
                     self.activate_surprise()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
