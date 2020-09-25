@@ -1,7 +1,13 @@
 """
-SanGuoSha Coding by Saba Tazayoni
-Started: 21/07/2020
-Current Version: 22/09/2020
+    __________   ___     ____    ___  __________  ___    ___  __________  __________   ___   ___  ___      ___
+   / _______//  / ||    /   ||  / // / _______// / //   / // / _____  // / _______//  / //  / // / ||     / //
+  / //_______  /  ||   / /| || / // / // ____   / //   / // / //   / // / //_______  / //__/ // /  ||    / //
+ /_______  // / ` ||  / //| ||/ // / // /_  // / //   / // / //   / // /_______  // / ____  // / ` ||   /_//
+ _______/ // / /| || / // | |/ // / //___/ // / //___/ // / //___/ //  _______/ // / //  / // / /| ||  ___
+/________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//|_|| /_//
+                                SanGuoSha Coding by Saba Tazayoni
+                    Started: 21/07/2020                  
+Current Version: 25/09/2020
 """
 
 from __future__ import print_function, unicode_literals
@@ -5810,18 +5816,24 @@ class Player(Character):
             if phase == "Draw":
                 print(
                     f"  >> Character Ability: Mediocrity; {self.character} draws {check_allegiances_in_play()} extra card(s) (one for every allegiance still in play)!")
-                return True
-            if phase == "Discard":
-                if check_allegiances_in_play() >= (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse)):
+                return [True]
+
+            elif phase == "Discard":
+                cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                    self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+                if check_allegiances_in_play() >= cards_discardable:
+                    difference = (check_allegiances_in_play() -
+                                  cards_discardable)
                     print(
                         f"  >> Character Ability: Mediocrity; {self.character} discards at least {check_allegiances_in_play()} cards (one for every allegiance in play) - they have no cards remaining.")
                     self.discard_all_cards()
-                    return True
+                    return [True, difference]
                 else:
                     print(
                         f"  >> Character Ability: Mediocrity; {self.character} discards at least {check_allegiances_in_play()} cards, one for every allegiance in play, and then down to their health-level ({self.current_health}/{self.max_health} HP remaining).")
-                    self.discard_from_equip_or_hand(
-                        check_allegiances_in_play())
+                    difference1 = check_allegiances_in_play()
+                    difference2 = 0
+                    self.discard_from_equip_or_hand(difference1)
                     limit_increase = 0
                     if self.character_ability3 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive." or self.character_ability4 == "Bloodline (Ruler Ability): Your maximum hand-limit is increased by two for each other Hero character still alive.":
                         heroes = []
@@ -5833,11 +5845,12 @@ class Player(Character):
                             print(
                                 f"  >> Character Ability: Bloodline (False Ruler Ability); {self.character}'s hand limit is increased by {limit_increase} (two for every other HERO character still alive).")
                     if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
-                        difference = (
+                        difference2 = (
                             len(self.hand_cards.list_cards()) - (self.current_health + limit_increase))
-                        self.hand_cards.discard_from_hand(
-                            difference)
-                    return True
+                        self.discard_from_equip_or_hand(difference2)
+                    difference = difference1 + difference2
+                    return [True, difference]
+        return [False]
 
     def check_one_after_another(self):
         # "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck."
@@ -6359,6 +6372,43 @@ class Player(Character):
 
             elif phase == "Start Game":
                 self.check_shapeshift("Start Game")
+
+    def check_stabilization(self, cards_discarded=0):
+        # "Stabilization: At the end of other players' discard phase, you can return one discarded card to that player. If you do so, you can take all of the other cards discarded in this phase as your own on-hand cards."
+        if (self.character_ability2.startswith("Stabilization:") or self.character_ability3.startswith("Stabilization:")):
+            if cards_discarded > 0:
+                message = f"{self.character}: Activate Stabilization and return 1 discarded card to {players[0].character}? You keep the rest."
+                if question_yes_no(message):
+                    if cards_discarded == 1:
+                        players[0].hand_cards.draw(discard_deck, 1, False)
+                        print(
+                            f"  >> Character Ability: Stabilization; {self.character} has returned a card to {players[0].character}!")
+                    else:
+                        stabilization = Player("Temporary")
+                        stabilization.hand_cards.draw(
+                            discard_deck, cards_discarded, False)
+                        options_str = stabilization.create_str_nonblind_menu(
+                            only_hand_cards=True)
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{player.character}: Please select which card you would like to take:',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        card_index = answer.get('Selected')
+                        drawn = stabilization.hand_cards.contents.pop(
+                            card_index)
+                        players[0].hand_cards.add_to_top(drawn)
+                        total_cards = len(stabilization.hand_cards.contents)
+                        while len(stabilization.hand_cards.contents) > 0:
+                            self.hand_cards.add_to_top(
+                                stabilization.hand_cards.contents.pop())
+                        print(
+                            f"  >> Character Ability: Stabilization; {self.character} has returned a card to {players[0].character}, and takes all other ({total_cards}) discarded cards for themselves!")
 
     def check_talent(self):
         # "Talent: You can use tool cards without range restrictions."
@@ -7891,7 +7941,8 @@ class Player(Character):
         if self.check_dual_heroes():
             cards_drawn = 0
             message = False
-        if self.check_mediocrity("Draw"):
+        mediocrity = self.check_mediocrity("Draw")
+        if mediocrity[0]:
             cards_drawn += check_allegiances_in_play()
             message = False
         # Checks for Sun Ce; Lingering Spirit
@@ -8009,8 +8060,9 @@ class Player(Character):
 # Discard Phase
     def start_discard_phase(self):
         print(" ")
-        if self.check_mediocrity("Discard"):
-            pass
+        mediocrity = self.check_mediocrity("Discard")
+        if mediocrity[0]:
+            difference = mediocrity[1]
         else:
             # Check for characters that have increased hand-card limits at end of their turn
             limit_increase1 = self.check_bloodline()
@@ -8022,6 +8074,8 @@ class Player(Character):
                 difference = (len(self.hand_cards.list_cards()) -
                               (self.current_health + limit_increase))
                 self.hand_cards.discard_from_hand(difference)
+        for player in players[1:]:
+            player.check_stabilization(difference)
         return self.start_end_phase()
 
 # End Phase
