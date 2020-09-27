@@ -12,7 +12,6 @@ Current Version: 27/09/2020
 
 from __future__ import print_function, unicode_literals
 import random
-from pprint import pprint
 from PyInquirer import prompt, Separator
 from examples import custom_style_2
 
@@ -1651,6 +1650,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Reconsider")
             if self.character_ability3.startswith("Rejection:"):
                 char_abils.append(" Character Ability >> Rejection")
+            if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
+                char_abils.append(" Ruler Ability >> Rouse")
             if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
                 char_abils.append(" Character Ability >> Seed of Animosity")
             if (self.character_ability2.startswith("Sow Dissension:") or self.character_ability3.startswith("Sow Dissension:")):
@@ -1666,6 +1667,8 @@ class Player(Character):
         if types == "Attack":
             if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
+            if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
+                char_abils.append(" Ruler Ability >> Rouse")
             return char_abils
 
     def reset_once_per_turn(self):
@@ -3594,7 +3597,7 @@ class Player(Character):
                         return None
 
                     elif options_str[card_index] == " Ruler Ability >> Escort":
-                        defender = self.check_escort("Activate")
+                        defender = self.check_escort("Reaction")
                         if defender[0]:
                             discarded = players[defender[1]].use_reaction_effect(
                                 "Defend", 1, card_played, player_index, reacting_player_index, True)
@@ -3628,21 +3631,26 @@ class Player(Character):
                 return(discarded)
 
             elif response_required == "Attack" and card_played.effect2 == "Barbarians":
-
                 options_str = self.hand_cards.list_cards()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
                 if self.activate_warrior_saint("Check"):
                     options_str.append(" Character Ability >> Warrior Saint")
+                if self.activate_rouse("Check"):
+                    options_str.append(" Ruler Ability >> Rouse")
                 if self.check_weapon_serpent_spear("Check"):
                     options_str.append(" Weapon Ability >> Serpent Spear")
                 options_str.append("Do nothing.")
 
+                if assistance:
+                    message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
+                else:
+                    message = f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!"
                 question = [
                     {
                         'type': 'list',
                         'name': 'Selected',
-                        'message': f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!",
+                        'message': message,
                         'choices': options_str,
                         'filter': lambda card: options_str.index(card)
                     },
@@ -3651,6 +3659,19 @@ class Player(Character):
                 card_index = answer.get('Selected')
                 if options_str[card_index] == "Do nothing.":
                     return(0)
+
+                elif options_str[card_index] == " Ruler Ability >> Rouse":
+                    defender = self.activate_rouse("Reaction")
+                    if defender[0]:
+                        placeholder = Card(
+                            0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
+                        discarded = players[defender[1]].use_reaction_effect(
+                            "Attack", 1, placeholder, player_index, defender[2], True)
+                        if type(discarded) == Card:
+                            if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                                print(
+                                    f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
+                                return(discarded)
 
                 elif options_str[card_index] == " Character Ability >> Warrior Saint":
                     discarded = self.activate_warrior_saint("Reaction")
@@ -3723,7 +3744,7 @@ class Player(Character):
                     return(0)
 
                 elif options_str[card_index] == " Ruler Ability >> Escort":
-                    defender = (self.check_escort("Activate"))
+                    defender = self.check_escort("Reaction")
                     if defender[0]:
                         discarded = players[defender[1]].use_reaction_effect(
                             "Defend", 1, card_played, player_index, reacting_player_index, True)
@@ -3743,9 +3764,7 @@ class Player(Character):
 
                 elif self.hand_cards.contents[card_index].effect == "Defend":
                     discarded = self.hand_cards.contents.pop(card_index)
-                    if not self.amassed_terrain:
-                        self.check_amassing_terrain()
-                        self.amassed_terrain = True
+                    self.check_amassing_terrain()
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Defend"
@@ -3762,6 +3781,8 @@ class Player(Character):
                     if self.activate_warrior_saint("Check"):
                         options_str.append(
                             " Character Ability >> Warrior Saint")
+                    if self.activate_rouse("Check"):
+                        options_str.append(" Ruler Ability >> Rouse")
                     if self.check_weapon_serpent_spear("Check"):
                         options_str.append(" Weapon Ability >> Serpent Spear")
                     options_str.append("Do nothing.")
@@ -3782,6 +3803,19 @@ class Player(Character):
                     card_index = answer.get('Selected')
                     if options_str[card_index] == "Do nothing.":
                         return True
+
+                    elif options_str[card_index] == " Ruler Ability >> Rouse":
+                        defender = self.activate_rouse("Reaction")
+                        if defender[0]:
+                            placeholder = Card(
+                                0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
+                            discarded = players[defender[1]].use_reaction_effect(
+                                "Attack", 1, placeholder, player_index, reacting_player_index, True)
+                            if type(discarded) == Card:
+                                if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                                    print(
+                                        f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
+                                    required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Warrior Saint":
                         discarded = self.activate_warrior_saint("Reaction")
@@ -4794,7 +4828,7 @@ class Player(Character):
                 if (self.character_ability2.startswith("Escort (Ruler Ability):") or self.character_ability3.startswith("Escort (Ruler Ability):") or self.character_ability4.startswith("Escort (Ruler Ability):")):
                     return True
 
-        if mode == "Activate":
+        if mode == "Reaction":
             if self.character == players[emperor_index].character:
                 targets = []
                 for player in players:
@@ -7145,6 +7179,83 @@ class Player(Character):
                             players[selected_index].check_retaliation(
                                 0, damage_dealt)
 
+    def activate_rouse(self, mode="Check"):
+        # "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."
+        emperor_index = None
+        false_ruler_index = None
+        for player_index, player in enumerate(players):
+            if (player.character_ability2.startswith("Rouse (Ruler Ability):") or player.character_ability3.startswith("Rouse (Ruler Ability):")):
+                if (player.role == "Emperor"):
+                    emperor_index = player_index
+                else:
+                    false_ruler_index = player_index
+
+        if mode == "Check":
+            if (self.role == "Emperor") or (self.character_ability2.startswith("False Ruler:")) or (self.character_ability3.startswith("False Ruler:")):
+                if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability)")):
+                    return True
+
+        if mode == "Activate" or mode == "Reaction":
+            if self.character == players[emperor_index].character:
+                targets = []
+                for player in players:
+                    targets.append(
+                        Separator("------" + str(player) + "------"))
+                for player_index, player in enumerate(players):
+                    if player.role != "Emperor" and (player.allegiance == "Shu" or player.character == "Sun Shang Xiang"):
+                        targets.pop(player_index)
+                        targets.insert(player_index, str(
+                            players[player_index]))
+            elif self.character == players[false_ruler_index].character:
+                targets = []
+                for player in players:
+                    targets.append(
+                        Separator("------" + str(player) + "------"))
+                for player_index, player in enumerate(players):
+                    if player.allegiance == "Shu" or player.character == "Sun Shang Xiang":
+                        targets.pop(player_index)
+                        targets.insert(player_index, str(
+                            players[player_index]))
+            targets.append(
+                Separator("--------------------Other--------------------"))
+            targets.append("Cancel ability.")
+            question = [
+                {
+                    'type': 'list',
+                    'name': 'Selected',
+                    'message': f'{self.character}: Please select a player to ATTACK for you via Rouse (Ruler Ability):',
+                    'choices': targets,
+                    'filter': lambda player: targets.index(player)
+                },
+            ]
+            answer = prompt(question, style=custom_style_2)
+            attacker_index = answer.get('Selected')
+            if targets[attacker_index] == "Cancel ability.":
+                return [False]
+
+            if mode == "Activate":
+                if self.character == players[emperor_index].character:
+                    player_index = emperor_index
+                elif self.character == players[false_ruler_index].character:
+                    player_index = false_ruler_index
+
+                card_played = Card(0, 'NONE', 'NONE', 'Tool', 'Barbarians',
+                                   'NONE', None, 'Barbarians')
+                discarded = players[attacker_index].use_reaction_effect(
+                    "Attack", 1, card_played, attacker_index, player_index, True)
+                if type(discarded) == Card:
+                    if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                        discarded.effect2 = "Attack"
+                        print(
+                            f"  >> Ruler Ability: Rouse; {players[attacker_index].character} has played an ATTACK on {self.character}'s behalf!")
+                        if not self.use_card_effect("Special", discarded):
+                            return False
+
+            if mode == "Reaction":
+                print(
+                    f"  >> Ruler Ability: Rouse; {self.character} has asked {players[attacker_index].character} to play an ATTACK on their behalf!")
+                return [True, attacker_index, player_index]
+
     def activate_surprise(self):
         # "Surprise: During your action phase, you can use any of your black-suited cards (on-hand or equipped) as DISMANTLE."
         if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
@@ -8228,15 +8339,15 @@ class Player(Character):
 # Action Phase
     def start_action_phase(self):
         if self.check_godspeed("Action"):
-            return players[0].start_discard_phase()
+            return self.start_discard_phase()
         action_phase_active = True
         while action_phase_active:
             if self.current_health == 0:
                 return(self.start_end_phase())
             print(' ')
             for player in players:
-                self.amassed_terrain = False
-                self.used_trigrams = False
+                player.amassed_terrain = False
+                player.used_trigrams = False
             options = []
             options.append(
                 Separator("--------------------Cards--------------------"))
@@ -8315,6 +8426,8 @@ class Player(Character):
                     self.activate_warrior_saint("Activate")
                 if options[action_taken_index] == " Ruler Ability >> Amber Sky":
                     self.activate_amber_sky()
+                if options[action_taken_index] == " Ruler Ability >> Rouse":
+                    self.activate_rouse("Activate")
                 if options[action_taken_index] == " Weapon Ability >> Serpent Spear":
                     cards_list = self.check_weapon_serpent_spear("Activate")
                     if cards_list[0] != None:
@@ -8340,14 +8453,13 @@ class Player(Character):
 # Discard Phase
     def start_discard_phase(self):
         print(" ")
+        difference = 0
         mediocrity = self.check_mediocrity("Discard")
         if mediocrity[0]:
             difference = mediocrity[1]
         else:
             # Check for characters that have increased hand-card limits at end of their turn
-            limit_increase1 = self.check_bloodline()
-            limit_increase2 = self.check_plotting_for_power(0, "Discard")
-            limit_increase = limit_increase1 + limit_increase2
+            limit_increase = self.check_bloodline() + self.check_plotting_for_power(0, "Discard")
 
             # Discard down to your current health level
             if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
@@ -8390,7 +8502,8 @@ discard_deck = Deck([])
 main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
-    player.hand_cards.draw(main_deck, 4, False)
+    player.hand_cards.draw(main_deck, 20, False)
+    player.current_health = 30
     player.check_geminate(2, False)
     player.check_shapeshift()
     player.check_false_ruler()
