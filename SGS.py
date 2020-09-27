@@ -2053,52 +2053,53 @@ class Player(Character):
         if target_index == None:
             target_index = 0
         if len(self.hand_cards.contents) == 0:
-            if self.equipment_weapon[0].effect == "Sky Scorcher Halberd":
-                message = f"{self.character}: You used your last hand-card to ATTACK {players[target_index].character} with Sky Scorcher Halberd. Target extra players?"
-                if question_yes_no(message):
-                    options = self.create_targeting_menu("Weapon")
-                    options.pop(target_index)
-                    options.insert(target_index, Separator(
-                        "------" + str(player) + "------"))
-                    options.append(
-                        Separator("--------------------Other--------------------"))
-                    options.append("Target noone else.")
+            if len(self.equipment_weapon) > 0:
+                if self.equipment_weapon[0].effect == "Sky Scorcher Halberd":
+                    message = f"{self.character}: You used your last hand-card to ATTACK {players[target_index].character} with Sky Scorcher Halberd. Target extra players?"
+                    if question_yes_no(message):
+                        options = self.create_targeting_menu("Weapon")
+                        options.pop(target_index)
+                        options.insert(target_index, Separator(
+                            "------" + str(player) + "------"))
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Target noone else.")
 
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Select up to two extra players to ATTACK:',
-                            'choices': options,
-                            'filter': lambda player: options.index(player)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    if options[answer.get('Selected')] == "Target noone else.":
-                        return [0]
-                    selected1 = answer.get('Selected')
-                    options.pop(selected1)
-                    options.insert(selected1, Separator(
-                        "------" + str(player) + "------"))
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Select up to two extra players to ATTACK:',
+                                'choices': options,
+                                'filter': lambda player: options.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        if options[answer.get('Selected')] == "Target noone else.":
+                            return [0]
+                        selected1 = answer.get('Selected')
+                        options.pop(selected1)
+                        options.insert(selected1, Separator(
+                            "------" + str(player) + "------"))
 
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Select up to one more extra player to ATTACK:',
-                            'choices': options,
-                            'filter': lambda player: options.index(player)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    if options[answer.get('Selected')] == "Target noone else.":
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Select up to one more extra player to ATTACK:',
+                                'choices': options,
+                                'filter': lambda player: options.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        if options[answer.get('Selected')] == "Target noone else.":
+                            print(
+                                f"  >> {self.character} used the Sky Scorcher Halberd to hit an extra player, {players[selected1].character}!!!")
+                            return [1, selected1]
+                        selected2 = answer.get('Selected')
                         print(
-                            f"  >> {self.character} used the Sky Scorcher Halberd to hit an extra player, {players[selected1].character}!!!")
-                        return [1, selected1]
-                    selected2 = answer.get('Selected')
-                    print(
-                        f"  >> {self.character} used the Sky Scorcher Halberd to hit two extra players, {players[selected1].character} and {players[selected2].character}!!!")
-                    return [2, selected1, selected2]
+                            f"  >> {self.character} used the Sky Scorcher Halberd to hit two extra players, {players[selected1].character} and {players[selected2].character}!!!")
+                        return [2, selected1, selected2]
 
     def check_weapon_zhuge_crossbow(self):
         if len(self.equipment_weapon) > 0:
@@ -2135,9 +2136,9 @@ class Player(Character):
                     selected = answer.get('Selected')
 
                     if players[selected].check_empty_city():
-                        return (' ')
+                        return False
                     if players[selected].used_delayed_wisdom:
-                        return (' ')
+                        return False
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use a BLACK ATTACK via {self.equipment_weapon[0]} against {players[selected]}."
@@ -2152,13 +2153,14 @@ class Player(Character):
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
-
+                        return True
                 else:
                     print(
                         f"{self.character}: You have insufficient range to reach anyone with {card}.")
             elif (self.attacks_this_turn > 0):
                 print(
                     f"{self.character}: You can only play one ATTACK card per turn.")
+            return False
 
         if card.effect2 == "Red Attack":
             if (self.attacks_this_turn == 0) or (self.check_berserk()) or (self.check_weapon_zhuge_crossbow()):
@@ -2179,9 +2181,9 @@ class Player(Character):
                     selected = answer.get('Selected')
 
                     if players[selected].check_empty_city():
-                        return (' ')
+                        return False
                     if players[selected].used_delayed_wisdom:
-                        return (' ')
+                        return False
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use a RED ATTACK via {self.equipment_weapon[0]} against {players[selected]}."
@@ -2196,6 +2198,14 @@ class Player(Character):
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
+                        return True
+                else:
+                    print(
+                        f"{self.character}: You have insufficient range to reach anyone with {card}.")
+            elif (self.attacks_this_turn > 0):
+                print(
+                    f"{self.character}: You can only play one ATTACK card per turn.")
+            return False
 
         if card.effect2 == "Colourless Attack":
             if (self.attacks_this_turn == 0) or (self.check_berserk()) or (self.check_weapon_zhuge_crossbow()):
@@ -2216,9 +2226,9 @@ class Player(Character):
                     selected = answer.get('Selected')
 
                     if players[selected].check_empty_city():
-                        return (' ')
+                        return False
                     if players[selected].used_delayed_wisdom:
-                        return (' ')
+                        return False
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use a COLOURLESS ATTACK via {self.equipment_weapon[0]} against {players[selected]}."
@@ -2233,6 +2243,14 @@ class Player(Character):
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
+                        return True
+                else:
+                    print(
+                        f"{self.character}: You have insufficient range to reach anyone with {card}.")
+            elif (self.attacks_this_turn > 0):
+                print(
+                    f"{self.character}: You can only play one ATTACK card per turn.")
+            return False
 
         # card.type == 'Basic':
         elif card.effect2 == 'Attack':
@@ -2254,9 +2272,9 @@ class Player(Character):
                     selected = answer.get('Selected')
 
                     if players[selected].check_empty_city():
-                        return (' ')
+                        return False
                     if players[selected].used_delayed_wisdom:
-                        return (' ')
+                        return False
 
                     print(f"{card} - ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use {card} against {players[selected]}."
@@ -2287,6 +2305,7 @@ class Player(Character):
             elif (self.attacks_this_turn > 0):
                 print(
                     f"{self.character}: You can only play one ATTACK card per turn.")
+            return False
 
         elif card.effect2 == 'Defend':
             print(
@@ -5587,7 +5606,18 @@ class Player(Character):
                     main_deck.check_if_empty()
                     attack_card = main_deck.contents[0]
                     attack_card.effect2 = "Colourless Attack"
-                    self.activate_attack(attack_card, target_index, 0)
+                    extra_targets = self.check_weapon_sky_scorcher_halberd(
+                        target_index)
+                    if (extra_targets == None) or (extra_targets[0] == 0):
+                        self.activate_attack(attack_card, target_index)
+                    elif (extra_targets[0] == 1):
+                        self.activate_attack(attack_card, target_index)
+                        self.activate_attack(attack_card, extra_targets[1])
+                    elif (extra_targets[0] == 2):
+                        self.activate_attack(attack_card, target_index)
+                        self.activate_attack(attack_card, extra_targets[1])
+                        self.activate_attack(attack_card, extra_targets[2])
+                    return True
 
             if phase == "Action":
                 usable_cards = []
@@ -5602,7 +5632,7 @@ class Player(Character):
                     usable_cards.append(card)
                 for card in self.equipment_defensive_horse:
                     usable_cards.append(card)
-                if usable_cards > 0:
+                if len(usable_cards) > 0:
                     message = f"{self.character}: Choose to skip your action phase, and discard a piece of equipment, activating Godspeed, and allowing you to ATTACK any player?"
                     if question_yes_no(message):
                         options = self.create_targeting_menu("Weapon", 0, 6)
@@ -5620,7 +5650,18 @@ class Player(Character):
                         main_deck.check_if_empty()
                         attack_card = main_deck.contents[0]
                         attack_card.effect2 = "Colourless Attack"
-                        self.activate_attack(attack_card, target_index, 0)
+                        extra_targets = self.check_weapon_sky_scorcher_halberd(
+                            target_index)
+                        if (extra_targets == None) or (extra_targets[0] == 0):
+                            self.activate_attack(attack_card, target_index)
+                        elif (extra_targets[0] == 1):
+                            self.activate_attack(attack_card, target_index)
+                            self.activate_attack(attack_card, extra_targets[1])
+                        elif (extra_targets[0] == 2):
+                            self.activate_attack(attack_card, target_index)
+                            self.activate_attack(attack_card, extra_targets[1])
+                            self.activate_attack(attack_card, extra_targets[2])
+                        return True
 
     def check_heartbreak(self, source_player_index=0):
         # "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game."
@@ -6339,7 +6380,7 @@ class Player(Character):
                         return True
                 else:
                     print(
-                        f"  >> Character Ability: Relish; {players[source_player_index.character]} didn't discard a basic card! {self.character} is unaffected.")
+                        f"  >> Character Ability: Relish; {players[source_player_index].character} didn't discard a basic card! {self.character} is unaffected.")
                     return False
 
         if mode == "Reaction":
@@ -8570,12 +8611,14 @@ discard_deck = Deck([])
 main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
-    player.hand_cards.draw(main_deck, 20, False)
-    player.current_health = 30
+    player.hand_cards.draw(main_deck, 0, False)
     player.check_geminate(2, False)
     player.check_shapeshift()
     player.check_false_ruler()
 print("All players have been dealt 4 cards!")
+players[0].equipment_weapon.append(Card(12, 'Queen', 'Diamonds', 'Weapon', 'Sky Scorcher Halberd',
+                                        'When equipped and using the last on-hand card to ATTACK, the ATTACK can target an additional two players.', 4))
+players[0].weapon_range = 4
 game_started = True
 
 while game_started:
