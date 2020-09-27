@@ -7,7 +7,7 @@
 /________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//| || /_//
                                 SanGuoSha Coding by Saba Tazayoni               /||______________| ||
                     Started: 21/07/2020                                        /___________________||
-Current Version: 25/09/2020
+Current Version: 27/09/2020
 """
 
 from __future__ import print_function, unicode_literals
@@ -1002,6 +1002,8 @@ class Player(Character):
         self.rites = []
         self.terrains = []
         self.previous_turn_health = None
+        self.used_trigrams = False
+        self.amassed_terrain = False
         self.used_bare_chested = False
         self.wine_active = False
         self.flipped_char_card = False
@@ -3471,11 +3473,7 @@ class Player(Character):
         players[selected].check_amassing_terrain()
         players[selected].check_one_after_another()
 
-    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=None, reacting_player_index=None, assistance=False):
-        if player_index == None:
-            player_index = 0
-        if reacting_player_index == None:
-            reacting_player_index = 0
+    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False):
         reactions_possible = True
         output_value = 0
 
@@ -3530,7 +3528,8 @@ class Player(Character):
 
                 elif self.hand_cards.contents[card_index].effect == "Peach":
                     discarded = self.hand_cards.contents.pop(card_index)
-                    self.check_amassing_terrain()
+                    if not self.amassed_terrain:
+                        self.check_amassing_terrain()
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     output_value += 1
@@ -3550,15 +3549,19 @@ class Player(Character):
 
             elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
                 discarded = None
-                amassed = False
                 while required > 0:
                     if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
                         self.check_ardour(card_played, player_index)
 
                     if not players[player_index].check_weapon_black_pommel():
                         armor_check = self.armor_eight_trigrams()
-                        if armor_check[0]:
-                            return(armor_check[1])
+                        if not self.used_trigrams:
+                            self.used_trigrams = True
+                            if armor_check[0]:
+                                self.used_trigrams = False
+                                required -= 1
+                                discarded = armor_check[1]
+
                     options_str = self.hand_cards.list_cards()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
@@ -3599,8 +3602,7 @@ class Player(Character):
                                 if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                     print(
                                         f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
-                                    players[defender[1]
-                                            ].check_amassing_terrain()
+                                    self.used_trigrams = False
                                     required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Impetus":
@@ -3608,17 +3610,19 @@ class Player(Character):
                             player_index, "Activate"))
                         if discarded != None:
                             discarded.effect2 = "Defend"
+                            self.used_trigrams = False
                             required -= 1
 
                     elif self.hand_cards.contents[card_index].effect == "Defend":
                         discarded = self.hand_cards.contents.pop(card_index)
-                        if not amassed:
+                        if not self.amassed_terrain:
                             self.check_amassing_terrain()
-                            amassed = True
+                            self.amassed_terrain = True
                         self.check_amassing_terrain()
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
                         discarded.effect2 = "Defend"
+                        self.used_trigrams = False
                         required -= 1
 
                 return(discarded)
@@ -3665,7 +3669,9 @@ class Player(Character):
                         discarded2 = self.hand_cards.contents.pop(
                             attack_played[3])
                         self.hand_cards.contents.remove("Placeholder")
-                        self.check_amassing_terrain()
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded2)
                         discarded2.effect2 == "Attack"
@@ -3673,14 +3679,15 @@ class Player(Character):
 
                 elif self.hand_cards.contents[card_index].effect == "Attack":
                     discarded = self.hand_cards.contents.pop(card_index)
-                    self.check_amassing_terrain()
+                    if not self.amassed_terrain:
+                        self.check_amassing_terrain()
+                        self.amassed_terrain = True
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Attack"
                     return(discarded)
 
             elif response_required == "Defend" and card_played.effect2 == "Rain of Arrows":
-
                 options_str = self.hand_cards.list_cards()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
@@ -3689,6 +3696,13 @@ class Player(Character):
                 if self.check_escort("Check"):
                     options_str.append(" Ruler Ability >> Escort")
                 options_str.append("Do nothing.")
+
+                armor_check = self.armor_eight_trigrams()
+                if not self.used_trigrams:
+                    self.used_trigrams = True
+                    if armor_check[0]:
+                        self.used_trigrams = False
+                        return (armor_check[1])
 
                 if assistance:
                     message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
@@ -3717,21 +3731,25 @@ class Player(Character):
                             if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                 print(
                                     f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
-                                players[defender[1]].check_amassing_terrain()
+                                self.used_trigrams = False
                                 return(discarded)
 
                 elif options_str[card_index] == " Character Ability >> Impetus":
                     discarded = self.check_impetus(player_index, "Activate")
                     if discarded != None:
                         discarded.effect2 = "Defend"
+                        self.used_trigrams = False
                         return(discarded)
 
                 elif self.hand_cards.contents[card_index].effect == "Defend":
                     discarded = self.hand_cards.contents.pop(card_index)
-                    self.check_amassing_terrain()
+                    if not self.amassed_terrain:
+                        self.check_amassing_terrain()
+                        self.amassed_terrain = True
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Defend"
+                    self.used_trigrams = False
                     return(discarded)
 
             elif response_required == "Attack" and card_played.effect2 == "Duel":
@@ -3781,14 +3799,18 @@ class Player(Character):
                             discarded2 = self.hand_cards.contents.pop(
                                 attack_played[3])
                             self.hand_cards.contents.remove("Placeholder")
-                            self.check_amassing_terrain()
+                            if not self.amassed_terrain:
+                                self.check_amassing_terrain()
+                                self.amassed_terrain = True
                             self.check_one_after_another()
                             discard_deck.add_to_top(discarded2)
                             required -= 1
 
                     elif self.hand_cards.contents[card_index].effect == "Attack":
                         discarded = self.hand_cards.contents.pop(card_index)
-                        self.check_amassing_terrain()
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
                         discarded.effect2 = "Attack"
@@ -8212,6 +8234,9 @@ class Player(Character):
             if self.current_health == 0:
                 return(self.start_end_phase())
             print(' ')
+            for player in players:
+                self.amassed_terrain = False
+                self.used_trigrams = False
             options = []
             options.append(
                 Separator("--------------------Cards--------------------"))
