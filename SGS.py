@@ -1509,6 +1509,7 @@ class Player(Character):
                 print(f"{self.character} flipped a {judgement_card}.")
                 judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
+                self.check_exalt()
                 if self.check_beauty(judgement_card):
                     if judgement_card.suit == "Spades" or judgement_card.suit == "Hearts":
                         print(
@@ -1530,7 +1531,7 @@ class Player(Character):
                 print(f"{self.character} flipped a {judgement_card}.")
                 judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
-
+                self.check_exalt()
                 if self.check_beauty(judgement_card):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
@@ -1597,6 +1598,7 @@ class Player(Character):
                 print(f"{self.character} flipped a {judgement_card}.")
                 judgement_card = check_judgement_tinkering(judgement_card, 0)
                 self.check_envy_of_heaven()
+                self.check_exalt()
                 self.check_beauty(judgement_card)
                 if judgement_card.suit == "Clubs":
                     print(
@@ -1737,6 +1739,7 @@ class Player(Character):
                     judgement_card = check_judgement_tinkering(
                         judgement_card, user_index)
                     self.check_envy_of_heaven()
+                    self.check_exalt()
                     if self.check_beauty(judgement_card):
                         if judgement_card.suit == "Spades" or judgement_card.suit == "Hearts" or judgement_card.suit == "Diamonds":
                             return (True, judgement_card)
@@ -2943,6 +2946,387 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
+    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False):
+        reactions_possible = True
+        output_value = 0
+
+        while reactions_possible:
+            print(" ")
+            if response_required == "Brink Of Death":
+                options_str = self.hand_cards.list_cards()
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                if (self.activate_drown_in_wine("Check")) and (self.character == players[player_index].character):
+                    options_str.append(" Character Ability >> Drown in Wine")
+                if self.check_first_aid(player_index, "Check"):
+                    options_str.append(" Character Ability >> First Aid")
+                options_str.append("Do nothing.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f"{self.character}: {players[player_index].character} is on the brink of death; please choose a response (a PEACH card or do nothing)!",
+                        'choices': options_str,
+                        'filter': lambda card: options_str.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card_index = answer.get('Selected')
+                if options_str[card_index] == "Do nothing.":
+                    reactions_possible = False
+                    return(output_value)
+
+                elif options_str[card_index] == " Character Ability >> Drown in Wine":
+                    if self.activate_drown_in_wine("Reaction"):
+                        output_value += 1
+                        print(
+                            f"{self.character} has healed themselves using WINE! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                        if players[player_index].check_break_brink_loop(output_value):
+                            reactions_possible = False
+                            return(output_value)
+
+                elif options_str[card_index] == " Character Ability >> First Aid":
+                    if (self.check_first_aid(player_index, "Reaction")):
+                        output_value += 1
+                        if self.character == players[player_index].character:
+                            print(
+                                f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                        else:
+                            print(
+                                f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                        if players[player_index].check_break_brink_loop(output_value):
+                            reactions_possible = False
+                            return(output_value)
+
+                elif self.hand_cards.contents[card_index].effect == "Peach":
+                    discarded = self.hand_cards.contents.pop(card_index)
+                    if not self.amassed_terrain:
+                        self.check_amassing_terrain()
+                    self.check_one_after_another()
+                    discard_deck.add_to_top(discarded)
+                    output_value += 1
+                    bonus_output = players[player_index].check_rescued(
+                        reacting_player_index)
+                    if bonus_output == 1:
+                        output_value += bonus_output
+                    if self.character == players[player_index].character:
+                        print(
+                            f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                    else:
+                        print(
+                            f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                    if players[player_index].check_break_brink_loop(output_value):
+                        reactions_possible = False
+                        return(output_value)
+
+            elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
+                discarded = None
+                while required > 0:
+                    if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
+                        self.check_ardour(card_played, player_index)
+
+                    if not players[player_index].check_weapon_black_pommel():
+                        armor_check = self.armor_eight_trigrams()
+                        if not self.used_trigrams:
+                            self.used_trigrams = True
+                            if armor_check[0]:
+                                self.used_trigrams = False
+                                required -= 1
+                                discarded = armor_check[1]
+
+                    options_str = self.hand_cards.list_cards()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    if self.check_impetus(player_index, "Check"):
+                        options_str.append(" Character Ability >> Impetus")
+                    if self.check_escort("Check"):
+                        options_str.append(" Ruler Ability >> Escort")
+                    options_str.append("Do nothing.")
+
+                    if assistance:
+                        message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
+                    elif card_played.effect2 == "Attack":
+                        message = f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
+                    else:
+                        message = f"{self.character}: You are being attacked by {players[player_index].character} using a {card_played.effect2.upper()}; please choose a response (a DEFEND card or do nothing)!"
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': message,
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options_str[card_index] == "Do nothing.":
+                        reactions_possible = False
+                        return None
+
+                    elif options_str[card_index] == " Ruler Ability >> Escort":
+                        defender = self.check_escort("Reaction")
+                        if defender[0]:
+                            discarded = players[defender[1]].use_reaction_effect(
+                                "Defend", 1, card_played, player_index, reacting_player_index, True)
+                            if type(discarded) == Card:
+                                if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
+                                    print(
+                                        f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
+                                    self.used_trigrams = False
+                                    required -= 1
+
+                    elif options_str[card_index] == " Character Ability >> Impetus":
+                        discarded = (self.check_impetus(
+                            player_index, "Activate"))
+                        if discarded != None:
+                            discarded.effect2 = "Defend"
+                            self.used_trigrams = False
+                            required -= 1
+
+                    elif self.hand_cards.contents[card_index].effect == "Defend":
+                        discarded = self.hand_cards.contents.pop(card_index)
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
+                        self.check_amassing_terrain()
+                        self.check_one_after_another()
+                        discard_deck.add_to_top(discarded)
+                        discarded.effect2 = "Defend"
+                        self.used_trigrams = False
+                        required -= 1
+
+                return(discarded)
+
+            elif response_required == "Attack" and card_played.effect2 == "Barbarians":
+                options_str = self.hand_cards.list_cards()
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                if self.activate_warrior_saint("Check"):
+                    options_str.append(" Character Ability >> Warrior Saint")
+                if self.activate_rouse("Check"):
+                    options_str.append(" Ruler Ability >> Rouse")
+                if self.check_weapon_serpent_spear("Check"):
+                    options_str.append(" Weapon Ability >> Serpent Spear")
+                options_str.append("Do nothing.")
+
+                if assistance:
+                    message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
+                else:
+                    message = f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!"
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': message,
+                        'choices': options_str,
+                        'filter': lambda card: options_str.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card_index = answer.get('Selected')
+                if options_str[card_index] == "Do nothing.":
+                    return(0)
+
+                elif options_str[card_index] == " Ruler Ability >> Rouse":
+                    defender = self.activate_rouse("Reaction")
+                    if defender[0]:
+                        placeholder = Card(
+                            0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
+                        discarded = players[defender[1]].use_reaction_effect(
+                            "Attack", 1, placeholder, player_index, defender[2], True)
+                        if type(discarded) == Card:
+                            if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                                print(
+                                    f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
+                                return(discarded)
+
+                elif options_str[card_index] == " Character Ability >> Warrior Saint":
+                    discarded = self.activate_warrior_saint("Reaction")
+                    if discarded != None:
+                        discarded.effect2 = "Attack"
+                        return(discarded)
+
+                elif options_str[card_index] == " Weapon Ability >> Serpent Spear":
+                    attack_played = self.check_weapon_serpent_spear("Activate")
+                    if attack_played[0] != None:
+                        discarded1 = self.hand_cards.contents.pop(
+                            attack_played[1])
+                        self.hand_cards.contents.insert(
+                            attack_played[1], "Placeholder")
+                        discard_deck.add_to_top(discarded1)
+                        discarded2 = self.hand_cards.contents.pop(
+                            attack_played[3])
+                        self.hand_cards.contents.remove("Placeholder")
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
+                        self.check_one_after_another()
+                        discard_deck.add_to_top(discarded2)
+                        discarded2.effect2 == "Attack"
+                        return(discarded2)
+
+                elif self.hand_cards.contents[card_index].effect == "Attack":
+                    discarded = self.hand_cards.contents.pop(card_index)
+                    if not self.amassed_terrain:
+                        self.check_amassing_terrain()
+                        self.amassed_terrain = True
+                    self.check_one_after_another()
+                    discard_deck.add_to_top(discarded)
+                    discarded.effect2 = "Attack"
+                    return(discarded)
+
+            elif response_required == "Defend" and card_played.effect2 == "Rain of Arrows":
+                options_str = self.hand_cards.list_cards()
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                if self.check_impetus(player_index, "Check"):
+                    options_str.append(" Character Ability >> Impetus")
+                if self.check_escort("Check"):
+                    options_str.append(" Ruler Ability >> Escort")
+                options_str.append("Do nothing.")
+
+                armor_check = self.armor_eight_trigrams()
+                if not self.used_trigrams:
+                    self.used_trigrams = True
+                    if armor_check[0]:
+                        self.used_trigrams = False
+                        return (armor_check[1])
+
+                if assistance:
+                    message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
+                else:
+                    message = f"{self.character}: {players[player_index].character} has activated RAIN OF ARROWS; please choose a response (a DEFEND card or do nothing)!"
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': message,
+                        'choices': options_str,
+                        'filter': lambda card: options_str.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card_index = answer.get('Selected')
+                if options_str[card_index] == "Do nothing.":
+                    return(0)
+
+                elif options_str[card_index] == " Ruler Ability >> Escort":
+                    defender = self.check_escort("Reaction")
+                    if defender[0]:
+                        discarded = players[defender[1]].use_reaction_effect(
+                            "Defend", 1, card_played, player_index, reacting_player_index, True)
+                        if type(discarded) == Card:
+                            if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
+                                print(
+                                    f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
+                                self.used_trigrams = False
+                                return(discarded)
+
+                elif options_str[card_index] == " Character Ability >> Impetus":
+                    discarded = self.check_impetus(player_index, "Activate")
+                    if discarded != None:
+                        discarded.effect2 = "Defend"
+                        self.used_trigrams = False
+                        return(discarded)
+
+                elif self.hand_cards.contents[card_index].effect == "Defend":
+                    discarded = self.hand_cards.contents.pop(card_index)
+                    self.check_amassing_terrain()
+                    self.check_one_after_another()
+                    discard_deck.add_to_top(discarded)
+                    discarded.effect2 = "Defend"
+                    self.used_trigrams = False
+                    return(discarded)
+
+            elif response_required == "Attack" and card_played.effect2 == "Duel":
+                enemy_attack_required = 1
+                while required > 0:
+
+                    options_str = self.hand_cards.list_cards()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    if self.activate_warrior_saint("Check"):
+                        options_str.append(
+                            " Character Ability >> Warrior Saint")
+                    if self.activate_rouse("Check"):
+                        options_str.append(" Ruler Ability >> Rouse")
+                    if self.check_weapon_serpent_spear("Check"):
+                        options_str.append(" Weapon Ability >> Serpent Spear")
+                    options_str.append("Do nothing.")
+
+                    if self.check_without_equal():
+                        enemy_attack_required = 2
+
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f"{self.character}: You having a DUEL vs {players[player_index].character}; please choose a response (an ATTACK card or do nothing)!",
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options_str[card_index] == "Do nothing.":
+                        return True
+
+                    elif options_str[card_index] == " Ruler Ability >> Rouse":
+                        defender = self.activate_rouse("Reaction")
+                        if defender[0]:
+                            placeholder = Card(
+                                0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
+                            discarded = players[defender[1]].use_reaction_effect(
+                                "Attack", 1, placeholder, player_index, reacting_player_index, True)
+                            if type(discarded) == Card:
+                                if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                                    print(
+                                        f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
+                                    required -= 1
+
+                    elif options_str[card_index] == " Character Ability >> Warrior Saint":
+                        discarded = self.activate_warrior_saint("Reaction")
+                        required -= 1
+
+                    elif options_str[card_index] == " Weapon Ability >> Serpent Spear":
+                        attack_played = self.check_weapon_serpent_spear(
+                            "Activate")
+                        if attack_played[0] != None:
+                            discarded1 = self.hand_cards.contents.pop(
+                                attack_played[1])
+                            self.hand_cards.contents.insert(
+                                attack_played[1], "Placeholder")
+                            discard_deck.add_to_top(discarded1)
+                            discarded2 = self.hand_cards.contents.pop(
+                                attack_played[3])
+                            self.hand_cards.contents.remove("Placeholder")
+                            if not self.amassed_terrain:
+                                self.check_amassing_terrain()
+                                self.amassed_terrain = True
+                            self.check_one_after_another()
+                            discard_deck.add_to_top(discarded2)
+                            required -= 1
+
+                    elif self.hand_cards.contents[card_index].effect == "Attack":
+                        discarded = self.hand_cards.contents.pop(card_index)
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
+                        self.check_one_after_another()
+                        discard_deck.add_to_top(discarded)
+                        discarded.effect2 = "Attack"
+                        required -= 1
+
+                duel_won = players[player_index].use_reaction_effect(
+                    "Attack", enemy_attack_required, card_played, reacting_player_index, player_index)
+                if duel_won:
+                    return False
+                else:
+                    return True
+
     def activate_attack(self, discarded, selected, coerced=0, discarded2=None):
         # Early pre-reactionary effects
         redirect = players[selected].check_displacement(
@@ -3476,387 +3860,6 @@ class Player(Character):
         players[selected].check_amassing_terrain()
         players[selected].check_one_after_another()
 
-    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False):
-        reactions_possible = True
-        output_value = 0
-
-        while reactions_possible:
-            print(" ")
-            if response_required == "Brink Of Death":
-                options_str = self.hand_cards.list_cards()
-                options_str.append(
-                    Separator("--------------------Other--------------------"))
-                if (self.activate_drown_in_wine("Check")) and (self.character == players[player_index].character):
-                    options_str.append(" Character Ability >> Drown in Wine")
-                if self.check_first_aid(player_index, "Check"):
-                    options_str.append(" Character Ability >> First Aid")
-                options_str.append("Do nothing.")
-
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f"{self.character}: {players[player_index].character} is on the brink of death; please choose a response (a PEACH card or do nothing)!",
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                card_index = answer.get('Selected')
-                if options_str[card_index] == "Do nothing.":
-                    reactions_possible = False
-                    return(output_value)
-
-                elif options_str[card_index] == " Character Ability >> Drown in Wine":
-                    if self.activate_drown_in_wine("Reaction"):
-                        output_value += 1
-                        print(
-                            f"{self.character} has healed themselves using WINE! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                        if players[player_index].check_break_brink_loop(output_value):
-                            reactions_possible = False
-                            return(output_value)
-
-                elif options_str[card_index] == " Character Ability >> First Aid":
-                    if (self.check_first_aid(player_index, "Reaction")):
-                        output_value += 1
-                        if self.character == players[player_index].character:
-                            print(
-                                f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                        else:
-                            print(
-                                f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                        if players[player_index].check_break_brink_loop(output_value):
-                            reactions_possible = False
-                            return(output_value)
-
-                elif self.hand_cards.contents[card_index].effect == "Peach":
-                    discarded = self.hand_cards.contents.pop(card_index)
-                    if not self.amassed_terrain:
-                        self.check_amassing_terrain()
-                    self.check_one_after_another()
-                    discard_deck.add_to_top(discarded)
-                    output_value += 1
-                    bonus_output = players[player_index].check_rescued(
-                        reacting_player_index)
-                    if bonus_output == 1:
-                        output_value += bonus_output
-                    if self.character == players[player_index].character:
-                        print(
-                            f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                    else:
-                        print(
-                            f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                    if players[player_index].check_break_brink_loop(output_value):
-                        reactions_possible = False
-                        return(output_value)
-
-            elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
-                discarded = None
-                while required > 0:
-                    if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
-                        self.check_ardour(card_played, player_index)
-
-                    if not players[player_index].check_weapon_black_pommel():
-                        armor_check = self.armor_eight_trigrams()
-                        if not self.used_trigrams:
-                            self.used_trigrams = True
-                            if armor_check[0]:
-                                self.used_trigrams = False
-                                required -= 1
-                                discarded = armor_check[1]
-
-                    options_str = self.hand_cards.list_cards()
-                    options_str.append(
-                        Separator("--------------------Other--------------------"))
-                    if self.check_impetus(player_index, "Check"):
-                        options_str.append(" Character Ability >> Impetus")
-                    if self.check_escort("Check"):
-                        options_str.append(" Ruler Ability >> Escort")
-                    options_str.append("Do nothing.")
-
-                    if assistance:
-                        message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
-                    elif card_played.effect2 == "Attack":
-                        message = f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
-                    else:
-                        message = f"{self.character}: You are being attacked by {players[player_index].character} using a {card_played.effect2.upper()}; please choose a response (a DEFEND card or do nothing)!"
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': message,
-                            'choices': options_str,
-                            'filter': lambda card: options_str.index(card)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    card_index = answer.get('Selected')
-                    if options_str[card_index] == "Do nothing.":
-                        reactions_possible = False
-                        return None
-
-                    elif options_str[card_index] == " Ruler Ability >> Escort":
-                        defender = self.check_escort("Reaction")
-                        if defender[0]:
-                            discarded = players[defender[1]].use_reaction_effect(
-                                "Defend", 1, card_played, player_index, reacting_player_index, True)
-                            if type(discarded) == Card:
-                                if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
-                                    print(
-                                        f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
-                                    self.used_trigrams = False
-                                    required -= 1
-
-                    elif options_str[card_index] == " Character Ability >> Impetus":
-                        discarded = (self.check_impetus(
-                            player_index, "Activate"))
-                        if discarded != None:
-                            discarded.effect2 = "Defend"
-                            self.used_trigrams = False
-                            required -= 1
-
-                    elif self.hand_cards.contents[card_index].effect == "Defend":
-                        discarded = self.hand_cards.contents.pop(card_index)
-                        if not self.amassed_terrain:
-                            self.check_amassing_terrain()
-                            self.amassed_terrain = True
-                        self.check_amassing_terrain()
-                        self.check_one_after_another()
-                        discard_deck.add_to_top(discarded)
-                        discarded.effect2 = "Defend"
-                        self.used_trigrams = False
-                        required -= 1
-
-                return(discarded)
-
-            elif response_required == "Attack" and card_played.effect2 == "Barbarians":
-                options_str = self.hand_cards.list_cards()
-                options_str.append(
-                    Separator("--------------------Other--------------------"))
-                if self.activate_warrior_saint("Check"):
-                    options_str.append(" Character Ability >> Warrior Saint")
-                if self.activate_rouse("Check"):
-                    options_str.append(" Ruler Ability >> Rouse")
-                if self.check_weapon_serpent_spear("Check"):
-                    options_str.append(" Weapon Ability >> Serpent Spear")
-                options_str.append("Do nothing.")
-
-                if assistance:
-                    message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
-                else:
-                    message = f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!"
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': message,
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                card_index = answer.get('Selected')
-                if options_str[card_index] == "Do nothing.":
-                    return(0)
-
-                elif options_str[card_index] == " Ruler Ability >> Rouse":
-                    defender = self.activate_rouse("Reaction")
-                    if defender[0]:
-                        placeholder = Card(
-                            0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
-                        discarded = players[defender[1]].use_reaction_effect(
-                            "Attack", 1, placeholder, player_index, defender[2], True)
-                        if type(discarded) == Card:
-                            if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
-                                print(
-                                    f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
-                                return(discarded)
-
-                elif options_str[card_index] == " Character Ability >> Warrior Saint":
-                    discarded = self.activate_warrior_saint("Reaction")
-                    if discarded != None:
-                        discarded.effect2 = "Attack"
-                        return(discarded)
-
-                elif options_str[card_index] == " Weapon Ability >> Serpent Spear":
-                    attack_played = self.check_weapon_serpent_spear("Activate")
-                    if attack_played[0] != None:
-                        discarded1 = self.hand_cards.contents.pop(
-                            attack_played[1])
-                        self.hand_cards.contents.insert(
-                            attack_played[1], "Placeholder")
-                        discard_deck.add_to_top(discarded1)
-                        discarded2 = self.hand_cards.contents.pop(
-                            attack_played[3])
-                        self.hand_cards.contents.remove("Placeholder")
-                        if not self.amassed_terrain:
-                            self.check_amassing_terrain()
-                            self.amassed_terrain = True
-                        self.check_one_after_another()
-                        discard_deck.add_to_top(discarded2)
-                        discarded2.effect2 == "Attack"
-                        return(discarded2)
-
-                elif self.hand_cards.contents[card_index].effect == "Attack":
-                    discarded = self.hand_cards.contents.pop(card_index)
-                    if not self.amassed_terrain:
-                        self.check_amassing_terrain()
-                        self.amassed_terrain = True
-                    self.check_one_after_another()
-                    discard_deck.add_to_top(discarded)
-                    discarded.effect2 = "Attack"
-                    return(discarded)
-
-            elif response_required == "Defend" and card_played.effect2 == "Rain of Arrows":
-                options_str = self.hand_cards.list_cards()
-                options_str.append(
-                    Separator("--------------------Other--------------------"))
-                if self.check_impetus(player_index, "Check"):
-                    options_str.append(" Character Ability >> Impetus")
-                if self.check_escort("Check"):
-                    options_str.append(" Ruler Ability >> Escort")
-                options_str.append("Do nothing.")
-
-                armor_check = self.armor_eight_trigrams()
-                if not self.used_trigrams:
-                    self.used_trigrams = True
-                    if armor_check[0]:
-                        self.used_trigrams = False
-                        return (armor_check[1])
-
-                if assistance:
-                    message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
-                else:
-                    message = f"{self.character}: {players[player_index].character} has activated RAIN OF ARROWS; please choose a response (a DEFEND card or do nothing)!"
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': message,
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                card_index = answer.get('Selected')
-                if options_str[card_index] == "Do nothing.":
-                    return(0)
-
-                elif options_str[card_index] == " Ruler Ability >> Escort":
-                    defender = self.check_escort("Reaction")
-                    if defender[0]:
-                        discarded = players[defender[1]].use_reaction_effect(
-                            "Defend", 1, card_played, player_index, reacting_player_index, True)
-                        if type(discarded) == Card:
-                            if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
-                                print(
-                                    f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
-                                self.used_trigrams = False
-                                return(discarded)
-
-                elif options_str[card_index] == " Character Ability >> Impetus":
-                    discarded = self.check_impetus(player_index, "Activate")
-                    if discarded != None:
-                        discarded.effect2 = "Defend"
-                        self.used_trigrams = False
-                        return(discarded)
-
-                elif self.hand_cards.contents[card_index].effect == "Defend":
-                    discarded = self.hand_cards.contents.pop(card_index)
-                    self.check_amassing_terrain()
-                    self.check_one_after_another()
-                    discard_deck.add_to_top(discarded)
-                    discarded.effect2 = "Defend"
-                    self.used_trigrams = False
-                    return(discarded)
-
-            elif response_required == "Attack" and card_played.effect2 == "Duel":
-                enemy_attack_required = 1
-                while required > 0:
-
-                    options_str = self.hand_cards.list_cards()
-                    options_str.append(
-                        Separator("--------------------Other--------------------"))
-                    if self.activate_warrior_saint("Check"):
-                        options_str.append(
-                            " Character Ability >> Warrior Saint")
-                    if self.activate_rouse("Check"):
-                        options_str.append(" Ruler Ability >> Rouse")
-                    if self.check_weapon_serpent_spear("Check"):
-                        options_str.append(" Weapon Ability >> Serpent Spear")
-                    options_str.append("Do nothing.")
-
-                    if self.check_without_equal():
-                        enemy_attack_required = 2
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f"{self.character}: You having a DUEL vs {players[player_index].character}; please choose a response (an ATTACK card or do nothing)!",
-                            'choices': options_str,
-                            'filter': lambda card: options_str.index(card)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    card_index = answer.get('Selected')
-                    if options_str[card_index] == "Do nothing.":
-                        return True
-
-                    elif options_str[card_index] == " Ruler Ability >> Rouse":
-                        defender = self.activate_rouse("Reaction")
-                        if defender[0]:
-                            placeholder = Card(
-                                0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
-                            discarded = players[defender[1]].use_reaction_effect(
-                                "Attack", 1, placeholder, player_index, reacting_player_index, True)
-                            if type(discarded) == Card:
-                                if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
-                                    print(
-                                        f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
-                                    required -= 1
-
-                    elif options_str[card_index] == " Character Ability >> Warrior Saint":
-                        discarded = self.activate_warrior_saint("Reaction")
-                        required -= 1
-
-                    elif options_str[card_index] == " Weapon Ability >> Serpent Spear":
-                        attack_played = self.check_weapon_serpent_spear(
-                            "Activate")
-                        if attack_played[0] != None:
-                            discarded1 = self.hand_cards.contents.pop(
-                                attack_played[1])
-                            self.hand_cards.contents.insert(
-                                attack_played[1], "Placeholder")
-                            discard_deck.add_to_top(discarded1)
-                            discarded2 = self.hand_cards.contents.pop(
-                                attack_played[3])
-                            self.hand_cards.contents.remove("Placeholder")
-                            if not self.amassed_terrain:
-                                self.check_amassing_terrain()
-                                self.amassed_terrain = True
-                            self.check_one_after_another()
-                            discard_deck.add_to_top(discarded2)
-                            required -= 1
-
-                    elif self.hand_cards.contents[card_index].effect == "Attack":
-                        discarded = self.hand_cards.contents.pop(card_index)
-                        if not self.amassed_terrain:
-                            self.check_amassing_terrain()
-                            self.amassed_terrain = True
-                        self.check_one_after_another()
-                        discard_deck.add_to_top(discarded)
-                        discarded.effect2 = "Attack"
-                        required -= 1
-
-                duel_won = players[player_index].use_reaction_effect(
-                    "Attack", enemy_attack_required, card_played, reacting_player_index, player_index)
-                if duel_won:
-                    return False
-                else:
-                    return True
-
     def discard_from_equip_or_hand(self, num=1):
         while num > 0:
             options_str = self.create_str_nonblind_menu()
@@ -4011,6 +4014,7 @@ class Player(Character):
                     main_deck.check_if_empty()
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
+                    self.check_exalt()
                     print(f"{self.character} flipped a {judgement_card}.")
                     judgement_card = check_judgement_tinkering(
                         judgement_card, user_index)
@@ -4919,6 +4923,93 @@ class Player(Character):
                     print(
                         f"{self.character}: There are no players that you can use this ability against.")
 
+    def check_evil_hero(self, card, card2=None):
+        # "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."
+        if (self.character_ability1.startswith("Evil Hero:") or self.character_ability3.startswith("Evil Hero:")):
+            if card in discard_deck.contents:
+                discard_deck.contents.remove(card)
+                self.hand_cards.add_to_top(card)
+                print(
+                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
+            elif card in main_deck.contents:
+                main_deck.contents.remove(card)
+                self.hand_cards.add_to_top(card)
+                print(
+                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
+
+            if card2 != None:
+                if card2 in discard_deck.contents:
+                    discard_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                    print(
+                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
+                elif card2 in main_deck.contents:
+                    main_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                    print(
+                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
+
+    def check_exalt(self):
+        # "Exalt (Ruler Ability): Whenever any Wei character (other than yourself) makes a judgement, if the judgement card that takes effect is either CLUBS or SPADES, that character can choose to let you draw one card from the deck."
+        if self.allegiance == "Wei":
+            emperor_index = None
+            false_ruler_index = None
+            for player_index, player in enumerate(players):
+                if (player.character_ability3.startswith("Exalt (Ruler Ability):") or player.character_ability4.startswith("Exalt (Ruler Ability):")):
+                    if (player.role == "Emperor"):
+                        emperor_index = player_index
+                    else:
+                        false_ruler_index = player_index
+
+            if emperor_index != None:
+                if false_ruler_index != None:
+                    message = f'{self.character}: Choose to activate Exalt (Ruler Ability), to allow the emperor (or false-ruler) to draw a card?'
+                elif self.role != "Emperor":
+                    message = f'{self.character}: Choose to activate Exalt (Ruler Ability), to allow the emperor to draw a card?'
+                else:
+                    return(' ')
+
+                if question_yes_no(message):
+                    target_indexes = [emperor_index]
+
+                    if self.role == "Emperor":
+                        if (false_ruler_index != None):
+                            target_index = false_ruler_index
+
+                    elif self.role != "Emperor":
+                        if false_ruler_index == None:
+                            target_index = emperor_index
+
+                        elif (false_ruler_index != None) and (self.character == players[false_ruler_index].character):
+                            target_index = emperor_index
+
+                        else:
+                            options = [str(players[emperor_index]), str(
+                                players[false_ruler_index]), "Both players!"]
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select which target will draw a card (Exalt):',
+                                    'choices': options,
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            selected = answer.get('Selected')
+                            if selected == "Both players!":
+                                target_indexes = [
+                                    emperor_index, false_ruler_index]
+                            elif selected == str(players[emperor_index]):
+                                target_indexes = [emperor_index]
+                            else:
+                                target_indexes = [false_ruler_index]
+
+                    for target_index in target_indexes:
+                        players[target_index].hand_cards.draw(
+                            main_deck, 1, False)
+                        print(
+                            f"  >> Ruler Ability: Exalt; {self.character} has allowed 1 card to be added to {players[target_index].character}'s hand.")
+
     def check_exile(self):
         # "Exile: Every instance that you suffer damage, you can force any other player to draw X number of cards (X being the units of health you have missing from your maximum after damage). By doing so the targeted player will have to flip their character card. Flipped character cards must miss their next turn."
         if (self.character_ability2.startswith("Exile:") or self.character_ability3.startswith("Exile:")):
@@ -4967,32 +5058,6 @@ class Player(Character):
                         print(
                             f"  >> Character Ability: Exile; {self.character} has flipped {players[selected].character}'s character card to face-up!")
 
-    def check_evil_hero(self, card, card2=None):
-        # "Evil Hero: Whenever you are damaged by a card, you can immediately add it to your hand."
-        if (self.character_ability1.startswith("Evil Hero:") or self.character_ability3.startswith("Evil Hero:")):
-            if card in discard_deck.contents:
-                discard_deck.contents.remove(card)
-                self.hand_cards.add_to_top(card)
-                print(
-                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
-            elif card in main_deck.contents:
-                main_deck.contents.remove(card)
-                self.hand_cards.add_to_top(card)
-                print(
-                    f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card} after taking damage from it.")
-
-            if card2 != None:
-                if card2 in discard_deck.contents:
-                    discard_deck.contents.remove(card2)
-                    self.hand_cards.add_to_top(card2)
-                    print(
-                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
-                elif card2 in main_deck.contents:
-                    main_deck.contents.remove(card2)
-                    self.hand_cards.add_to_top(card2)
-                    print(
-                        f"  >> Character Ability: Evil Hero; {self.character} immediately draws {card2} after taking damage from it.")
-
     def check_eye_for_an_eye(self, source_player_index=0, mode="Activate"):
         # "Eye for an Eye: For every instance that you suffer damage, you can flip a judgement card. If the judgement is not HEARTS, the character that damaged you must choose between the following options; lose one unit of health, or discard any two on-hand cards."
         user_index = 0
@@ -5011,6 +5076,7 @@ class Player(Character):
                 main_deck.check_if_empty()
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
+                self.check_exalt()
                 print(f"{self.character} flipped a {judgement_card}.")
                 judgement_card = check_judgement_tinkering(
                     judgement_card, user_index)
@@ -5484,6 +5550,7 @@ class Player(Character):
                 else:
                     main_deck.check_if_empty()
                     judgement_card = main_deck.remove_from_top()
+                    self.check_exalt()
                     print(
                         f"{self.character}'s judgement card is a {judgement_card}.")
                     judgement_card = check_judgement_tinkering(
@@ -5871,6 +5938,7 @@ class Player(Character):
                 judgement_card = check_judgement_tinkering(
                     judgement_card, user_index)
                 players[selected_index].check_envy_of_heaven()
+                players[selected_index].check_exalt()
 
                 if players[selected_index].check_beauty(judgement_card):
                     print(
@@ -6623,7 +6691,7 @@ class Player(Character):
                     return(' ')
 
                 if question_yes_no(message):
-                    target_index = emperor_index
+                    target_indexes = [emperor_index]
 
                     if self.role == "Emperor":
                         if (false_ruler_index != None):
