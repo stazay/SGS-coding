@@ -1393,29 +1393,30 @@ class Player(Character):
                 else:
                     options_str.append(
                         Separator("  -----------<Empty Weapon Slot>-----------  "))
-            if len(self.equipment_armor) > 0:
-                options_str.append(str(self.equipment_armor[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Armor Slot>------------  "))
-            if len(self.equipment_offensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_offensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if len(self.equipment_defensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_defensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if append_judgements:
-                options_str.append(
-                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                if len(self.pending_judgements) > 0:
-                    for pending_judgement_card in self.pending_judgements:
-                        options_str.append(str(pending_judgement_card))
+            if not omit_item == "Non-weapon":
+                if len(self.equipment_armor) > 0:
+                    options_str.append(str(self.equipment_armor[0]))
+                else:
+                    options_str.append(
+                        Separator("  -----------<Empty Armor Slot>------------  "))
+                if len(self.equipment_offensive_horse) > 0:
+                    options_str.append(
+                        str(self.equipment_offensive_horse[0]))
+                else:
+                    options_str.append(
+                        Separator("  -----------<Empty Horse Slot>------------  "))
+                if len(self.equipment_defensive_horse) > 0:
+                    options_str.append(
+                        str(self.equipment_defensive_horse[0]))
+                else:
+                    options_str.append(
+                        Separator("  -----------<Empty Horse Slot>------------  "))
+                if append_judgements:
+                    options_str.append(
+                        Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+                    if len(self.pending_judgements) > 0:
+                        for pending_judgement_card in self.pending_judgements:
+                            options_str.append(str(pending_judgement_card))
 
             return(options_str)
 
@@ -1642,6 +1643,8 @@ class Player(Character):
             if (self.character_ability1.startswith("Dual Heroes:") or self.character_ability3.startswith("Dual Heroes:")):
                 if self.used_dual_heroes != False:
                     char_abils.append(" Character Ability >> Dual Heroes")
+            if (self.character_ability1.startswith("Ferocious Assault:") or self.character_ability3.startswith("Ferocious Assault:")):
+                char_abils.append(" Character Ability >> Ferocious Assault")
             if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
                 char_abils.append(" Character Ability >> Green Salve")
             if (self.character_ability1.startswith("Marriage:") or self.character_ability3.startswith("Marriage:")):
@@ -1688,6 +1691,7 @@ class Player(Character):
         self.used_bare_chested = False
         self.used_brilliant_scheme = False
         self.used_dual_heroes = False
+        self.used_ferocious_assault = False
         self.used_green_salve = False
         self.used_marriage = False
         self.used_reconsider = False
@@ -8000,6 +8004,153 @@ class Player(Character):
                     f"  >> Character Ability: Brilliant Scheme; {self.character} chose to attack a player!")
                 return True
 
+    def activate_ferocious_assault(self):
+        # "Ferocious Assault: During your action phase, you can inflict one unit of damage to any player within your attacking range by either; reducing one unit of your own health, or discarding one weapon card (on-hand or equipped). Limited to one use per turn."
+        if (self.character_ability1.startswith("Ferocious Assault:") or self.character_ability3.startswith("Ferocious Assault:")):
+
+            if self.used_ferocious_assault:
+                print(
+                    f"{self.character}: You can only use Ferocious Assault once per turn.")
+
+            else:
+                options_str = self.create_targeting_menu("Weapon", 0)
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Who would you like to damage with Ferocious Assault?',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected_index = answer.get('Selected')
+                if options_str[selected_index] == "Cancel ability.":
+                    return(' ')
+
+                options_str = ["Lose 1 unit of health."]
+                usable_cards = []
+                for card in self.hand_cards.contents:
+                    if card.type == "Weapon":
+                        usable_cards.append(card)
+                for card in self.equipment_weapon:
+                    usable_cards.append(card)
+                if len(usable_cards) > 0:
+                    options_str.append("Discard a weapon.")
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Select how you will use this ability:',
+                        'choices': options_str,
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                chosen_option = answer.get('Selected')
+                if chosen_option == "Cancel ability.":
+                    return(' ')
+
+                if chosen_option == "Discard a weapon.":
+                    options_str = self.create_str_nonblind_menu(
+                        False, False, "Non-weapon")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a weapon to discard to activate Ferocious Assault:',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    discarded_index = answer.get('Selected')
+
+                    # Check if hand-card
+                    if discarded_index <= len(self.hand_cards.contents):
+                        discarded = self.hand_cards.contents[discarded_index - 1]
+                        if discarded.type == "Weapon":
+                            card = self.hand_cards.contents.pop(
+                                discarded_index - 1)
+                            discard_deck.add_to_top(card)
+                            print(
+                                f"  >> Character Ability: Ferocious Assault: {self.character} has discarded {card} to damage {players[selected_index].character}!")
+                        else:
+                            return (' ')
+
+                    # Check if equipment-card
+                    else:
+                        if discarded_index == (len(self.hand_cards.contents) + 2):
+                            reachable = self.calculate_targets_in_physical_range(
+                                0)
+                            if selected_index in reachable:
+                                card = self.equipment_weapon.pop()
+                                discard_deck.add_to_top(card)
+                                self.weapon_range = 1
+                                print(
+                                    f"  >> Character Ability: Ferocious Assault: {self.character} has discarded {card} from their weapon-slot to damage {players[selected_index].character}!")
+                            else:
+                                print(
+                                    f"{self.character}: You can't reach that target with Ferocious Assault if you discard your weapon!")
+                                return (' ')
+                damage_dealt = 1
+
+                fantasy = players[selected_index].check_fantasy(
+                    damage_dealt, 0)
+                if fantasy[0]:
+                    selected_index = fantasy[1]
+
+                deplete_karma = players[selected_index].check_deplete_karma(
+                    damage_dealt, 0, None)
+                if deplete_karma[0]:
+                    damage_dealt = deplete_karma[1]
+
+                if chosen_option == "Lose 1 unit of health.":
+                    self.current_health -= 1
+                    print(
+                        f"  >> Character Ability: Ferocious Assault: {self.character} has lost 1 health ({self.current_health}/{self.max_health} HP remaining)!")
+                    if self.current_health < 1:
+                        if self.check_brink_of_death_loop(0, "Self") == "Break":
+                            players[selected_index].current_health -= damage_dealt
+                            if players[selected_index].current_health < 1:
+                                if player.check_brink_of_death_loop(selected_index, "Self") == "Break":
+                                    return(' ')
+
+                players[selected_index].current_health -= damage_dealt
+                print(
+                    f"  >> Character Ability: Ferocious Assault: {self.character} has dealt 1 damage to {players[selected_index].character} ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)!")
+                if players[selected_index].current_health < 1:
+                    if player.check_brink_of_death_loop(selected_index, 0) == "Break":
+                        return(' ')
+
+                if players[selected_index].current_health > 0:
+                    if fantasy[0]:
+                        cards_to_draw = (
+                            players[selected_index].max_health - players[selected_index].current_health)
+                        print(
+                            f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
+                        players[selected_index].hand_cards.draw(
+                            main_deck, cards_to_draw, False)
+
+                    self.check_lament(0, selected_index)
+                    players[selected_index].check_delayed_wisdom()
+                    players[selected_index].check_eternal_loyalty(
+                        damage_dealt)
+                    players[selected_index].check_exile()
+                    players[selected_index].check_eye_for_an_eye(
+                        0, "Activate")
+                    players[selected_index].check_geminate(damage_dealt)
+                    players[selected_index].check_plotting_for_power(
+                        damage_dealt, mode="Reaction")
+                    players[selected_index].check_retaliation(
+                        0, damage_dealt)
+                self.used_ferocious_assault = True
+
     def activate_green_salve(self):
         # "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."
         if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
@@ -8623,6 +8774,8 @@ class Player(Character):
                     self.activate_drown_in_wine("Activate")
                 if options[action_taken_index] == " Character Ability >> Dual Heroes":
                     self.check_dual_heroes("Activate")
+                if options[action_taken_index] == " Character Ability >> Ferocious Assault":
+                    self.activate_ferocious_assault()
                 if options[action_taken_index] == " Character Ability >> Green Salve":
                     self.activate_green_salve()
                 if options[action_taken_index] == " Character Ability >> Marriage":
@@ -8731,6 +8884,7 @@ print("All players have been dealt 4 cards!")
 game_started = True
 
 while game_started:
+    check_win_conditions()
     # Check if missing next turn
     if players[0].flipped_char_card:
         print(
