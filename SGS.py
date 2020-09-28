@@ -7,7 +7,7 @@
 /________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//| || /_//
                                 SanGuoSha Coding by Saba Tazayoni               /||______________| ||
                     Started: 21/07/2020                                        /___________________||
-Current Version: 27/09/2020
+Current Version: 28/09/2020
 """
 
 from __future__ import print_function, unicode_literals
@@ -1635,6 +1635,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Blockade")
             if (self.character_ability1.startswith("Brilliant Scheme:") or self.character_ability3.startswith("Brilliant Scheme")):
                 char_abils.append(" Character Ability >> Brilliant Scheme")
+            if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
+                char_abils.append(" Character Ability >> Dragon Heart")
             if (self.character_ability1.startswith("Drown in Wine:") or self.character_ability3.startswith("Drown in Wine:")):
                 char_abils.append(" Character Ability >> Drown in Wine")
             if (self.character_ability1.startswith("Dual Heroes:") or self.character_ability3.startswith("Dual Heroes:")):
@@ -1667,6 +1669,8 @@ class Player(Character):
             return char_abils
 
         if types == "Attack":
+            if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
+                char_abils.append(" Character Ability >> Dragon Heart")
             if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
             if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
@@ -3057,6 +3061,9 @@ class Player(Character):
                     options_str = self.hand_cards.list_cards()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
+                    if self.activate_dragon_heart("Check"):
+                        options_str.append(
+                            " Character Ability >> Dragon Heart")
                     if self.check_impetus(player_index, "Check"):
                         options_str.append(" Character Ability >> Impetus")
                     if self.check_escort("Check"):
@@ -3097,6 +3104,14 @@ class Player(Character):
                                     self.used_trigrams = False
                                     required -= 1
 
+                    elif options_str[card_index] == " Character Ability >> Dragon Heart":
+                        discarded = (
+                            self.activate_dragon_heart("Reaction Defend"))
+                        if discarded != None:
+                            discarded.effect2 = "Defend"
+                            self.used_trigrams = False
+                            required -= 1
+
                     elif options_str[card_index] == " Character Ability >> Impetus":
                         discarded = (self.check_impetus(
                             player_index, "Activate"))
@@ -3123,6 +3138,8 @@ class Player(Character):
                 options_str = self.hand_cards.list_cards()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
+                if self.activate_dragon_heart("Check"):
+                    options_str.append(" Character Ability >> Dragon Heart")
                 if self.activate_warrior_saint("Check"):
                     options_str.append(" Character Ability >> Warrior Saint")
                 if self.activate_rouse("Check"):
@@ -3161,6 +3178,12 @@ class Player(Character):
                                 print(
                                     f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
                                 return(discarded)
+
+                elif options_str[card_index] == " Character Ability >> Dragon Heart":
+                    discarded = self.activate_dragon_heart("Reaction Attack")
+                    if discarded != None:
+                        discarded.effect2 = "Attack"
+                        return(discarded)
 
                 elif options_str[card_index] == " Character Ability >> Warrior Saint":
                     discarded = self.activate_warrior_saint("Reaction")
@@ -3201,6 +3224,8 @@ class Player(Character):
                 options_str = self.hand_cards.list_cards()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
+                if self.activate_dragon_heart("Check"):
+                    options_str.append(" Character Ability >> Dragon Heart")
                 if self.check_impetus(player_index, "Check"):
                     options_str.append(" Character Ability >> Impetus")
                 if self.check_escort("Check"):
@@ -3244,6 +3269,13 @@ class Player(Character):
                                 self.used_trigrams = False
                                 return(discarded)
 
+                elif options_str[card_index] == " Character Ability >> Dragon Heart":
+                    discarded = (self.activate_dragon_heart("Reaction Defend"))
+                    if discarded != None:
+                        discarded.effect2 = "Defend"
+                        self.used_trigrams = False
+                        return(discarded)
+
                 elif options_str[card_index] == " Character Ability >> Impetus":
                     discarded = self.check_impetus(player_index, "Activate")
                     if discarded != None:
@@ -3267,6 +3299,9 @@ class Player(Character):
                     options_str = self.hand_cards.list_cards()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
+                    if self.activate_dragon_heart("Check"):
+                        options_str.append(
+                            " Character Ability >> Dragon Heart")
                     if self.activate_warrior_saint("Check"):
                         options_str.append(
                             " Character Ability >> Warrior Saint")
@@ -3305,6 +3340,11 @@ class Player(Character):
                                     print(
                                         f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
                                     required -= 1
+
+                    elif options_str[card_index] == " Character Ability >> Dragon Heart":
+                        discarded = self.activate_dragon_heart(
+                            "Reaction Attack")
+                        required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Warrior Saint":
                         discarded = self.activate_warrior_saint("Reaction")
@@ -6982,6 +7022,77 @@ class Player(Character):
                         print(
                             f"{options[discarded_index]} cannot be used as RATIONS DEPLETED as it is NOT a black-suited, basic/equipment card.")
 
+    def activate_dragon_heart(self, mode="Check"):
+        # "Dragon Heart: Your ATTACK and DEFEND cards can be used interchangeably."
+        if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
+            if mode == "Check":
+                return True
+
+            if mode == "Activate" or mode == "Reaction Attack" or mode == "Reaction Defend":
+                cards_discardable = len(self.hand_cards.contents)
+                if cards_discardable > 0:
+                    usable_cards = []
+                    for card in self.hand_cards.contents:
+                        if card.effect == "Attack" or card.effect == "Defend":
+                            usable_cards.append(card)
+
+                    if len(usable_cards) < 1:
+                        print(
+                            f"{self.character}: You cannot use this ability as you have no ATTACK or DEFEND cards.")
+
+                    else:
+                        options_str = self.create_str_nonblind_menu(True)
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel ability.")
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a card that will be used as ATTACK or DEFEND:',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+
+                        if options_str[discarded_index] == "Cancel ability.":
+                            return (' ')
+
+                        card = self.hand_cards.contents.pop(discarded_index)
+                        if card.effect == "Attack" or card.effect == "Defend":
+
+                            if mode == "Activate":
+                                card.effect2 = "Attack"
+                                if not self.use_card_effect("Special", card):
+                                    self.hand_cards.contents.append(card)
+                                    print(
+                                        f"{self.character} cancelled using their effect, and {card} was returned.")
+                                else:
+                                    discard_deck.add_to_top(card)
+
+                            if mode == "Reaction Attack":
+                                if card.effect == "Defend":
+                                    print(
+                                        f"  >> Character Ability: Dragon Heart; {self.character} has discarded {card} from their hand to use as ATTACK.")
+                                discard_deck.add_to_top(card)
+                                card.effect2 == "Attack"
+                                return (card)
+
+                            if mode == "Reaction Defend":
+                                if card.effect == "Attack":
+                                    print(
+                                        f"  >> Character Ability: Dragon Heart; {self.character} has discarded {card} from their hand to use as DEFEND.")
+                                discard_deck.add_to_top(card)
+                                card.effect2 == "Defend"
+                                return (card)
+
+                        else:
+                            print(
+                                f"{self.hand_cards.contents[discarded_index]} cannot be used for this effect - needs to be an ATTACK or DEFEND.")
+
     def activate_drown_in_wine(self, mode="Check"):
         # "Drown in Wine: You can use any of your on-hand cards with suit of SPADES as WINE. WINE can be used on yourself the brink of death to restore one unit of health, or to increase the damage of their next ATTACK by one damage."
         if (self.character_ability1.startswith("Drown in Wine:") or self.character_ability3.startswith("Drown in Wine:")):
@@ -7301,7 +7412,7 @@ class Player(Character):
 
         if mode == "Check":
             if (self.role == "Emperor") or (self.character_ability2.startswith("False Ruler:")) or (self.character_ability3.startswith("False Ruler:")):
-                if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability)")):
+                if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
                     return True
 
         if mode == "Activate" or mode == "Reaction":
@@ -7491,12 +7602,11 @@ class Player(Character):
 
     def activate_warrior_saint(self, mode="Check"):
         # "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."
-        if mode == "Check":
-            if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
+        if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
+            if mode == "Check":
                 return True
 
-        if mode == "Activate" or mode == "Reaction":
-            if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
+            if mode == "Activate" or mode == "Reaction":
                 cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                     self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
                 if cards_discardable > 0:
@@ -8405,7 +8515,7 @@ class Player(Character):
         if self.check_godspeed("Judgement"):
             return players[0].start_action_phase()
         if self.check_pending_judgements() == "Break":
-            return players[0].start_beginning_phase()
+            return "Break"
         else:
             self.check_pending_judgements()
         if self.acedia_active and self.rations_depleted_active:
@@ -8507,6 +8617,8 @@ class Player(Character):
                     self.activate_blockade()
                 if options[action_taken_index] == " Character Ability >> Brilliant Scheme":
                     self.activate_brilliant_scheme("Activate")
+                if options[action_taken_index] == " Character Ability >> Dragon Heart":
+                    self.activate_dragon_heart("Activate")
                 if options[action_taken_index] == " Character Ability >> Drown in Wine":
                     self.activate_drown_in_wine("Activate")
                 if options[action_taken_index] == " Character Ability >> Dual Heroes":
@@ -8611,14 +8723,11 @@ discard_deck = Deck([])
 main_deck.shuffle()
 print("The deck has been shuffled!")
 for player in players:
-    player.hand_cards.draw(main_deck, 0, False)
+    player.hand_cards.draw(main_deck, 4, False)
     player.check_geminate(2, False)
     player.check_shapeshift()
     player.check_false_ruler()
 print("All players have been dealt 4 cards!")
-players[0].equipment_weapon.append(Card(12, 'Queen', 'Diamonds', 'Weapon', 'Sky Scorcher Halberd',
-                                        'When equipped and using the last on-hand card to ATTACK, the ATTACK can target an additional two players.', 4))
-players[0].weapon_range = 4
 game_started = True
 
 while game_started:
