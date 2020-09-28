@@ -283,13 +283,6 @@ def question_yes_no(message):
         return True
 
 
-def get_playing_card_options(self):
-    options = []
-    for card in self.list_cards():
-        options.append(card)
-    return options
-
-
 def get_emperors_for_single_draft(self):
     options = [shu_emperor_cards.contents.pop(), wei_emperor_cards.contents.pop(
     ), wu_emperor_cards.contents.pop(), hero_emperor_cards.contents.pop()]
@@ -466,7 +459,7 @@ hero_emperors = [
 shu_characters = [
     Character("Fa Zheng", "Shu", 3, "Male",
               "Grudge: Whenever someone damages you, they must give you a card of suit HEARTS from their hand. If they do not, they lose one unit of health. Whenever another player heals you, they draw a card from the deck.",
-              "Dazzle: During your action phase, you can give a card with suit of HEARTS to another player. Then, you can take any of their cards (on-hand or equipped), and give it to any character."),
+              "Dazzle: During your action phase, you can give a card with suit of HEARTS to another player. Then, you can take any of their cards (on-hand or equipped), and give it to any character. Limited to one use per turn."),
     Character("Guan Yu", "Shu", 4, "Male",
               "Horsemanship: You will always be -1 distance in any range calculations.",
               "Warrior Saint: You can use any red-suited cards (on-hand or equipped) as an ATTACK."),
@@ -721,7 +714,9 @@ class Hand(Deck):
         self.contents = hand_cards
 
     def prompt_for_discard_from_hand(self):
-        options_str = get_playing_card_options(self)
+        options_str = []
+        for card in self.list_cards():
+            options_str.append(card)
         question = [
             {
                 'type': 'list',
@@ -1667,6 +1662,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Sow Dissension")
             if (self.character_ability1.startswith("Surprise:") or self.character_ability3.startswith("Surprise:")):
                 char_abils.append(" Character Ability >> Surprise")
+            if (self.character_ability1.startswith("Taunt:") or self.character_ability3.startswith("Taunt:")):
+                char_abils.append(" Character Ability >> Taunt")
             if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
                 char_abils.append(" Character Ability >> Trojan Flesh")
             if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
@@ -1701,6 +1698,7 @@ class Player(Character):
         self.used_reconsider = False
         self.used_seed_of_animosity = False
         self.used_sow_dissension = False
+        self.used_taunt = False
 
         for player in players:
             player.used_delayed_wisdom = False
@@ -2011,7 +2009,7 @@ class Player(Character):
                                 f"{self.character}: You cannot use this weapon effect as you need at least two hand-cards to do so.")
                             return [None, None, None, None, None]
 
-                        options_str = get_playing_card_options(self.hand_cards)
+                        options_str = self.create_str_nonblind_menu(True)
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -2830,6 +2828,11 @@ class Player(Character):
                 if possible_acedia.effect2 == 'Acedia':
                     print(
                         f"{self.character}: {players[selected].character} cannot be targeted by ACEDIA as they already have one pending.")
+                    if card_index == "Special":
+                        return False
+                    else:
+                        card = discard_deck.remove_from_top()
+                        self.hand_cards.contents.append(card)
 
             if card_index == "Special":
                 card_used = card
@@ -2984,7 +2987,7 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
-    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False, relief=False):
+    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False, other_effect=None):
         reactions_possible = True
         output_value = 0
 
@@ -3161,8 +3164,10 @@ class Player(Character):
                     options_str.append(" Weapon Ability >> Serpent Spear")
                 options_str.append("Do nothing.")
 
-                if relief:
+                if other_effect == "Relief":
                     message = f"{self.character}: You have opted to play an ATTACK against {players[0].character}; please choose a response (an ATTACK card or do nothing)!"
+                elif other_effect == "Taunt":
+                    message = f"{self.character}: You have been TAUNTED by {players[0].character}. Please choose a response (an ATTACK card or do nothing)!"
                 elif assistance:
                     message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
                 else:
@@ -3527,7 +3532,7 @@ class Player(Character):
         options_str = []
         options_str.append(
             Separator("--------------------Cards--------------------"))
-        playing_card_options_str = get_playing_card_options(self.hand_cards)
+        playing_card_options_str = self.create_str_nonblind_menu(True)
         for card in playing_card_options_str:
             options_str.append(card)
         options_str.append(
@@ -4194,6 +4199,48 @@ class Player(Character):
                     f"  >> Character Ability: Ardour; {self.character} used or was target of {card} (a DUEL or red-suited ATTACK). He draws a card.")
                 self.hand_cards.draw(main_deck, 1, False)
 
+    def check_astrology(self):
+        # "Astrology: Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck."
+        if (self.character_ability1.startswith("Astrology:") or self.character_ability3.startswith("Astrology:")):
+            message = f"{self.character}: Choose to activate Astrology to view the top X cards of the deck, and rearrange them to the top or bottom of the deck?"
+            if question_yes_no(message):
+
+                cards_viewed = len(players)
+                if cards_viewed > 4:
+                    cards_viewed = 5
+                astrology = Player("Temporary")
+                astrology.hand_cards.draw(main_deck, cards_viewed, False)
+                for item in range(cards_viewed):
+                    options = astrology.create_str_nonblind_menu(True)
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a card to add to the top/bottom of deck (note: first card in, last card out):',
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please decide whether you want to add {astrology.hand_cards.contents[card_index]} to the top or the bottom of the deck:',
+                            'choices': ["Add to top.", "Add to bottom."]
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    if answer.get('Selected') == "Add to top.":
+                        main_deck.add_to_top(
+                            astrology.hand_cards.contents.pop())
+                    else:
+                        main_deck.add_to_bottom(
+                            astrology.hand_cards.contents.pop())
+                print(
+                    f"  >> Character Ability: Astrology; {self.character} has rearranged the top {cards_viewed} of the deck to the top/bottom.")
+
     def check_backstab(self, discarded, discarded2=None, selected_index=0):
         # "Backstab: Whenever you use an ATTACK to cause damage to a player within your physical range, you can flip a judgement card. If the judgement is not HEARTS, no damage is caused, and instead you cause the target to reduce their maximum health by 1."
         if (self.character_ability2.startswith("Backstab:") or self.character_ability3.startswith("Backstab:")):
@@ -4697,6 +4744,8 @@ class Player(Character):
                     self.max_health -= 1
                     if self.current_health > self.max_health:
                         self.current_health -= 1
+                    if self.max_health == 0:
+                        self.check_brink_of_death_loop()
                     print(
                         f"  >> Character Ability: Disintegrate; {self.character}'s health is not among the least, so they lose one maximum-health. ({self.current_health}/{self.max_health} HP remaining)")
 
@@ -5952,7 +6001,7 @@ class Player(Character):
                             f"{self.character}: You cannot use this ability as you have no black-suited cards in your hand.")
 
                     else:
-                        options_str = get_playing_card_options(self.hand_cards)
+                        options_str = self.create_str_nonblind_menu(True)
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -6319,7 +6368,7 @@ class Player(Character):
                     self.hand_cards.draw(main_deck, 1, False)
                     print(
                         f"  >> Character Ability: Plotting for Power; {self.character} has drawn one card.")
-                    options_str = get_playing_card_options(self.hand_cards)
+                    options_str = self.create_str_nonblind_menu(True)
                     question = [
                         {
                             'type': 'list',
@@ -6548,7 +6597,7 @@ class Player(Character):
                             card_played = Card(0, 'NONE', 'NONE', 'Tool', 'Barbarians',
                                                'NONE', None, 'Barbarians')
                             discarded = self.use_reaction_effect(
-                                "Attack", 1, card_played, dying_player_index, user_index, False, True)
+                                "Attack", 1, card_played, dying_player_index, user_index, False, "Relief")
                             if type(discarded) == Card:
                                 if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                                     discarded.effect2 = "Attack"
@@ -6566,7 +6615,8 @@ class Player(Character):
                                         if bonus_output == 1:
                                             output_value += bonus_output
                                         players[dying_player_index].current_health += output_value
-                                        print(f"  >> Character Ability: Relief; {self.character} has healed {players[dying_player_index].character} by using a PEACH ({players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP remaining)!")
+                                        print(
+                                            f"  >> Character Ability: Relief; {self.character} has healed {players[dying_player_index].character} by using a PEACH ({players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP remaining)!")
 
     def check_relish(self, source_player_index=0, mode="Activate"):
         # "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."
@@ -7551,7 +7601,7 @@ class Player(Character):
         # "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."
         if (self.character_ability1.startswith("Random Strike:") or self.character_ability3.startswith("Random Strike:")):
             if len(self.hand_cards.contents) > 1:
-                options = get_playing_card_options(self.hand_cards)
+                options = self.create_str_nonblind_menu(True)
                 options.append(
                     Separator("--------------------Other--------------------"))
                 options.append("Cancel ability.")
@@ -8937,6 +8987,121 @@ class Player(Character):
                 self.check_amassing_terrain()
                 self.check_one_after_another()
 
+    def activate_taunt(self):
+        # "Taunt: During your action phase, you can pick any player that is able to reach you using an ATTACK. That player must use an ATTACK on you, or else you can discard one of their cards. Limited to one use per turn."
+        if (self.character_ability1.startswith("Taunt:") or self.character_ability3.startswith("Taunt:")):
+            if self.used_taunt:
+                print(f"{self.character}: You can only use Taunt once per turn.")
+
+            else:
+                options = [
+                    Separator("------<Cannot target yourself>------")]
+                for player_index, player in enumerate(players):
+                    if player_index != 0:
+                        if 0 in player.calculate_targets_in_weapon_range(player_index):
+                            options.append(
+                                str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                        else:
+                            options.append(
+                                Separator("------" + str(player) + "------"))
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please a target to ATTACK you:',
+                        'choices': options,
+                        'filter': lambda player: options.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target_index = answer.get('Selected')
+                if options[target_index] == "Cancel ability.":
+                    return(' ')
+                print(
+                    f"  >> Character Ability: Taunt; {self.character} has taunted {players[target_index].character} attack him!")
+                card_played = Card(0, 'NONE', 'NONE', 'Tool',
+                                   'Barbarians', 'NONE', None, 'Barbarians')
+                discarded = players[target_index].use_reaction_effect(
+                    "Attack", 1, card_played, target_index, 0, False, "Taunt")
+                if type(discarded) == Card:
+                    if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                        discarded.effect2 = "Attack"
+                        players[target_index].activate_attack(
+                            discarded, 0, target_index)
+                else:
+                    cards_discardable = (len(players[target_index].hand_cards.contents) + len(players[target_index].equipment_weapon) + len(
+                        players[target_index].equipment_armor) + len(players[target_index].equipment_offensive_horse) + len(players[target_index].equipment_defensive_horse))
+                    if cards_discardable > 0:
+                        print(
+                            f"  >> Character Ability: Taunt; {players[target_index].character} didn't ATTACK! {self.character} will discard one of their cards!")
+                        options = players[target_index].create_str_semiblind_menu(
+                        )
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Cancel ability.")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a card of {players[target_index].character} discard:',
+                                'choices': options,
+                                'filter': lambda card: options.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+                        if options[discarded_index] == "Cancel ability.":
+                            self.used_taunt = True
+                            return(' ')
+
+                        # Check if hand-card
+                        if discarded_index <= len(players[target_index].hand_cards.contents):
+                            card_discarded = players[target_index].hand_cards.contents.pop(
+                                discarded_index - 1)
+                            discard_deck.add_to_top(card_discarded)
+                            print(
+                                f"{self.character} has discarded {card_discarded} from {players[target_index].character}'s hand!")
+                            players[target_index].check_one_after_another()
+
+                        # Check if equipment-card
+                        if discarded_index > len(players[target_index].hand_cards.contents):
+                            if discarded_index == (len(players[target_index].hand_cards.contents) + 2):
+                                card_discarded = players[target_index].equipment_weapon.pop(
+                                )
+                                discard_deck.add_to_top(card_discarded)
+                                players[target_index].weapon_range = 1
+                                print(
+                                    f"{self.character} has discarded {card_discarded} from {players[target_index].character}'s weapon-slot!")
+                                players[target_index].check_warrior_woman()
+
+                            elif discarded_index == (len(players[target_index].hand_cards.contents) + 3):
+                                card_discarded = players[target_index].equipment_armor.pop(
+                                )
+                                discard_deck.add_to_top(card_discarded)
+                                print(
+                                    f"{self.character} has discarded {card_discarded} from {players[target_index].character}'s armor-slot!")
+                                players[target_index].check_warrior_woman()
+
+                            elif discarded_index == (len(players[target_index].hand_cards.contents) + 4):
+                                card_discarded = players[target_index].equipment_offensive_horse.pop(
+                                )
+                                discard_deck.add_to_top(card_discarded)
+                                print(
+                                    f"{self.character} has discarded {card_discarded} from {players[target_index].character}'s horse-slot!")
+                                players[target_index].check_warrior_woman()
+
+                            elif discarded_index == (len(players[target_index].hand_cards.contents) + 5):
+                                card_discarded = players[target_index].equipment_defensive_horse.pop(
+                                )
+                                discard_deck.add_to_top(card_discarded)
+                                print(
+                                    f"{self.character} has discarded {card_discarded} from {players[target_index].character}'s horse-slot!")
+                                players[target_index].check_warrior_woman()
+                self.used_taunt = True
+
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
@@ -8949,7 +9114,7 @@ class Player(Character):
         self.check_insurrection()
         self.check_recommence_the_legacy()
         self.check_second_wind("Beginning")
-        # Check for Jiang Wei/Zhuge Liang; Astrology
+        self.check_astrology()
         self.check_goddess_luo()
         self.check_lingering_spirit()
         return self.start_judgement_phase()
@@ -9006,8 +9171,9 @@ class Player(Character):
             return self.start_discard_phase()
         action_phase_active = True
         while action_phase_active:
-            if self.current_health == 0:
-                return(self.start_end_phase())
+            check_win_conditions()
+            if not game_started or self.current_health < 1:
+                return self.start_end_phase()
             print(' ')
             for player in players:
                 player.amassed_terrain = False
@@ -9015,7 +9181,7 @@ class Player(Character):
             options = []
             options.append(
                 Separator("--------------------Cards--------------------"))
-            playing_card_options = get_playing_card_options(self.hand_cards)
+            playing_card_options = self.create_str_nonblind_menu(True)
             for card in playing_card_options:
                 options.append(card)
             options.append(
@@ -9090,6 +9256,8 @@ class Player(Character):
                     self.activate_sow_dissension()
                 if options[action_taken_index] == " Character Ability >> Surprise":
                     self.activate_surprise()
+                if options[action_taken_index] == " Character Ability >> Taunt":
+                    self.activate_taunt()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
                     self.activate_trojan_flesh()
                 if options[action_taken_index] == " Character Ability >> Warrior Saint":
@@ -9194,14 +9362,3 @@ while game_started:
     else:
         # If dead at end of turn
         players.pop(0)
-
-# how to reference players~
-# players[0].hand_cards.draw(main_deck, 4)
-# players[0].hand_cards.view_hand()
-# players[0].hand_cards.discard_from_hand(2)
-# players[0].equipment_weapon.append(Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel', 'When equipped, the wielder ignores any armor of their targets.', 2))
-# players[1].equipment_weapon.append(Card(6, 'Six', 'Spades', 'Weapon', 'Black Pommel', 'When equipped, the wielder ignores any armor of their targets.', 2))
-# players[1].equipment_armor.append(Card(2, 'Two', 'Spades', 'Armor', 'Eight-Trigrams', 'When equipped: whenever a DEFEND is needed, the wearer can perform a judgement. If it is red, the DEFEND is considered to be played.'))
-# players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Acedia', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Acedia'))
-# players[1].pending_judgements.append(Card('6', 'Six', 'Spades', 'Delay-Tool', 'Lightning', 'You can place Delay-Tool on any other player. The target must perform a judgement for this card. If it is not HEARTS, they forfeit their action-phase.', None, 'Lightning'))
-# players[0].start_judgement_phase()
