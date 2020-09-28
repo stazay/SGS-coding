@@ -982,12 +982,12 @@ all_cards = [
 
 # A class for individual players and their stats in the game
 class Player(Character):
-    def __init__(self, role, weapon_range=1, attacks_this_turn=0, max_health=1, current_health=1, hand_cards=[]):
+    def __init__(self, role):
         self.role = role
-        self.weapon_range = weapon_range
-        self.attacks_this_turn = attacks_this_turn
-        self.current_health = current_health
-        self.max_health = max_health
+        self.weapon_range = 1
+        self.attacks_this_turn = 0
+        self.current_health = 0
+        self.max_health = 0
         self.hand_cards = Hand([])
         self.equipment_weapon = []
         self.equipment_armor = []
@@ -1647,6 +1647,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Ferocious Assault")
             if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
                 char_abils.append(" Character Ability >> Green Salve")
+            if (self.character_ability1.startswith("Horsebow:") or self.character_ability3.startswith("Horsebow:")):
+                char_abils.append(" Character Ability >> Horsebow")
             if (self.character_ability1.startswith("Marriage:") or self.character_ability3.startswith("Marriage:")):
                 char_abils.append(" Character Ability >> Marriage")
             if (self.character_ability1.startswith("National Colours:") or self.character_ability3.startswith("National Colours:")):
@@ -1674,6 +1676,8 @@ class Player(Character):
         if types == "Attack":
             if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
                 char_abils.append(" Character Ability >> Dragon Heart")
+            if (self.character_ability1.startswith("Horsebow:") or self.character_ability3.startswith("Horsebow:")):
+                char_abils.append(" Character Ability >> Horsebow")
             if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
             if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
@@ -1821,6 +1825,7 @@ class Player(Character):
                         self.check_insanity(target_index, damage_dealt)
                         self.check_tyrant()
                         for player_index, player in enumerate(players):
+                            player.check_relief()
                             if player.current_health < 1:
                                 if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                                     return "Break"
@@ -2149,7 +2154,7 @@ class Player(Character):
                         return False
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
-                    message = f"{self.character}: Please confirm you would like to use a BLACK ATTACK via {self.equipment_weapon[0]} against {players[selected]}."
+                    message = f"{self.character}: Please confirm you would like to use a BLACK ATTACK against {players[selected]}."
                     if question_yes_no(message):
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
@@ -2194,7 +2199,7 @@ class Player(Character):
                         return False
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
-                    message = f"{self.character}: Please confirm you would like to use a RED ATTACK via {self.equipment_weapon[0]} against {players[selected]}."
+                    message = f"{self.character}: Please confirm you would like to use a RED ATTACK against {players[selected]}."
                     if question_yes_no(message):
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
@@ -2239,7 +2244,7 @@ class Player(Character):
                         return False
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
-                    message = f"{self.character}: Please confirm you would like to use a COLOURLESS ATTACK via {self.equipment_weapon[0]} against {players[selected]}."
+                    message = f"{self.character}: Please confirm you would like to use a COLOURLESS ATTACK against {players[selected]}."
                     if question_yes_no(message):
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
@@ -2353,7 +2358,7 @@ class Player(Character):
                 for player_index, player in enumerate(players):
                     if (player != players[0]) and (player.current_health > 0):
                         beauty = self.check_beauty(card)
-                        if (not player.check_behind_the_curtain(card, beauty)) and (not player.used_delayed_wisdom):
+                        if (not player.check_behind_the_curtain(card, beauty)) and (not player.check_giant_elephant(card, "Reaction")) and (not player.used_delayed_wisdom):
                             barb_response = player.use_reaction_effect(
                                 "Attack", 1, card, 0, player)
                             if type(barb_response) == Card:
@@ -2385,6 +2390,8 @@ class Player(Character):
                                 self.check_insanity(player, damage_dealt)
                                 self.check_tyrant()
 
+                                for player in players:
+                                    player.check_relief()
                                 if player.current_health < 1:
                                     player.check_brink_of_death_loop(
                                         player_index, 0)
@@ -2408,6 +2415,8 @@ class Player(Character):
                                     player.check_plotting_for_power(
                                         damage_dealt, mode="Reaction")
                                     player.check_retaliation(0, damage_dealt)
+                for player in players:
+                    player.check_giant_elephant(card, "Check")
 
         elif card.effect2 == 'Granary':
             print(f"{card} - GRANARY - {card.flavour_text}")
@@ -2513,6 +2522,8 @@ class Player(Character):
                             self.check_insanity(player, damage_dealt)
                             self.check_tyrant()
 
+                            for player in players:
+                                player.check_relief()
                             if player.current_health < 1:
                                 player.check_brink_of_death_loop(
                                     player_index, 0)
@@ -2973,7 +2984,7 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
-    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False):
+    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False, relief=False):
         reactions_possible = True
         output_value = 0
 
@@ -3142,17 +3153,17 @@ class Player(Character):
                 options_str = self.hand_cards.list_cards()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                if self.activate_dragon_heart("Check"):
-                    options_str.append(" Character Ability >> Dragon Heart")
-                if self.activate_warrior_saint("Check"):
-                    options_str.append(" Character Ability >> Warrior Saint")
-                if self.activate_rouse("Check"):
-                    options_str.append(" Ruler Ability >> Rouse")
+                activatable_abilities = self.check_activatable_abilities(
+                    "Attack")
+                for ability in activatable_abilities:
+                    options_str.append(ability)
                 if self.check_weapon_serpent_spear("Check"):
                     options_str.append(" Weapon Ability >> Serpent Spear")
                 options_str.append("Do nothing.")
 
-                if assistance:
+                if relief:
+                    message = f"{self.character}: You have opted to play an ATTACK against {players[0].character}; please choose a response (an ATTACK card or do nothing)!"
+                elif assistance:
                     message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
                 else:
                     message = f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!"
@@ -3185,6 +3196,12 @@ class Player(Character):
 
                 elif options_str[card_index] == " Character Ability >> Dragon Heart":
                     discarded = self.activate_dragon_heart("Reaction Attack")
+                    if discarded != None:
+                        discarded.effect2 = "Attack"
+                        return(discarded)
+
+                elif options_str[card_index] == " Character Ability >> Horsebow":
+                    discarded = self.activate_horsebow("Reaction")
                     if discarded != None:
                         discarded.effect2 = "Attack"
                         return(discarded)
@@ -3303,14 +3320,10 @@ class Player(Character):
                     options_str = self.hand_cards.list_cards()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
-                    if self.activate_dragon_heart("Check"):
-                        options_str.append(
-                            " Character Ability >> Dragon Heart")
-                    if self.activate_warrior_saint("Check"):
-                        options_str.append(
-                            " Character Ability >> Warrior Saint")
-                    if self.activate_rouse("Check"):
-                        options_str.append(" Ruler Ability >> Rouse")
+                    activatable_abilities = self.check_activatable_abilities(
+                        "Attack")
+                    for ability in activatable_abilities:
+                        options_str.append(ability)
                     if self.check_weapon_serpent_spear("Check"):
                         options_str.append(" Weapon Ability >> Serpent Spear")
                     options_str.append("Do nothing.")
@@ -3348,6 +3361,10 @@ class Player(Character):
                     elif options_str[card_index] == " Character Ability >> Dragon Heart":
                         discarded = self.activate_dragon_heart(
                             "Reaction Attack")
+                        required -= 1
+
+                    elif options_str[card_index] == " Character Ability >> Horsebow":
+                        discarded = self.activate_horsebow("Reaction")
                         required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Warrior Saint":
@@ -3476,6 +3493,7 @@ class Player(Character):
 
             # DAMAGED - post-damage abilities and brink of death
             for player_index, player in enumerate(players):
+                player.check_relief()
                 if player.current_health < 1:
                     if players[player_index].check_brink_of_death_loop(player_index, coerced) == "Break":
                         return "Break"
@@ -3552,6 +3570,75 @@ class Player(Character):
             players[0].hand_cards.add_to_top(weapon)
             print(
                 f"{self.character}: Your weapon has been stolen by {players[0].character} for not attacking {players[selected].character}!")
+
+        elif options[action_taken_index] == " Ruler Ability >> Rouse":
+            defender = self.activate_rouse("Reaction")
+            if defender[0]:
+                placeholder = Card(0, 'NONE', 'NONE', 'Tool',
+                                   'Barbarians', 'NONE', None, 'Barbarians')
+                discarded = players[defender[1]].use_reaction_effect(
+                    "Attack", 1, placeholder, coerced, defender[2], True)
+                if type(discarded) == Card:
+                    if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                        print(
+                            f"  >> Ruler Ability: Rouse; {players[defender[1]].character} has played an ATTACK on {self.character}'s behalf!")
+                        print(
+                            f"{self.character} was coerced into attacking {players[selected]}.")
+                        extra_targets = self.check_weapon_sky_scorcher_halberd(
+                            selected)
+                        if (extra_targets == None) or (extra_targets[0] == 0):
+                            self.activate_attack(discarded, selected, coerced)
+                        elif (extra_targets[0] == 1):
+                            self.activate_attack(discarded, selected, coerced)
+                            self.activate_attack(
+                                discarded, extra_targets[1], coerced)
+                        elif (extra_targets[0] == 2):
+                            self.activate_attack(discarded, selected, coerced)
+                            self.activate_attack(
+                                discarded, extra_targets[1], coerced)
+                            self.activate_attack(
+                                discarded, extra_targets[2], coerced)
+
+        elif options[action_taken_index] == " Character Ability >> Dragon Heart":
+            discarded = self.activate_dragon_heart("Reaction Attack")
+            if discarded != None:
+                discarded.effect2 = "Attack"
+                print(
+                    f"{self.character} was coerced into attacking {players[selected]}.")
+                extra_targets = self.check_weapon_sky_scorcher_halberd(
+                    selected)
+                if (extra_targets == None) or (extra_targets[0] == 0):
+                    self.activate_attack(discarded, selected, coerced)
+                elif (extra_targets[0] == 1):
+                    self.activate_attack(discarded, selected, coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[1], coerced)
+                elif (extra_targets[0] == 2):
+                    self.activate_attack(discarded, selected, coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[1], coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[2], coerced)
+
+        elif options[action_taken_index] == " Character Ability >> Horsebow":
+            discarded = self.activate_horsebow("Reaction")
+            if discarded != None:
+                print(
+                    f"{self.character} was coerced into attacking {players[selected]}.")
+                extra_targets = self.check_weapon_sky_scorcher_halberd(
+                    selected)
+                if (extra_targets == None) or (extra_targets[0] == 0):
+                    self.activate_attack(discarded, selected, coerced)
+                elif (extra_targets[0] == 1):
+                    self.activate_attack(discarded, selected, coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[1], coerced)
+                elif (extra_targets[0] == 2):
+                    self.activate_attack(discarded, selected, coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[1], coerced)
+                    self.activate_attack(
+                        discarded, extra_targets[2], coerced)
 
         elif options[action_taken_index] == " Character Ability >> Warrior Saint":
             discarded = self.activate_warrior_saint("Reaction")
@@ -3736,6 +3823,7 @@ class Player(Character):
             print(
                 f"{self.character} has won the DUEL! {players[selected].character} takes {damage_dealt} damage! ({players[selected].current_health}/{players[selected].max_health} HP remaining)")
             for player_index, player in enumerate(players):
+                player.check_relief()
                 if player.current_health < 1:
                     if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                         return (' ')
@@ -3782,6 +3870,7 @@ class Player(Character):
                     f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
 
                 for player_index, player in enumerate(players):
+                    player.check_relief()
                     if player.current_health < 1:
                         if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                             return (' ')
@@ -3819,6 +3908,7 @@ class Player(Character):
                     f"{players[selected].character} has won the DUEL! {players[redirected].character} takes {damage_dealt} damage! ({players[redirected].current_health}/{players[redirected].max_health} HP remaining)")
 
                 for player_index, player in enumerate(players):
+                    player.check_relief()
                     if player.current_health < 1:
                         if players[player_index].check_brink_of_death_loop(player_index, 0) == "Break":
                             return (' ')
@@ -4135,6 +4225,7 @@ class Player(Character):
                         print(
                             f"{self.character}'s judgement card is a {judgement_card} and therefore {players[selected_index].character} loses maximum health instead. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                         for player_index, player in enumerate(players):
+                            player.check_relief()
                             if player.current_health < 1:
                                 players[player_index].check_brink_of_death_loop(
                                     player_index, 0)
@@ -4157,6 +4248,7 @@ class Player(Character):
                             f"{self.character}'s judgement card is a {judgement_card} and therefore Backstab does not apply. Damage dealt as normal; {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                         self.check_weapon_huangs_longbow(selected_index)
                         for player_index, player in enumerate(players):
+                            player.check_relief()
                             if player.current_health < 1:
                                 players[player_index].check_brink_of_death_loop(
                                     player_index, 0)
@@ -4599,6 +4691,8 @@ class Player(Character):
                     self.current_health -= 1
                     print(
                         f"  >> Character Ability: Disintegrate; {self.character}'s health is not among the least, so they lose one health. ({self.current_health}/{self.max_health} HP remaining)")
+                    for player in players:
+                        player.check_relief()
                 if answer.get('Selected') == 'Lose one maximum-health':
                     self.max_health -= 1
                     if self.current_health > self.max_health:
@@ -5181,6 +5275,7 @@ class Player(Character):
                     print(
                         f"{self.character} suffered {damage_dealt} damage from {players[user_index].character}'s an Eye for an Eye ({self.current_health}/{self.max_health} HP remaining).")
                     for player_index, player in enumerate(players):
+                        player.check_relief()
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, user_index) == "Break":
                                 return "Break"
@@ -5445,6 +5540,7 @@ class Player(Character):
                             f"  >> Character Ability: Fearsome Archer; {self.character} attacked {players[selected_index].character} with an undodgable ATTACK, dealing {damage_dealt} damage. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                     self.check_weapon_huangs_longbow(selected_index)
                     for player_index, player in enumerate(players):
+                        player.check_relief()
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, 0)
@@ -5597,6 +5693,26 @@ class Player(Character):
                 card = character_card_discard_pile.remove_from_top()
                 self.forms.add_to_top(card)
                 num -= 1
+
+    def check_giant_elephant(self, card, mode="Check"):
+        # "Giant Elephant: The tool card BARBARIANS has no net effect on you. When any other player uses BARBARIANS and its effects and subsequent card effects are concluded, you will acquire the BARBARIANS card used."
+        if (self.character_ability1.startswith("Giant Elephant:") or self.character_ability3.startswith("Giant Elephant:")):
+            if mode == "Reaction":
+                print(
+                    f"  >> Character Ability: Giant Elephant; {self.character} is immune to the effects of {card}!")
+                return True
+
+            if mode == "Check":
+                if card in discard_deck.contents:
+                    discard_deck.contents.remove(card)
+                    self.hand_cards.add_to_top(card)
+                    print(
+                        f"  >> Character Ability: Giant Elephant; {self.character} draws {card} after it resolves!")
+                elif card in main_deck.contents:
+                    main_deck.contents.remove(card)
+                    self.hand_cards.add_to_top(card)
+                    print(
+                        f"  >> Character Ability: Giant Elephant; {self.character} draws {card} after it resolves!")
 
     def check_goddess_luo(self):
         # "Goddess Luo: At the beginning of your turn, you flip a judgement card. If the judgement is a black-suited, you may choose to flip another. This process continues until you flip a red-suited card. The red card is discarded and all black-suited cards are added to your hand."
@@ -5781,6 +5897,7 @@ class Player(Character):
                             f"{self.character}'s judgement card is a {judgement_card} and therefore the ATTACK cannot be dodged, dealing {damage_dealt} damage to {players[selected_index].character}. ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                     self.check_weapon_huangs_longbow(selected_index)
                     for player_index, player in enumerate(players):
+                        player.check_relief()
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, user_index)
@@ -6047,6 +6164,7 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Lightning Strike; {players[selected_index].character}'s judgement card is a {judgement_card} and therefore they take {damage_dealt} lightning damage ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining).")
                     for player_index, player in enumerate(players):
+                        player.check_relief()
                         if player.current_health < 1:
                             players[player_index].check_brink_of_death_loop(
                                 player_index, user_index)
@@ -6412,6 +6530,43 @@ class Player(Character):
                 self.character_ability3 = "Astrology: Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck."
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
+
+    def check_relief(self):
+        # "Relief: When anyone is on the brink of death, you are able to play an ATTACK on the player taking their turn. If you hit, no damage is dealt, and instead a PEACH is automatically used on the character on the brink of death. This can only be activated outside of your turn."
+        for player_index, player in enumerate(players):
+            if (player.character_ability2.startswith("Relief:") or player.character_ability3.startswith("Relief:")):
+                user_index = player_index
+                break
+
+        if (self.character_ability2.startswith("Relief:") or self.character_ability3.startswith("Relief:")):
+            if self.character != players[0].character:
+                for player_index, player in enumerate(players):
+                    if player.current_health < 1:
+                        dying_player_index = player_index
+                        message = f"{self.character}: {players[dying_player_index].character} is on the brink of death. Activate Relief and ATTACK {players[0].character}? If hit, {players[dying_player_index].character} is healed?"
+                        if question_yes_no(message):
+                            card_played = Card(0, 'NONE', 'NONE', 'Tool', 'Barbarians',
+                                               'NONE', None, 'Barbarians')
+                            discarded = self.use_reaction_effect(
+                                "Attack", 1, card_played, dying_player_index, user_index, False, True)
+                            if type(discarded) == Card:
+                                if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                                    discarded.effect2 = "Attack"
+                                    print(
+                                        f"  >> Character Ability: Relief; {self.character} has ATTACKED {players[0].character} to save {players[dying_player_index].character} from the brink of death!")
+                                    attack_defended = players[0].use_reaction_effect(
+                                        "Defend", 1, discarded, user_index, 0)
+                                    if type(attack_defended) == Card and (attack_defended.effect == "Defend" or attack_defended.effect2 == "Defend"):
+                                        print(
+                                            f"{players[0].character} successfully defended the ATTACK with {attack_defended}.")
+                                    else:
+                                        output_value = 1
+                                        bonus_output = players[dying_player_index].check_rescued(
+                                            user_index)
+                                        if bonus_output == 1:
+                                            output_value += bonus_output
+                                        players[dying_player_index].current_health += output_value
+                                        print(f"  >> Character Ability: Relief; {self.character} has healed {players[dying_player_index].character} by using a PEACH ({players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP remaining)!")
 
     def check_relish(self, source_player_index=0, mode="Activate"):
         # "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."
@@ -7155,6 +7310,134 @@ class Player(Character):
 
                             return True
 
+    def activate_horsebow(self, mode="Check"):
+        # "Horsebow: You can use any equipment cards as an ATTACK. Whenever you do so, that ATTACK has unlimited range."
+        if (self.character_ability1.startswith("Horsebow:") or self.character_ability3.startswith("Horsebow:")):
+            if mode == "Check":
+                return True
+
+            if mode == "Activate" or mode == "Reaction":
+                cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                    self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+                if cards_discardable > 0:
+                    usable_cards = []
+                    for card in self.hand_cards.contents:
+                        if card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse":
+                            usable_cards.append(card)
+                    for card in self.equipment_weapon:
+                        usable_cards.append(card)
+                    for card in self.equipment_armor:
+                        usable_cards.append(card)
+                    for card in self.equipment_offensive_horse:
+                        usable_cards.append(card)
+                    for card in self.equipment_defensive_horse:
+                        usable_cards.append(card)
+
+                    if len(usable_cards) < 1:
+                        print(
+                            f"{self.character}: You cannot use this ability as you have no EQUIPMENT cards.")
+
+                    else:
+                        options_str = self.create_str_nonblind_menu()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel ability.")
+                        options = self.create_actual_menu()
+
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select an EQUIPMENT card to use as ATTACK with unlimited range?',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+                        weapon_popped = False
+                        armor_popped = False
+                        off_horse_popped = False
+                        def_horse_popped = False
+
+                        if options_str[discarded_index] == "Cancel ability.":
+                            return (' ')
+
+                        if options[discarded_index].type == "Weapon" or options[discarded_index].type == "Armor" or options[discarded_index].type == "-1 Horse" or options[discarded_index].type == "+1 Horse":
+                            temp_range_variable = self.weapon_range
+                            self.weapon_range = 6
+                            # Check if hand-card
+                            if discarded_index <= len(self.hand_cards.contents):
+                                card = self.hand_cards.contents.pop(
+                                    discarded_index - 1)
+                                print(
+                                    f"  >> Character Ability: Horsebow; {self.character} has discarded {card} from their hand to use as ATTACK with unlimited range.")
+
+                            # Check if equipment-card
+                            else:
+                                if discarded_index == (len(self.hand_cards.contents) + 2):
+                                    card = self.equipment_weapon.pop()
+                                    self.weapon_range = 1
+                                    weapon_popped = True
+                                    print(
+                                        f"  >> Character Ability: Horsebow; {self.character} has discarded {card} from their weapon-slot to use as ATTACK with unlimited range.")
+
+                                if discarded_index == (len(self.hand_cards.contents) + 3):
+                                    card = self.equipment_armor.pop()
+                                    armor_popped = True
+                                    print(
+                                        f"  >> Character Ability: Horsebow; {self.character} has discarded {card} from their armor-slot to use as ATTACK with unlimited range.")
+
+                                if discarded_index == (len(self.hand_cards.contents) + 4):
+                                    card = self.equipment_offensive_horse.pop()
+                                    off_horse_popped = True
+                                    print(
+                                        f"  >> Character Ability: Horsebow; {self.character} has discarded {card} from their horse-slot to use as ATTACK with unlimited range.")
+
+                                if discarded_index == (len(self.hand_cards.contents) + 5):
+                                    card = self.equipment_defensive_horse.pop()
+                                    def_horse_popped = True
+                                    print(
+                                        f"  >> Character Ability: Horsebow; {self.character} has discarded {card} from their horse-slot to use as ATTACK with unlimited range.")
+
+                            card.effect2 = "Attack"
+                            if mode == "Activate":
+                                if not self.use_card_effect("Special", card):
+                                    if weapon_popped:
+                                        self.equipment_weapon.append(card)
+                                        self.weapon_range = card.weapon_range
+                                    if armor_popped:
+                                        self.equipment_armor.append(card)
+                                        self.weapon_range = temp_range_variable
+                                    if off_horse_popped:
+                                        self.equipment_offensive_horse.append(
+                                            card)
+                                        self.weapon_range = temp_range_variable
+                                    if def_horse_popped:
+                                        self.equipment_defensive_horse.append(
+                                            card)
+                                        self.weapon_range = temp_range_variable
+                                    else:
+                                        self.hand_cards.add_to_top(card)
+                                        self.weapon_range = temp_range_variable
+                                    print(
+                                        f"{self.character} cancelled using their effect, and {card} was returned.")
+                                else:
+                                    self.weapon_range = temp_range_variable
+                                    discard_deck.add_to_top(card)
+
+                            if mode == "Reaction":
+                                if weapon_popped:
+                                    self.weapon_range = 1
+                                else:
+                                    self.weapon_range = temp_range_variable
+                                discard_deck.add_to_top(card)
+                                return (card)
+
+                        else:
+                            print(
+                                f"{options[discarded_index]} cannot be used as an ATTACK as is it NOT an EQUIPMENT card.")
+
     def activate_national_colours(self):
         # "National Colours: During your action phase, you can use any of your cards (on-hand or equipped) with a DIAMONDS suit as ACEDIA."
         if (self.character_ability1.startswith("National Colours:") or self.character_ability3.startswith("National Colours:")):
@@ -7378,6 +7661,7 @@ class Player(Character):
                         print(
                             f"  >> Character Ability: Rejection; {players[selected_index].character} has more cards than {self.character}, so they take {damage_dealt} damage! ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)")
                         for player_index, player in enumerate(players):
+                            player.check_relief()
                             if player.current_health < 1:
                                 players[player_index].check_brink_of_death_loop(
                                     player_index, 0)
@@ -7597,6 +7881,8 @@ class Player(Character):
                 print(
                     f"  >> Character Ability: Trojan Flesh; {self.character} lost one health to draw two cards from the deck.")
                 self.current_health -= 1
+                for player in players:
+                    player.check_relief()
                 if self.current_health < 1:
                     if self.check_brink_of_death_loop(0, "Self") == "Break":
                         return "Break"
@@ -8114,9 +8400,13 @@ class Player(Character):
                     self.current_health -= 1
                     print(
                         f"  >> Character Ability: Ferocious Assault: {self.character} has lost 1 health ({self.current_health}/{self.max_health} HP remaining)!")
+                    for player in players:
+                        player.check_relief()
                     if self.current_health < 1:
                         if self.check_brink_of_death_loop(0, "Self") == "Break":
                             players[selected_index].current_health -= damage_dealt
+                            for player in players:
+                                player.check_relief()
                             if players[selected_index].current_health < 1:
                                 if player.check_brink_of_death_loop(selected_index, "Self") == "Break":
                                     return(' ')
@@ -8124,6 +8414,8 @@ class Player(Character):
                 players[selected_index].current_health -= damage_dealt
                 print(
                     f"  >> Character Ability: Ferocious Assault: {self.character} has dealt 1 damage to {players[selected_index].character} ({players[selected_index].current_health}/{players[selected_index].max_health} HP remaining)!")
+                for player in players:
+                    player.check_relief()
                 if players[selected_index].current_health < 1:
                     if player.check_brink_of_death_loop(selected_index, 0) == "Break":
                         return(' ')
@@ -8609,6 +8901,8 @@ class Player(Character):
                 self.current_health -= 1
                 print(
                     f"  >> Character Ability: Sow Dissension; {self.character} kept their given card, and lost one health ({self.current_health}/{self.max_health} HP remaining)!")
+                for player in players:
+                    player.check_relief()
                 if self.current_health < 1:
                     if self.check_brink_of_death_loop(0, "Self") == "Break":
                         return "Break"
@@ -8778,6 +9072,8 @@ class Player(Character):
                     self.activate_ferocious_assault()
                 if options[action_taken_index] == " Character Ability >> Green Salve":
                     self.activate_green_salve()
+                if options[action_taken_index] == " Character Ability >> Horsebow":
+                    self.activate_horsebow("Activate")
                 if options[action_taken_index] == " Character Ability >> Marriage":
                     self.activate_marriage()
                 if options[action_taken_index] == " Character Ability >> National Colours":
