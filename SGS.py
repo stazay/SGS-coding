@@ -636,19 +636,13 @@ def generate_character_decks():
 # A class for handling the individual cards in the deck
 class Card:
     def __init__(self, rank, val, suit, type, effect, flavour_text, weapon_range=None, effect2=None):
-        # For comparing numerical values of cards (1-13); Ace = 1, King = 13 - Aces low, Kings high
         self.rank = rank
-        # Written values on cards (Ace to King)
         self.val = val
-        # Suits of cards (Spades/Hearts/Clubs/Diamonds)
         self.suit = suit
-        # Denominations of card-effects (Basic, tool or equipment)
         self.type = type
-        self.effect = effect                # Pre-defined effects of cards
-        self.flavour_text = flavour_text    # Description of what each card does
-        # Added range for reaching other players, provided by weapons (a type of equipment)
+        self.effect = effect
+        self.flavour_text = flavour_text
         self.weapon_range = weapon_range
-        # Reassigned effects of cards, by character-effects
         self.effect2 = effect2
 
     def __str__(self):
@@ -1418,6 +1412,46 @@ class Player(Character):
                     if len(self.pending_judgements) > 0:
                         for pending_judgement_card in self.pending_judgements:
                             options_str.append(str(pending_judgement_card))
+
+            return(options_str)
+
+    def create_str_nohands_menu(self, append_judgements=False):
+        cards_discardable = (len(self.equipment_weapon) + len(self.equipment_armor) + len(
+            self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        if append_judgements == 1:
+            cards_discardable += len(self.pending_judgements)
+        if cards_discardable > 0:
+            options_str = []
+            options_str.append(
+                Separator("---------------EQUIPPED--CARDS---------------"))
+            if len(self.equipment_weapon) > 0:
+                options_str.append(str(self.equipment_weapon[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Weapon Slot>-----------  "))
+            if len(self.equipment_armor) > 0:
+                options_str.append(str(self.equipment_armor[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Armor Slot>------------  "))
+            if len(self.equipment_offensive_horse) > 0:
+                options_str.append(
+                    str(self.equipment_offensive_horse[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Horse Slot>------------  "))
+            if len(self.equipment_defensive_horse) > 0:
+                options_str.append(
+                    str(self.equipment_defensive_horse[0]))
+            else:
+                options_str.append(
+                    Separator("  -----------<Empty Horse Slot>------------  "))
+            if append_judgements:
+                options_str.append(
+                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+                if len(self.pending_judgements) > 0:
+                    for pending_judgement_card in self.pending_judgements:
+                        options_str.append(str(pending_judgement_card))
 
             return(options_str)
 
@@ -5794,6 +5828,244 @@ class Player(Character):
                             print(
                                 f"{options[discarded_index]} cannot be used as PEACH as it is NOT red-suited.")
 
+    def check_flexibility(self, phase="Judgement"):
+        # "Flexibility: You can discard one on-hand card to skip any of your phases (excluding the beginning and end phases). If you skip your drawing phase using this method, you can draw one on-hand card from a maximum of two other players. If you skip your action phase using this method, you can relocate a card (in the equipment area or pending time-delay tool card area) from its original location to an identical location."
+        if (self.character_ability1.startswith("Flexibility:") or self.character_ability3.startswith("Flexibility")):
+            if len(self.hand_cards.contents) > 0:
+                if phase == "Judgement":
+                    message = f"{self.character}: Discard a card to skip your judgement phase?"
+                    if question_yes_no(message):
+                        self.hand_cards.discard_from_hand()
+                        print(
+                            f"  >> Character Ability: Flexibility; {self.character} discarded a card to skip their judgement phase!")
+                        return True
+
+                if phase == "Draw":
+                    message = f"{self.character}: Discard a card to skip your draw phase? You can instead draw one card from two different players:"
+                    if question_yes_no(message):
+                        self.hand_cards.discard_from_hand()
+                        print(
+                            f"  >> Character Ability: Flexibility; {self.character} discarded a card to skip their draw phase!")
+                        draw_from_players = 2
+                        selected_indexes = []
+                        options = [
+                            Separator("------<Cannot target yourself>------")]
+                        for player in players[1:]:
+                            if len(player.hand_cards.contents) > 0:
+                                options.append(
+                                    str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                            else:
+                                options.append(Separator(
+                                    "------" + str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)" + "------"))
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Target no others.")
+
+                        while draw_from_players > 0:
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select a character to draw a hand-card from:',
+                                    'choices': options,
+                                    'filter': lambda player: options.index(player)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            target_index = answer.get('Selected')
+                            if options[target_index] == "Target no others.":
+                                draw_from_players = 0
+                            else:
+                                selected_indexes.append(target_index)
+                                options.pop(target_index)
+                                options.insert(target_index, (Separator(
+                                    "------<ALREADY SELECTED>------")))
+                                draw_from_players -= 1
+
+                        for player_index in selected_indexes:
+                            options = players[player_index].create_str_blind_menu(
+                            )
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f"{self.character}: Please select which card you would like to take from {players[player_index].character}'s hand:",
+                                    'choices': options,
+                                    'filter': lambda card: options.index(card)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            card_stolen_index = answer.get('Selected')
+                            card_stolen = players[player_index].hand_cards.contents.pop(
+                                card_stolen_index - 1)
+                            self.hand_cards.add_to_top(card_stolen)
+                            print(
+                                f"  >> Character Ability: Flexibility; {self.character} has drawn {card_stolen} from {players[player_index].character}'s hand.")
+                            players[player_index].check_amassing_terrain()
+                            players[player_index].check_one_after_another()
+                        return True
+
+                if phase == "Action":
+                    message = f"{self.character}: Discard a card to skip your action phase? You can then reposition any piece of equipment/pending judgement cards."
+                    if question_yes_no(message):
+                        print(
+                            f"  >> Character Ability: Flexibility; {self.character} discarded a card to skip their action phase!")
+                        possible_repositions = 0
+                        for player in players:
+                            if len(player.equipment_weapon) + len(player.equipment_armor) + len(player.equipment_offensive_horse) + len(player.equipment_defensive_horse) + len(player.pending_judgements) > 0:
+                                possible_repositions += 1
+
+                        if possible_repositions > 0:
+                            options = []
+                            for player in players:
+                                if len(player.equipment_weapon) + len(player.equipment_armor) + len(player.equipment_offensive_horse) + len(player.equipment_defensive_horse) + len(player.pending_judgements) > 0:
+                                    options.append(str(
+                                        player) + f" W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                                else:
+                                    options.append(Separator(
+                                        "------" + str(player) + f" (No equipped or pending judgement cards)" + "------"))
+
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select a character whose equipment or judgement you want to reposition:',
+                                    'choices': options,
+                                    'filter': lambda player: options.index(player)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            target_index = answer.get('Selected')
+
+                            options = players[target_index].create_str_nohands_menu(
+                                True)
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select which card you would like to reposition:',
+                                    'choices': options,
+                                    'filter': lambda card: options.index(card)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            card_index = answer.get('Selected')
+                            options = []
+
+                            if card_index == 1:
+                                repositioned = players[target_index].equipment_weapon.pop(
+                                )
+                                players[target_index].weapon_range = 1
+                                players[target_index].check_warrior_woman()
+                                for player in players:
+                                    if len(player.equipment_weapon) == 0:
+                                        options.append(str(
+                                            player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                                    else:
+                                        options.append(Separator(
+                                            "------" + str(player) + f" (has a weapon!)" + "------"))
+
+                            elif card_index == 2:
+                                repositioned = players[target_index].equipment_armor.pop(
+                                )
+                                players[target_index].check_warrior_woman()
+                                for player in players:
+                                    if len(player.equipment_armor) == 0:
+                                        options.append(str(
+                                            player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                                    else:
+                                        options.append(Separator(
+                                            "------" + str(player) + f" (has armor!)" + "------"))
+
+                            elif card_index == 3:
+                                repositioned = players[target_index].equipment_offensive_horse.pop(
+                                )
+                                players[target_index].check_warrior_woman()
+                                for player in players:
+                                    if len(player.equipment_offensive_horse) == 0:
+                                        options.append(str(
+                                            player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                                    else:
+                                        options.append(Separator(
+                                            "------" + str(player) + f" (has a -1 horse!)" + "------"))
+
+                            elif card_index == 4:
+                                repositioned = players[target_index].equipment_defensive_horse.pop(
+                                )
+                                players[target_index].check_warrior_woman()
+                                for player in players:
+                                    if len(player.equipment_defensive_horse) == 0:
+                                        options.append(str(
+                                            player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                                    else:
+                                        options.append(Separator(
+                                            "------" + str(player) + f" (has a -1 horse!)" + "------"))
+
+                            else:
+                                repositioned = players[target_index].pending_judgements.pop(
+                                    card_index - 6)
+                                for player in players:
+                                    for pending_judgement in player.pending_judgements:
+                                        if pending_judgement.effect2 == repositioned.effect2:
+                                            options.append(Separator(
+                                                "------" + str(player) + f" (has pending {repositioned.effect2})" + "------"))
+                                    else:
+                                        options.append(str(
+                                            player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select to where you would like to reposition {repositioned}:',
+                                    'choices': options,
+                                    'filter': lambda player: options.index(player)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            target2_index = answer.get('Selected')
+
+                            if card_index == 1:
+                                players[target2_index].equipment_weapon.append(
+                                    repositioned)
+                                players[target2_index].weapon_range = repositioned.weapon_range
+                                print(
+                                    f"  >> Character Ability: Flexibility; {self.character} moved {repositioned} from {players[target_index].character} to the weapon-slot of {players[target2_index].character}!")
+
+                            elif card_index == 2:
+                                players[target2_index].equipment_armor.append(
+                                    repositioned)
+                                print(
+                                    f"  >> Character Ability: Flexibility; {self.character} moved {repositioned} from {players[target_index].character} to the armor-slot of {players[target2_index].character}!")
+
+                            elif card_index == 3:
+                                players[target2_index].equipment_offensive_horse.append(
+                                    repositioned)
+                                print(
+                                    f"  >> Character Ability: Flexibility; {self.character} moved {repositioned} from {players[target_index].character} to the horse-slot of {players[target2_index].character}!")
+
+                            elif card_index == 4:
+                                players[target2_index].equipment_defensive_horse.append(
+                                    repositioned)
+                                print(
+                                    f"  >> Character Ability: Flexibility; {self.character} moved {repositioned} from {players[target_index].character} to the horse-slot of {players[target2_index].character}!")
+
+                            else:
+                                players[target2_index].pending_judgements.append(
+                                    repositioned)
+                                print(
+                                    f"  >> Character Ability: Flexibility; {self.character} moved {repositioned} from {players[target_index].character} to the pending judgements of {players[target2_index].character}!")
+                        return True
+
+                if phase == "Discard":
+                    message = f"{self.character}: Discard a card to skip your discard phase?"
+                    if question_yes_no(message):
+                        self.hand_cards.discard_from_hand()
+                        print(
+                            f"  >> Character Ability: Flexibility; {self.character} discarded a card to skip their discard phase!")
+                        return True
+        return False
+
     def check_garden_of_lust(self, selected_index=0):
         # "Garden of Lust: Whenever you use an ATTACK on a female character or vice-versa, the targeted character needs to use two DEFEND cards to successfully evade the attack."
         if (self.character_ability2.startswith("Garden of Lust:") or self.character_ability3.startswith("Garden of Lust:")):
@@ -6477,124 +6749,68 @@ class Player(Character):
     def check_raid(self):
         # "Raid: In your drawing phase, you can choose to forgo drawing cards from the deck and, instead, draw one on-hand card from a maximum of two other players."
         if (self.character_ability1.startswith("Raid:") or self.character_ability2.startswith("Raid:")):
-            activated_raid = True
-            while activated_raid:
-                print(' ')
-                message = f"{self.character}: Choose to activate Raid, and draw one hand-card from other player(s) instead of drawing from the deck?"
-                if not question_yes_no(message):
-                    activated_raid = False
-                else:
-
-                    targets_str = []
-                    targets = []
-                    targets_str.append(Separator(
-                        f"--{self.character} (Can't target yourself!)--"))
-                    targets.append("Blank")
-                    for player in players[1:]:
-                        if len(player.hand_cards.contents) > 0:
-                            targets_str.append(str(player))
-                            targets.append(player)
-                        else:
-                            targets_str.append(
-                                Separator(f"--{player.character} (0 cards - cannot be targeted)--"))
-                            targets.append("Blank")
-                    targets_str.append(
-                        Separator("--------------------Other--------------------"))
-                    targets_str.append("Cancel")
-                    targets.append(Separator())
-                    targets.append("Cancel")
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select a character to target with Raid:',
-                            'choices': targets_str,
-                            'filter': lambda player: targets_str.index(player)
-                        },
-                    ]
-
-                    answer = prompt(question, style=custom_style_2)
-                    target1_index = answer.get('Selected')
-
-                    if target1_index == (len(players) + 1):
-                        return self.check_raid()
-
-                    targets_str.pop(target1_index)
-                    targets_str.insert(target1_index, Separator(
-                        f"--{players[target1_index].character} (Already selected)--"))
-                    target1 = targets[target1_index]
-                    targets_str.insert(-1, "Target noone else")
-                    targets.insert(-1, "Target noone else")
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select a character to target with Raid:',
-                            'choices': targets_str,
-                            'filter': lambda player: targets_str.index(player)
-                        },
-                    ]
-
-                    answer = prompt(question, style=custom_style_2)
-                    target2_index = answer.get('Selected')
-                    target2 = targets[target2_index]
-
-                    if target2 == "Cancel":
-                        return self.check_raid()
+            print(' ')
+            message = f"{self.character}: Choose to activate Raid, and draw one hand-card from other player(s) instead of drawing from the deck?"
+            if not question_yes_no(message):
+                return False
+            else:
+                draw_from_players = 2
+                selected_indexes = []
+                options = [
+                    Separator("------<Cannot target yourself>------")]
+                for player in players[1:]:
+                    if len(player.hand_cards.contents) > 0:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
                     else:
-                        print(' ')
-                        options_str = target1.create_str_blind_menu()
+                        options.append(Separator(
+                            "------" + str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)" + "------"))
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Target no others.")
 
-                        question = [
-                            {
-                                'type': 'list',
-                                'name': 'Selected',
-                                'message': f"{self.character}: Please select which card you would like to take from {target1.character}'s hand:",
-                                'choices': options_str,
-                                'filter': lambda card: options_str.index(card)
-                            },
-                        ]
-                        answer = prompt(question, style=custom_style_2)
-                        card_stolen_index = answer.get('Selected')
+                while draw_from_players > 0:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a character to draw a hand-card from:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    target_index = answer.get('Selected')
+                    if options[target_index] == "Target no others.":
+                        draw_from_players = 0
+                    else:
+                        selected_indexes.append(target_index)
+                        options.pop(target_index)
+                        options.insert(target_index, (Separator(
+                            "------<ALREADY SELECTED>------")))
+                        draw_from_players -= 1
 
-                        if card_stolen_index <= len(target1.hand_cards.contents):
-                            card_stolen = target1.hand_cards.contents.pop(
-                                card_stolen_index - 1)
-                            self.hand_cards.add_to_top(card_stolen)
-                            print(
-                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target1.character}'s hand.")
-                            target1.check_amassing_terrain()
-                            target1.check_one_after_another()
-                            activated_raid = False
-
-                    if target2 != "Target noone else":
-                        print(' ')
-                        options_str = target2.create_str_blind_menu()
-
-                        question = [
-                            {
-                                'type': 'list',
-                                'name': 'Selected',
-                                'message': f"{self.character}: Please select which card you would like to take from {target2.character}'s hand:",
-                                'choices': options_str,
-                                'filter': lambda card: options_str.index(card)
-                            },
-                        ]
-                        answer = prompt(question, style=custom_style_2)
-                        card_stolen_index = answer.get('Selected')
-
-                        if card_stolen_index <= len(target2.hand_cards.contents):
-                            card_stolen = target2.hand_cards.contents.pop(
-                                card_stolen_index - 1)
-                            self.hand_cards.add_to_top(card_stolen)
-                            print(
-                                f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {target2.character}'s hand.")
-                            target2.check_amassing_terrain()
-                            target2.check_one_after_another()
-                            activated_raid = False
-                    return True
+                for player_index in selected_indexes:
+                    options = players[player_index].create_str_blind_menu()
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f"{self.character}: Please select which card you would like to take from {players[player_index].character}'s hand:",
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_stolen_index = answer.get('Selected')
+                    card_stolen = players[player_index].hand_cards.contents.pop(
+                        card_stolen_index - 1)
+                    self.hand_cards.add_to_top(card_stolen)
+                    print(
+                        f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {players[player_index].character}'s hand.")
+                    players[player_index].check_amassing_terrain()
+                    players[player_index].check_one_after_another()
+                return True
 
     def check_reckless(self, card, source_player_index=0):
         # "Reckless: Every instance that you suffer damage from a red-suited ATTACK, or a WINE ATTACK, your maximum health limit is reduced by one instead."
@@ -9283,8 +9499,10 @@ class Player(Character):
 # Judgement Phase
     def start_judgement_phase(self):
         print(" ")
+        if self.check_flexibility("Judgement"):
+            return self.start_drawing_phase()
         if self.check_godspeed("Judgement"):
-            return players[0].start_action_phase()
+            return self.start_action_phase()
         if self.check_pending_judgements() == "Break":
             return "Break"
         else:
@@ -9299,8 +9517,7 @@ class Player(Character):
 # Drawing Phase
     def start_drawing_phase(self):
         print(" ")
-        if self.check_raid():
-            # Check for Zhang He; Flexibility
+        if self.check_flexibility("Draw") or self.check_raid():
             return self.start_action_phase()
         cards_drawn = 2
         message = True
@@ -9328,7 +9545,7 @@ class Player(Character):
 
 # Action Phase
     def start_action_phase(self):
-        if self.check_godspeed("Action"):
+        if self.check_flexibility("Action") or self.check_godspeed("Action"):
             return self.start_discard_phase()
         action_phase_active = True
         while action_phase_active:
@@ -9454,6 +9671,8 @@ class Player(Character):
 # Discard Phase
     def start_discard_phase(self):
         print(" ")
+        if self.check_flexibility("Discard"):
+            return self.start_end_phase()
         difference = 0
         mediocrity = self.check_mediocrity("Discard")
         if mediocrity[0]:
