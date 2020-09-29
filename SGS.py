@@ -1212,25 +1212,25 @@ class Player(Character):
         print(' ')
 
 # Menu Creation for targeting players
-    def calculate_targets_in_physical_range(self, player_index, modifier=0):
+    def calculate_targets_in_physical_range(self, source_player_index, modifier=0):
         output = []
         for (target_index, target) in enumerate(players):
-            if target_index != player_index:
-                distance = abs(target_index - player_index)
+            if target_index != source_player_index:
+                distance = abs(target_index - source_player_index)
                 if distance > len(players) / 2:
                     distance = len(players) - distance
-                if distance - (players[player_index].check_horsemanship() + modifier + (len(players[player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
+                if distance - (players[source_player_index].check_horsemanship() + modifier + (len(players[source_player_index].equipment_offensive_horse) + 1)) + (len(target.equipment_defensive_horse)) <= 0:
                     output.append(target_index)
         return output
 
-    def calculate_targets_in_weapon_range(self, player_index, modifier=0, omit=None):
+    def calculate_targets_in_weapon_range(self, source_player_index, modifier=0, omit=None):
         output = []
         for (target_index, target) in enumerate(players):
-            if target_index != player_index:
-                distance = abs(target_index - player_index)
+            if target_index != source_player_index:
+                distance = abs(target_index - source_player_index)
                 if distance > len(players) / 2:
                     distance = len(players) - distance
-                if distance - (players[player_index].check_horsemanship() + modifier + (len(players[player_index].equipment_offensive_horse)) + (players[player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
+                if distance - (players[source_player_index].check_horsemanship() + modifier + (len(players[source_player_index].equipment_offensive_horse)) + (players[source_player_index].weapon_range)) + (len(target.equipment_defensive_horse)) <= 0:
                     output.append(target_index)
         if omit != None:
             output.remove(omit)
@@ -1544,6 +1544,7 @@ class Player(Character):
                             if self.check_brink_of_death_loop(0, "Self") == "Break":
                                 return "Break"
                         discard_deck.add_to_top(pending_judgement)
+                        self.check_bequeathed_strategy(damage_dealt)
                         self.check_eternal_loyalty(damage_dealt)
                         self.check_evil_hero(pending_judgement)
                         self.check_exile()
@@ -1557,6 +1558,8 @@ class Player(Character):
                                 return "Break"
 
                         discard_deck.add_to_top(pending_judgement)
+                        players[redirected].check_bequeathed_strategy(
+                            damage_dealt)
                         players[redirected].check_delayed_wisdom()
                         players[redirected].check_eternal_loyalty(damage_dealt)
                         players[redirected].check_evil_hero(pending_judgement)
@@ -1835,6 +1838,8 @@ class Player(Character):
                             players[target_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
                         self.check_lament(user_index, target_index)
+                        players[target_index].check_bequeathed_strategy(
+                            damage_dealt)
                         players[target_index].check_delayed_wisdom()
                         players[target_index].check_eternal_loyalty(
                             damage_dealt)
@@ -2403,6 +2408,8 @@ class Player(Character):
                                         player.hand_cards.draw(
                                             main_deck, cards_to_draw, False)
 
+                                    player.check_bequeathed_strategy(
+                                        damage_dealt)
                                     player.check_delayed_wisdom()
                                     player.check_eternal_loyalty(damage_dealt)
                                     player.check_evil_hero(card)
@@ -2535,6 +2542,7 @@ class Player(Character):
                                     player.hand_cards.draw(
                                         main_deck, cards_to_draw, False)
 
+                                player.check_bequeathed_strategy(damage_dealt)
                                 player.check_delayed_wisdom()
                                 player.check_eternal_loyalty(damage_dealt)
                                 player.check_evil_hero(card)
@@ -2987,7 +2995,7 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
-    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, assistance=False, other_effect=None):
+    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, other_effect=None):
         reactions_possible = True
         output_value = 0
 
@@ -3088,7 +3096,7 @@ class Player(Character):
                         options_str.append(" Ruler Ability >> Escort")
                     options_str.append("Do nothing.")
 
-                    if assistance:
+                    if other_effect == "Escort":
                         message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
                     elif card_played.effect2 == "Attack":
                         message = f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
@@ -3114,7 +3122,7 @@ class Player(Character):
                         defender = self.check_escort("Reaction")
                         if defender[0]:
                             discarded = players[defender[1]].use_reaction_effect(
-                                "Defend", 1, card_played, player_index, reacting_player_index, True)
+                                "Defend", 1, card_played, player_index, reacting_player_index, "Escort")
                             if type(discarded) == Card:
                                 if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                     print(
@@ -3168,7 +3176,7 @@ class Player(Character):
                     message = f"{self.character}: You have opted to play an ATTACK against {players[0].character}; please choose a response (an ATTACK card or do nothing)!"
                 elif other_effect == "Taunt":
                     message = f"{self.character}: You have been TAUNTED by {players[0].character}. Please choose a response (an ATTACK card or do nothing)!"
-                elif assistance:
+                elif other_effect == "Rouse":
                     message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
                 else:
                     message = f"{self.character}: {players[player_index].character} has activated BARBARIANS; please choose a response (an ATTACK card or do nothing)!"
@@ -3192,7 +3200,7 @@ class Player(Character):
                         placeholder = Card(
                             0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
                         discarded = players[defender[1]].use_reaction_effect(
-                            "Attack", 1, placeholder, player_index, defender[2], True)
+                            "Attack", 1, placeholder, player_index, defender[2], "Rouse")
                         if type(discarded) == Card:
                             if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                                 print(
@@ -3265,7 +3273,7 @@ class Player(Character):
                         self.used_trigrams = False
                         return (armor_check[1])
 
-                if assistance:
+                if other_effect == "Escort":
                     message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
                 else:
                     message = f"{self.character}: {players[player_index].character} has activated RAIN OF ARROWS; please choose a response (a DEFEND card or do nothing)!"
@@ -3287,7 +3295,7 @@ class Player(Character):
                     defender = self.check_escort("Reaction")
                     if defender[0]:
                         discarded = players[defender[1]].use_reaction_effect(
-                            "Defend", 1, card_played, player_index, reacting_player_index, True)
+                            "Defend", 1, card_played, player_index, reacting_player_index, "Escort")
                         if type(discarded) == Card:
                             if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                 print(
@@ -3356,7 +3364,7 @@ class Player(Character):
                             placeholder = Card(
                                 0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
                             discarded = players[defender[1]].use_reaction_effect(
-                                "Attack", 1, placeholder, player_index, reacting_player_index, True)
+                                "Attack", 1, placeholder, player_index, reacting_player_index, "Rouse")
                             if type(discarded) == Card:
                                 if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                                     print(
@@ -3512,6 +3520,7 @@ class Player(Character):
                     main_deck, cards_to_draw, False)
 
             self.check_lament(coerced, selected)
+            players[selected].check_bequeathed_strategy(damage_dealt)
             players[selected].check_delayed_wisdom()
             players[selected].check_eternal_loyalty(
                 damage_dealt)
@@ -3582,7 +3591,7 @@ class Player(Character):
                 placeholder = Card(0, 'NONE', 'NONE', 'Tool',
                                    'Barbarians', 'NONE', None, 'Barbarians')
                 discarded = players[defender[1]].use_reaction_effect(
-                    "Attack", 1, placeholder, coerced, defender[2], True)
+                    "Attack", 1, placeholder, coerced, defender[2], "Rouse")
                 if type(discarded) == Card:
                     if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                         print(
@@ -3841,6 +3850,7 @@ class Player(Character):
                     f"  >> Character Ability: Fantasy; {self.character} draws {cards_to_draw} from the deck.")
                 players[selected].hand_cards.draw(
                     main_deck, cards_to_draw, False)
+            players[selected].check_bequeathed_strategy(damage_dealt)
             players[selected].check_delayed_wisdom()
             players[selected].check_eternal_loyalty(damage_dealt)
             players[selected].check_evil_hero(discarded)
@@ -3881,6 +3891,7 @@ class Player(Character):
                             return (' ')
 
                 # Retaliatory Ability Checks
+                self.check_bequeathed_strategy(damage_dealt)
                 self.check_eternal_loyalty(damage_dealt)
                 self.check_evil_hero(discarded)
                 self.check_exile()
@@ -3925,6 +3936,7 @@ class Player(Character):
                     f"  >> Character Ability: Fantasy; {players[redirected].character} draws {cards_to_draw} from the deck.")
                 players[redirected].hand_cards.draw(
                     main_deck, cards_to_draw, False)
+                players[redirected].check_bequeathed_strategy(damage_dealt)
                 players[redirected].check_delayed_wisdom()
                 players[redirected].check_eternal_loyalty(damage_dealt)
                 players[redirected].check_evil_hero(discarded)
@@ -4310,6 +4322,8 @@ class Player(Character):
                                     main_deck, cards_to_draw, False)
 
                             self.check_lament(user_index, selected_index)
+                            players[selected_index].check_bequeathed_strategy(
+                                damage_dealt)
                             players[selected_index].check_delayed_wisdom()
                             players[selected_index].check_eternal_loyalty(
                                 damage_dealt)
@@ -4363,6 +4377,55 @@ class Player(Character):
                         f"  >> Character Ability: Behind the Curtain; {self.character} is immune to the effects of {card} as it is a BLACK tool card.")
                     return True
         return False
+
+    def check_bequeathed_strategy(self, damage_dealt):
+        # "Bequeathed Strategy: For every one unit of damage you recieve, you can draw two cards from the deck. You can then choose to give away one, two or none of these cards to any player."
+        if (self.character_ability2.startswith("Bequeathed Strategy:") or self.character_ability3.startswith("Bequeathed Strategy:")):
+            message = f"{self.character}: Choose to activate Bequeathed Strategy and draw {damage_dealt}x2 cards? You can then redistribute them between players."
+            if question_yes_no(message):
+                print(
+                    f"  >> Character Ability: Bequeathed Strategy; {self.character} has taken {damage_dealt} and therefore draws {damage_dealt*2} cards, and redestributes them.")
+                for item in range(damage_dealt):
+                    beq_strat = Player("Temporary")
+                    beq_strat.hand_cards.draw(main_deck, 2, False)
+                    cards_to_distribute = 2
+                    while cards_to_distribute > 0:
+                        options = beq_strat.create_str_nonblind_menu(True)
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a card:',
+                                'choices': options,
+                                'filter': lambda card: options.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        card_index = answer.get('Selected')
+                        options = []
+                        for player in players:
+                            options.append(
+                                str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please decide to whom you would like to distribute this card:',
+                                'choices': options,
+                                'filter': lambda player: options.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        player_index = answer.get('Selected')
+                        if self.character != players[player_index].character:
+                            print(
+                                f"  >> Character Ability: Bequeathed Strategy; {self.character} gave a card to {players[player_index]}.")
+                        else:
+                            print(
+                                f"  >> Character Ability: Bequeathed Strategy; {self.character} took a card and added it to his own hand.")
+                        players[player_index].hand_cards.add_to_top(
+                            beq_strat.hand_cards.contents.pop(card_index))
+                        cards_to_distribute -= 1
 
     def check_berserk(self):
         # "Berserk: There is no limit on how many times you can ATTACK during your turn."
@@ -5328,6 +5391,7 @@ class Player(Character):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, user_index) == "Break":
                                 return "Break"
+                    self.check_bequeathed_strategy(damage_dealt)
                     self.check_delayed_wisdom()
                     self.check_eternal_loyalty(damage_dealt)
                     self.check_exile()
@@ -5348,6 +5412,7 @@ class Player(Character):
                         if player.current_health < 1:
                             if players[player_index].check_brink_of_death_loop(player_index, user_index) == "Break":
                                 return "Break"
+                    players[redirected].check_bequeathed_strategy(damage_dealt)
                     players[redirected].check_delayed_wisdom()
                     players[redirected].check_eternal_loyalty(damage_dealt)
                     players[redirected].check_exile()
@@ -5603,6 +5668,8 @@ class Player(Character):
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
                         self.check_lament(user_index, selected_index)
+                        players[selected_index].check_bequeathed_strategy(
+                            damage_dealt)
                         players[selected_index].check_delayed_wisdom()
                         players[selected_index].check_eternal_loyalty(
                             damage_dealt)
@@ -5961,6 +6028,8 @@ class Player(Character):
                                 main_deck, cards_to_draw, False)
 
                         self.check_lament(user_index, selected_index)
+                        players[selected_index].check_bequeathed_strategy(
+                            damage_dealt)
                         players[selected_index].check_delayed_wisdom()
                         players[selected_index].check_eternal_loyalty(
                             damage_dealt)
@@ -6227,6 +6296,8 @@ class Player(Character):
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
 
+                        players[selected_index].check_bequeathed_strategy(
+                            damage_dealt)
                         players[selected_index].check_delayed_wisdom()
                         players[selected_index].check_eternal_loyalty(
                             damage_dealt)
@@ -6597,7 +6668,7 @@ class Player(Character):
                             card_played = Card(0, 'NONE', 'NONE', 'Tool', 'Barbarians',
                                                'NONE', None, 'Barbarians')
                             discarded = self.use_reaction_effect(
-                                "Attack", 1, card_played, dying_player_index, user_index, False, "Relief")
+                                "Attack", 1, card_played, dying_player_index, user_index, "Relief")
                             if type(discarded) == Card:
                                 if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                                     discarded.effect2 = "Attack"
@@ -7724,6 +7795,8 @@ class Player(Character):
                                     f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
                                 players[selected_index].hand_cards.draw(
                                     main_deck, cards_to_draw, False)
+                            players[selected_index].check_bequeathed_strategy(
+                                damage_dealt)
                             players[selected_index].check_delayed_wisdom()
                             players[selected_index].check_eternal_loyalty(
                                 damage_dealt)
@@ -7800,7 +7873,7 @@ class Player(Character):
                 card_played = Card(0, 'NONE', 'NONE', 'Tool', 'Barbarians',
                                    'NONE', None, 'Barbarians')
                 discarded = players[attacker_index].use_reaction_effect(
-                    "Attack", 1, card_played, attacker_index, player_index, True)
+                    "Attack", 1, card_played, attacker_index, player_index, "Rouse")
                 if type(discarded) == Card:
                     if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                         discarded.effect2 = "Attack"
@@ -8480,6 +8553,8 @@ class Player(Character):
                             main_deck, cards_to_draw, False)
 
                     self.check_lament(0, selected_index)
+                    players[selected_index].check_bequeathed_strategy(
+                        damage_dealt)
                     players[selected_index].check_delayed_wisdom()
                     players[selected_index].check_eternal_loyalty(
                         damage_dealt)
@@ -9025,7 +9100,7 @@ class Player(Character):
                 card_played = Card(0, 'NONE', 'NONE', 'Tool',
                                    'Barbarians', 'NONE', None, 'Barbarians')
                 discarded = players[target_index].use_reaction_effect(
-                    "Attack", 1, card_played, target_index, 0, False, "Taunt")
+                    "Attack", 1, card_played, target_index, 0, "Taunt")
                 if type(discarded) == Card:
                     if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
                         discarded.effect2 = "Attack"
@@ -9174,10 +9249,10 @@ class Player(Character):
             check_win_conditions()
             if not game_started or self.current_health < 1:
                 return self.start_end_phase()
-            print(' ')
             for player in players:
                 player.amassed_terrain = False
                 player.used_trigrams = False
+            print(' ')
             options = []
             options.append(
                 Separator("--------------------Cards--------------------"))
