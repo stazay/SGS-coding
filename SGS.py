@@ -7,7 +7,7 @@
 /________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//| || /_//
                                 SanGuoSha Coding by Saba Tazayoni               /||______________| ||
                     Started: 21/07/2020                                        /___________________||
-Current Version: 28/09/2020
+Current Version: 29/09/2020
 """
 
 from __future__ import print_function, unicode_literals
@@ -636,13 +636,19 @@ def generate_character_decks():
 # A class for handling the individual cards in the deck
 class Card:
     def __init__(self, rank, val, suit, type, effect, flavour_text, weapon_range=None, effect2=None):
+        # For comparing numerical values of cards (1-13); Ace = 1, King = 13 - Aces low, Kings high
         self.rank = rank
+        # Written values on cards (Ace to King)
         self.val = val
+        # Suits of cards (Spades/Hearts/Clubs/Diamonds)
         self.suit = suit
+        # Denominations of card-effects (Basic, tool or equipment)
         self.type = type
-        self.effect = effect
-        self.flavour_text = flavour_text
+        self.effect = effect                # Pre-defined effects of cards
+        self.flavour_text = flavour_text    # Description of what each card does
+        # Added range for reaching other players, provided by weapons (a type of equipment)
         self.weapon_range = weapon_range
+        # Reassigned effects of cards, by character-effects
         self.effect2 = effect2
 
     def __str__(self):
@@ -1628,6 +1634,8 @@ class Player(Character):
 
             if (self.character_ability2.startswith("Alliance:") or self.character_ability3.startswith("Alliance:")):
                 char_abils.append(" Character Ability >> Alliance")
+            if (self.character_ability1.startswith("Benevolence:") or self.character_ability3.startswith("Benevolence:")):
+                char_abils.append(" Character Ability >> Benevolence")
             if self.character_ability3.startswith("Blitz:"):
                 char_abils.append(" Character Ability >> Blitz")
             if (self.character_ability1.startswith("Blockade:") or self.character_ability3.startswith("Blockade:")):
@@ -1693,6 +1701,7 @@ class Player(Character):
         self.used_alliance = False
         self.used_amber_sky = False
         self.used_bare_chested = False
+        self.used_benevolence = False
         self.used_brilliant_scheme = False
         self.used_dual_heroes = False
         self.used_ferocious_assault = False
@@ -8272,6 +8281,83 @@ class Player(Character):
                         print(
                             f"{self.character}: You can only give a DEFEND or LIGHTNING CARD with this effect.")
 
+    def activate_benevolence(self):
+        # "Benevolence: You can give any number of your hand-cards to any players. If you give away more than one card, you recovers one unit of health."
+        if (self.character_ability1.startswith("Benevolence:") or self.character_ability3.startswith("Benevolence:")):
+            cards_discardable = len(self.hand_cards.contents)
+            if self.used_benevolence:
+                print(
+                    f"{self.character}: You can only use Benevolence once per turn!")
+
+            else:
+                cards_to_donate = 0
+                options = self.create_str_nonblind_menu(True)
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("No more cards.")
+                options.append("Cancel ability.")
+                selected_cards = []
+                while cards_discardable > 0:
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select cards to discard and redraw:',
+                            'choices': options,
+                            'filter': lambda card: options.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options[card_index] == "Cancel ability.":
+                        return (' ')
+                    elif options[card_index] == "No more cards.":
+                        if cards_to_donate == 0:
+                            return (' ')
+                        cards_discardable = 0
+                    else:
+                        selected_cards.append(card_index)
+                        options.pop(card_index)
+                        options.insert(card_index, (Separator(
+                            "------<ALREADY SELECTED>------")))
+                        cards_discardable -= 1
+                        cards_to_donate += 1
+
+                for card_index in selected_cards:
+                    card = self.hand_cards.contents[card_index]
+                    options = [
+                        Separator("------<Cannot target yourself>------")]
+                    for player in players[1:]:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please decide to whom you would like to give {card} to:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    player_index = answer.get('Selected')
+                    players[player_index].hand_cards.add_to_top(
+                        self.hand_cards.contents.pop(card_index))
+                    self.hand_cards.contents.insert(card_index, "Placeholder")
+                    print(
+                        f"  >> Character Ability: Benevolence; {self.character} has given a card to {players[player_index].character}!")
+
+                for item in self.hand_cards.contents:
+                    if "Placeholder" in self.hand_cards.contents:
+                        self.hand_cards.contents.remove("Placeholder")
+                print(
+                    f"  >> Character Ability: Benevolence; {self.character} has donated {cards_to_donate} to other players.")
+                if self.max_health > self.current_health:
+                    print(
+                        f"  >> Character Ability: Benevolence; {self.character} has recovered 1 unit of health ({self.current_health}/{self.max_health} HP remaining)!")
+                self.used_benevolence = True
+                return(' ')
+
     def activate_brilliant_scheme(self, mode="Activate"):
         # "Brilliant Scheme: Once per turn, you can give another player an ATTACK or equipment card. The player can then choose to draw one card or allow you to choose one character within their attacking range. This character is ATTACKed by the player that recieved the card."
         if mode == "Activate":
@@ -9297,6 +9383,8 @@ class Player(Character):
             else:
                 if options[action_taken_index] == " Character Ability >> Alliance":
                     self.activate_alliance()
+                if options[action_taken_index] == " Character Ability >> Benevolence":
+                    self.activate_benevolence()
                 if options[action_taken_index] == " Character Ability >> Blitz":
                     self.activate_blitz()
                 if options[action_taken_index] == " Character Ability >> Blockade":
