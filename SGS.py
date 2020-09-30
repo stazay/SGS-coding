@@ -7,7 +7,7 @@
 /________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//| || /_//
                                 SanGuoSha Coding by Saba Tazayoni               /||______________| ||
                     Started: 21/07/2020                                        /___________________||
-Current Version: 29/09/2020
+Current Version: 30/09/2020
 """
 
 from __future__ import print_function, unicode_literals
@@ -999,6 +999,7 @@ class Player(Character):
         self.previous_turn_health = None
         self.used_trigrams = False
         self.amassed_terrain = False
+        self.used_cornering_maneuver = False
         self.used_bare_chested = False
         self.wine_active = False
         self.flipped_char_card = False
@@ -1889,6 +1890,7 @@ class Player(Character):
                             players[target_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
                         self.check_lament(user_index, target_index)
+                        self.check_grudge(target_index, "Damage")
                         players[target_index].check_bequeathed_strategy(
                             damage_dealt)
                         players[target_index].check_delayed_wisdom()
@@ -2462,6 +2464,7 @@ class Player(Character):
                                         player.hand_cards.draw(
                                             main_deck, cards_to_draw, False)
 
+                                    self.check_grudge(player_index, "Damage")
                                     player.check_bequeathed_strategy(
                                         damage_dealt)
                                     player.check_delayed_wisdom()
@@ -2596,6 +2599,7 @@ class Player(Character):
                                     player.hand_cards.draw(
                                         main_deck, cards_to_draw, False)
 
+                                self.check_grudge(player_index, "Damage")
                                 player.check_bequeathed_strategy(damage_dealt)
                                 player.check_delayed_wisdom()
                                 player.check_eternal_loyalty(damage_dealt)
@@ -3098,6 +3102,7 @@ class Player(Character):
                         else:
                             print(
                                 f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                        self.check_grudge(player_index, "Heal")
                         if players[player_index].check_break_brink_loop(output_value):
                             reactions_possible = False
                             return(output_value)
@@ -3106,6 +3111,8 @@ class Player(Character):
                     discarded = self.hand_cards.contents.pop(card_index)
                     if not self.amassed_terrain:
                         self.check_amassing_terrain()
+                    if not self.used_cornering_maneuver:
+                        self.check_cornering_maneuver(discarded)
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     output_value += 1
@@ -3119,6 +3126,7 @@ class Player(Character):
                     else:
                         print(
                             f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                    self.check_grudge(player_index, "Heal")
                     if players[player_index].check_break_brink_loop(output_value):
                         reactions_possible = False
                         return(output_value)
@@ -3189,6 +3197,9 @@ class Player(Character):
                             self.activate_dragon_heart("Reaction Defend"))
                         if discarded != None:
                             discarded.effect2 = "Defend"
+                            if not self.used_cornering_maneuver:
+                                self.check_cornering_maneuver(discarded)
+                                self.cornering_maneuver = True
                             self.used_trigrams = False
                             required -= 1
 
@@ -3205,7 +3216,9 @@ class Player(Character):
                         if not self.amassed_terrain:
                             self.check_amassing_terrain()
                             self.amassed_terrain = True
-                        self.check_amassing_terrain()
+                        if not self.cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.cornering_maneuver = True
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
                         discarded.effect2 = "Defend"
@@ -3267,6 +3280,9 @@ class Player(Character):
                     discarded = self.activate_dragon_heart("Reaction Attack")
                     if discarded != None:
                         discarded.effect2 = "Attack"
+                        if not self.cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.cornering_maneuver = True
                         return(discarded)
 
                 elif options_str[card_index] == " Character Ability >> Horsebow":
@@ -3295,6 +3311,9 @@ class Player(Character):
                         if not self.amassed_terrain:
                             self.check_amassing_terrain()
                             self.amassed_terrain = True
+                        if not self.cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.cornering_maneuver = True
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded2)
                         discarded2.effect2 == "Attack"
@@ -3305,6 +3324,9 @@ class Player(Character):
                     if not self.amassed_terrain:
                         self.check_amassing_terrain()
                         self.amassed_terrain = True
+                    if not self.cornering_maneuver:
+                        self.check_cornering_maneuver(discarded)
+                        self.cornering_maneuver = True
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Attack"
@@ -3363,6 +3385,9 @@ class Player(Character):
                     discarded = (self.activate_dragon_heart("Reaction Defend"))
                     if discarded != None:
                         discarded.effect2 = "Defend"
+                        if not self.cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.cornering_maneuver = True
                         self.used_trigrams = False
                         return(discarded)
 
@@ -3376,6 +3401,7 @@ class Player(Character):
                 elif self.hand_cards.contents[card_index].effect == "Defend":
                     discarded = self.hand_cards.contents.pop(card_index)
                     self.check_amassing_terrain()
+                    self.check_cornering_maneuver(discarded)
                     self.check_one_after_another()
                     discard_deck.add_to_top(discarded)
                     discarded.effect2 = "Defend"
@@ -3430,6 +3456,9 @@ class Player(Character):
                     elif options_str[card_index] == " Character Ability >> Dragon Heart":
                         discarded = self.activate_dragon_heart(
                             "Reaction Attack")
+                        if not self.cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.cornering_maneuver = True
                         required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Horsebow":
@@ -3455,6 +3484,9 @@ class Player(Character):
                             if not self.amassed_terrain:
                                 self.check_amassing_terrain()
                                 self.amassed_terrain = True
+                            if not self.cornering_maneuver:
+                                self.check_cornering_maneuver(discarded)
+                                self.cornering_maneuver = True
                             self.check_one_after_another()
                             discard_deck.add_to_top(discarded2)
                             required -= 1
@@ -3464,6 +3496,9 @@ class Player(Character):
                         if not self.amassed_terrain:
                             self.check_amassing_terrain()
                             self.amassed_terrain = True
+                        if not self.cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.cornering_maneuver = True
                         self.check_one_after_another()
                         discard_deck.add_to_top(discarded)
                         discarded.effect2 = "Attack"
@@ -3576,6 +3611,7 @@ class Player(Character):
                     main_deck, cards_to_draw, False)
 
             self.check_lament(coerced, selected)
+            self.check_grudge(selected, "Damage")
             players[selected].check_bequeathed_strategy(damage_dealt)
             players[selected].check_delayed_wisdom()
             players[selected].check_eternal_loyalty(
@@ -3907,6 +3943,7 @@ class Player(Character):
                     f"  >> Character Ability: Fantasy; {self.character} draws {cards_to_draw} from the deck.")
                 players[selected].hand_cards.draw(
                     main_deck, cards_to_draw, False)
+            self.check_grudge(selected, "Damage")
             players[selected].check_bequeathed_strategy(damage_dealt)
             players[selected].check_delayed_wisdom()
             players[selected].check_eternal_loyalty(damage_dealt)
@@ -3936,7 +3973,10 @@ class Player(Character):
 
                 # Damage Resolution
                 self.current_health -= damage_dealt
-                players[selected].check_insanity(0, damage_dealt)
+                if selected2 == None:
+                    players[selected].check_insanity(0, damage_dealt)
+                else:
+                    players[selected].check_insanity(selected2, damage_dealt)
                 players[selected].check_tyrant()
                 print(
                     f"{players[selected].character} has won the DUEL! {self.character} takes {damage_dealt} damage! ({self.current_health}/{self.max_health} HP remaining)")
@@ -3948,6 +3988,10 @@ class Player(Character):
                             return (' ')
 
                 # Retaliatory Ability Checks
+                if selected2 == None:
+                    players[selected].check_grudge(0, "Damage")
+                else:
+                    players[selected].check_grudge(selected2, "Damage")
                 self.check_bequeathed_strategy(damage_dealt)
                 self.check_eternal_loyalty(damage_dealt)
                 self.check_evil_hero(discarded)
@@ -3993,6 +4037,7 @@ class Player(Character):
                     f"  >> Character Ability: Fantasy; {players[redirected].character} draws {cards_to_draw} from the deck.")
                 players[redirected].hand_cards.draw(
                     main_deck, cards_to_draw, False)
+                self.check_grudge(redirected, "Damage")
                 players[redirected].check_bequeathed_strategy(damage_dealt)
                 players[redirected].check_delayed_wisdom()
                 players[redirected].check_eternal_loyalty(damage_dealt)
@@ -4386,6 +4431,7 @@ class Player(Character):
                                 players[selected_index].hand_cards.draw(
                                     main_deck, cards_to_draw, False)
 
+                            self.check_grudge(selected_index, "Damage")
                             self.check_lament(user_index, selected_index)
                             players[selected_index].check_bequeathed_strategy(
                                 damage_dealt)
@@ -4540,6 +4586,55 @@ class Player(Character):
                 self.character_ability3 = "Blitz: In your action phase, you can use any of your TERRAINS as STEAL."
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
+
+    def check_cornering_maneuver(self, card):
+        # "Cornering Maneuver: Whenever you use a hand-card outside of your turn, you can flip the top card from the deck. If the card is the same type (basic, tool or equipment) as the card used, you can give the card to any player. If not, Zhao Yun can discard or return the card to the top of the deck."
+        if (self.character_ability2.startswith("Cornering Maneuver:") or self.character_ability3.startswith("Cornering Maneuver:")):
+            if self.character != players[0].character:
+                message = f"{self.character}: Activate Cornering Maneuver and reveal the top card of the deck?"
+                if question_yes_no(message):
+                    main_deck.check_if_empty()
+                    flipped_card = main_deck.remove_from_top()
+                    print(
+                        f"  >> Character Ability: Cornering Maneuver; {self.character} flipped {flipped_card} from the deck!")
+                    if (card.type == "Basic" and flipped_card.card.type == "Basic") or (card.type == "Tool" and flipped_card.card.type == "Tool"):
+                        options = []
+                        for player in players:
+                            options.append(
+                                str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please decide to whom you would like to distribute this card:',
+                                'choices': options,
+                                'filter': lambda player: options.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        player_index = answer.get('Selected')
+                        players[player_index].hand_cards.add_to_top(
+                            flipped_card)
+                        print(
+                            f"  >> Character Ability: Cornering Maneuver; {self.character} gave {flipped_card} to {players[player_index].character}!")
+                    else:
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Return {flipped_card} to top of deck or discard it?',
+                                'choices': ["Return to top of deck.", "Discard card."]
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        if answer == "Return to top of deck.":
+                            main_deck.add_to_top(flipped_card)
+                            print(
+                                f"  >> Character Ability: Cornering Maneuver; {self.character} returned {flipped_card} to the top of the deck!")
+                        else:
+                            discard_deck.add_to_top(flipped_card)
+                            print(
+                                f"  >> Character Ability: Cornering Maneuver; {self.character} placed {flipped_card} on the top of the discard deck!")
 
     def check_dark_sorcery(self, judgement_card):
         # "Dark Sorcery: You can exchange the judgement card of any player before it takes effect, with any of your CLUBS or SPADES, either on-hand or equipped."
@@ -5763,6 +5858,7 @@ class Player(Character):
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
                         self.check_lament(user_index, selected_index)
+                        self.check_grudge(selected_index, "Damage")
                         players[selected_index].check_bequeathed_strategy(
                             damage_dealt)
                         players[selected_index].check_delayed_wisdom()
@@ -6273,6 +6369,54 @@ class Player(Character):
                             self.activate_attack(attack_card, extra_targets[2])
                         return True
 
+    def check_grudge(self, target_index, mode="Damage"):
+        # "Grudge: Whenever someone damages you, they must give you a card of suit HEARTS from their hand. If they do not, they lose one unit of health. Whenever another player heals you, they draw a card from the deck."
+        if (players[target_index].character_ability1.startswith("Grudge:") or players[target_index].character_ability3.startswith("Grudge:")):
+            if self.character != players[target_index].character:
+                if mode == "Damage":
+                    if len(self.hand_cards.contents) > 0:
+                        options = self.create_nonblind_menu(True)
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Lose one unit of health.")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select a HEARTS card to give to {players[target_index].character} or lose one health:',
+                                'choices': options,
+                                'filter': lambda card: options.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        discarded_index = answer.get('Selected')
+                        if options[discarded_index] == "Lose one unit of health.":
+                            self.current_health -= 1
+                            print(
+                                f"  >> Character Ability: Grudge; {self.character} did not give a HEARTS card, and instead lost one unit of health ({self.current_health}/{self.max_health} HP remaining)!")
+                            for player_index, player in enumerate(players):
+                                player.check_brink_of_death_loop(
+                                    player_index, "Self")
+                        elif self.hand_cards.contents[discarded_index].suit == "Hearts":
+                            players[target_index].hand_cards.add_to_top(
+                                self.hand_cards.contents.pop(discarded_index))
+                            print(
+                                f"  >> Character Ability: Grudge; {players[target_index].character} was given a HEARTS card by {self.character}!")
+                        else:
+                            return self.check_grudge(target_index, "Damage")
+                    else:
+                        self.current_health -= 1
+                        print(
+                            f"  >> Character Ability: Grudge; {self.character} did not give a HEARTS card, and instead lost one unit of health ({self.current_health}/{self.max_health} HP remaining)!")
+                        for player_index, player in enumerate(players):
+                            player.check_brink_of_death_loop(
+                                player_index, "Self")
+
+                if mode == "Heal":
+                    print(
+                        f"  >> Character Ability: Grudge; {self.character} healed {players[target_index].character}, and therefore draws a card!")
+                    self.hand_cards.draw(main_deck, 1, False)
+
     def check_heartbreak(self, source_player_index=0):
         # "Heartbreak: Whenever a player kills you, they lose all of their character abilities for the rest of the game."
         if (self.character_ability2.startswith("Heartbreak:") or self.character_ability3.startswith("Heartbreak:")):
@@ -6361,6 +6505,7 @@ class Player(Character):
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
 
+                        self.check_grudge(selected_index, "Damage")
                         self.check_lament(user_index, selected_index)
                         players[selected_index].check_bequeathed_strategy(
                             damage_dealt)
@@ -6529,6 +6674,7 @@ class Player(Character):
                                     players[targeted_index].current_health += 1
                                     print(
                                         f"  >> Character Ability: Lament; {user.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
+                                    user.check_grudge(targeted_index, "Heal")
 
                         elif judgement_card.suit == "Spades":
                             players[source_player_index].flipped_char_card = True
@@ -6630,6 +6776,7 @@ class Player(Character):
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
 
+                        self.check_grudge(selected_index, "Damage")
                         players[selected_index].check_bequeathed_strategy(
                             damage_dealt)
                         players[selected_index].check_delayed_wisdom()
@@ -7005,6 +7152,8 @@ class Player(Character):
                                         players[dying_player_index].current_health += output_value
                                         print(
                                             f"  >> Character Ability: Relief; {self.character} has healed {players[dying_player_index].character} by using a PEACH ({players[dying_player_index].current_health}/{players[dying_player_index].max_health} HP remaining)!")
+                                        self.check_grudge(
+                                            dying_player_index, "Heal")
 
     def check_relish(self, source_player_index=0, mode="Activate"):
         # "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you."
@@ -8223,6 +8372,7 @@ class Player(Character):
                                     f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
                                 players[selected_index].hand_cards.draw(
                                     main_deck, cards_to_draw, False)
+                            self.check_grudge(selected_index, "Damage")
                             players[selected_index].check_bequeathed_strategy(
                                 damage_dealt)
                             players[selected_index].check_delayed_wisdom()
@@ -9058,6 +9208,7 @@ class Player(Character):
                             main_deck, cards_to_draw, False)
 
                     self.check_lament(0, selected_index)
+                    self.check_grudge(selected_index, "Damage")
                     players[selected_index].check_bequeathed_strategy(
                         damage_dealt)
                     players[selected_index].check_delayed_wisdom()
@@ -9163,6 +9314,7 @@ class Player(Character):
                     self.used_green_salve = True
                     print(
                         f"  >> Character Ability: Green Salve; {self.character} discarded {card} to heal {options[player_healed_index].character} by one! ({options[player_healed_index].current_health}/{options[player_healed_index].max_health} HP remaining)")
+                    self.check_grudge(player_healed_index, "Heal")
 
     def activate_marriage(self):
         # "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."
@@ -9248,7 +9400,6 @@ class Player(Character):
                     discarded2 = self.hand_cards.contents.pop(card2_index)
                     discard_deck.add_to_top(discarded2)
                     self.hand_cards.contents.remove("Placeholder")
-                    self.check_one_after_another()
                     if self.max_health > self.current_health:
                         self.current_health += 1
                         players[player_healed_index].current_health += 1
@@ -9258,6 +9409,7 @@ class Player(Character):
                         players[player_healed_index].current_health += 1
                         print(
                             f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
+                    self.check_grudge(player_healed_index, "Heal")
 
     def activate_reconsider(self):
         # "Reconsider: You can discard any number of cards to then draw the same number. Limited to one use per turn."
@@ -9846,6 +9998,7 @@ class Player(Character):
                 return self.start_end_phase()
             for player in players:
                 player.amassed_terrain = False
+                player.used_cornering_maneuver = False
                 player.used_trigrams = False
             print(' ')
             options = []
