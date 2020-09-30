@@ -436,7 +436,7 @@ wu_emperors = [
               "Lingering Spirit (INACTIVE Ability): If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum.",
               "Hegemony (Ruler Ability): During the action phase of any other Wu characters, they can choose to COMPETE against you; you both show a card simultaneously, and whoever has the higher value wins. If they do not win, you can take both cards used. After your awakening ability activates, you are able to refuse COMPETE effects."),
     Character("Sun Quan", "Wu", 4, "Male",
-              "Reconsider: Once per turn, you can discard any number of cards to then draw the same number.",
+              "Reconsider: You can discard any number of cards to then draw the same number. Limited to one use per turn.",
               "Rescued (Ruler Ability): Whenever another member of Wu uses a PEACH to save you from the brink of death, it provides you with two units of health.")
 ]
 
@@ -993,6 +993,7 @@ class Player(Character):
         self.rations_depleted_active = False
         self.awakened = False
         self.forms = CharacterDeck([])
+        self.refusing_death = []
         self.rites = []
         self.terrains = []
         self.previous_turn_health = None
@@ -1301,7 +1302,7 @@ class Player(Character):
             options.append("Empty Horse Slot")
         return(options)
 
-    def create_str_blind_menu(self):
+    def create_blind_menu(self):
         cards_discardable = (len(self.hand_cards.contents))
         if cards_discardable > 0:
             options_str = []
@@ -1314,7 +1315,7 @@ class Player(Character):
 
             return(options_str)
 
-    def create_str_semiblind_menu(self, append_judgements=False):
+    def create_semiblind_menu(self, append_judgements=False):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
             self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         if append_judgements == 1:
@@ -1362,7 +1363,7 @@ class Player(Character):
 
             return(options_str)
 
-    def create_str_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
+    def create_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
             self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         if append_judgements == 1:
@@ -1415,7 +1416,7 @@ class Player(Character):
 
             return(options_str)
 
-    def create_str_nohands_menu(self, append_judgements=False):
+    def create_nohands_menu(self, append_judgements=False):
         cards_discardable = (len(self.equipment_weapon) + len(self.equipment_armor) + len(
             self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         if append_judgements == 1:
@@ -1478,6 +1479,7 @@ class Player(Character):
 
             # Unmitigated Murder Loop
             if players[0].check_unmitigated_murder():
+                self.check_refusing_death("Brink of Death")
                 self.current_health += players[0].use_reaction_effect(
                     "Brink Of Death", None, dying_player_index, reacting_player_index)
                 if (players[dying_player_index].current_health < 1) and (players[0] != players[dying_player_index]):
@@ -1486,6 +1488,7 @@ class Player(Character):
 
             # Regular Brink of Death Loop
             else:
+                self.check_refusing_death("Brink of Death")
                 for player in players[dying_player_index:]:
                     if players[dying_player_index].current_health > 0:
                         break
@@ -1674,6 +1677,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Blitz")
             if (self.character_ability1.startswith("Blockade:") or self.character_ability3.startswith("Blockade:")):
                 char_abils.append(" Character Ability >> Blockade")
+            if (self.character_ability1.startswith("Blunt Advice:") or self.character_ability3.startswith("Blunt Advice:")):
+                char_abils.append(" Character Ability >> Blunt Advice")
             if (self.character_ability1.startswith("Brilliant Scheme:") or self.character_ability3.startswith("Brilliant Scheme")):
                 char_abils.append(" Character Ability >> Brilliant Scheme")
             if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
@@ -1821,7 +1826,7 @@ class Player(Character):
                     message = f"{self.character}: Would you like to discard two cards to force the damage against {players[target_index].character} ({players[target_index].current_health}/{players[target_index].max_health} HP remaining)?"
                     if question_yes_no(message):
                         num = 2
-                        options_str = self.create_str_nonblind_menu(
+                        options_str = self.create_nonblind_menu(
                             False, False, omit_item="Weapon")
                         options = self.create_actual_menu()
                         while num > 0:
@@ -1922,6 +1927,9 @@ class Player(Character):
 
         if mode == "Activate":
             self.discard_from_equip_or_hand(2)
+            self.check_amassing_terrain()
+            self.check_exertion(None, "Check")
+            self.check_one_after_another()
 
     def check_weapon_gender_swords(self, target_index=0, mode="Check"):
         if target_index == None:
@@ -2057,7 +2065,7 @@ class Player(Character):
                                 f"{self.character}: You cannot use this weapon effect as you need at least two hand-cards to do so.")
                             return [None, None, None, None, None]
 
-                        options_str = self.create_str_nonblind_menu(True)
+                        options_str = self.create_nonblind_menu(True)
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -2478,7 +2486,7 @@ class Player(Character):
                 self.check_wisdom()
                 granary = Player("Temporary")
                 granary.hand_cards.draw(main_deck, len(players), False)
-                options_str = granary.create_str_nonblind_menu(
+                options_str = granary.create_nonblind_menu(
                     only_hand_cards=True)
                 for player in players:
                     beauty = self.check_beauty(card)
@@ -3584,7 +3592,7 @@ class Player(Character):
         options_str = []
         options_str.append(
             Separator("--------------------Cards--------------------"))
-        playing_card_options_str = self.create_str_nonblind_menu(True)
+        playing_card_options_str = self.create_nonblind_menu(True)
         for card in playing_card_options_str:
             options_str.append(card)
         options_str.append(
@@ -3763,7 +3771,7 @@ class Player(Character):
                     discarded, extra_targets[2], coerced)
 
     def activate_dismantle(self, discarded, selected=0):
-        options_str = players[selected].create_str_semiblind_menu(True)
+        options_str = players[selected].create_semiblind_menu(True)
         question = [
             {
                 'type': 'list',
@@ -3843,6 +3851,7 @@ class Player(Character):
                     print(
                         f"{self.character} has destroyed {card_dismantled} from {players[selected].character}'s pending judgements by using DISMANTLE.")
         players[selected].check_amassing_terrain()
+        players[selected].check_exertion(None, "Check")
         players[selected].check_one_after_another()
 
     def activate_duel(self, discarded, selected, selected2=0):
@@ -3994,7 +4003,7 @@ class Player(Character):
         return (' ')
 
     def activate_steal(self, discarded, selected=0):
-        options_str = players[selected].create_str_semiblind_menu(True)
+        options_str = players[selected].create_semiblind_menu(True)
         question = [
             {
                 'type': 'list',
@@ -4071,11 +4080,12 @@ class Player(Character):
                     print(
                         f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements by using STEAL.")
         players[selected].check_amassing_terrain()
+        players[selected].check_exertion(None, "Check")
         players[selected].check_one_after_another()
 
     def discard_from_equip_or_hand(self, num=1):
         while num > 0:
-            options_str = self.create_str_nonblind_menu()
+            options_str = self.create_nonblind_menu()
             question = [
                 {
                     'type': 'list',
@@ -4139,8 +4149,15 @@ class Player(Character):
             discard_deck.add_to_top(self.equipment_defensive_horse.pop())
         if death == False:
             self.check_amassing_terrain()
+            self.check_exertion(None, "Check")
             self.check_one_after_another()
         if death:
+            for card in self.refusing_death:
+                discard_deck.add_to_top(card)
+            for card in self.rites:
+                discard_deck.add_to_top(card)
+            for card in self.terrains:
+                discard_deck.add_to_top(card)
             print(
                 f"{self.character} discarded {cards_discarded} card(s) upon their death.")
             for player in players:
@@ -4193,7 +4210,7 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Altruism; {self.character} has to give {players[selected_index].character} half of his hand-cards!")
                     while cards_to_give > 0:
-                        options = self.create_str_nonblind_menu(True)
+                        options = self.create_nonblind_menu(True)
                         question = [
                             {
                                 'type': 'list',
@@ -4266,7 +4283,7 @@ class Player(Character):
                 astrology = Player("Temporary")
                 astrology.hand_cards.draw(main_deck, cards_viewed, False)
                 for item in range(cards_viewed):
-                    options = astrology.create_str_nonblind_menu(True)
+                    options = astrology.create_nonblind_menu(True)
                     question = [
                         {
                             'type': 'list',
@@ -4433,7 +4450,7 @@ class Player(Character):
                     beq_strat.hand_cards.draw(main_deck, 2, False)
                     cards_to_distribute = 2
                     while cards_to_distribute > 0:
-                        options = beq_strat.create_str_nonblind_menu(True)
+                        options = beq_strat.create_nonblind_menu(True)
                         question = [
                             {
                                 'type': 'list',
@@ -4553,7 +4570,7 @@ class Player(Character):
                     return [False]
 
                 else:
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -4677,7 +4694,7 @@ class Player(Character):
                                 f"{self.character}: You cannot activate Deplete Karma as you have no red-cards in your hand.")
 
                         else:
-                            options = self.create_str_nonblind_menu(True)
+                            options = self.create_nonblind_menu(True)
                             options.append(
                                 Separator("--------------------Other--------------------"))
                             options.append("Cancel ability.")
@@ -4721,7 +4738,7 @@ class Player(Character):
                                 f"{self.character}: You cannot activate Deplete Karma as you have no black-cards in your hand.")
 
                         else:
-                            options = self.create_str_nonblind_menu(True)
+                            options = self.create_nonblind_menu(True)
                             options.append(
                                 Separator("--------------------Other--------------------"))
                             options.append("Cancel ability.")
@@ -4762,7 +4779,7 @@ class Player(Character):
                 if not question_yes_no(message):
                     return [False]
                 else:
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -4871,7 +4888,7 @@ class Player(Character):
                 if not question_yes_no(message):
                     return [False]
 
-                options_str = self.create_str_nonblind_menu()
+                options_str = self.create_nonblind_menu()
                 options_str.append(
                     Separator("--------------------Other--------------------"))
                 options_str.append("Cancel ability.")
@@ -5014,7 +5031,7 @@ class Player(Character):
                         if card.suit == "Spades" or card.suit == "Clubs":
                             usable_cards.append(card)
                     if len(usable_cards) > 0:
-                        options = self.create_str_nonblind_menu(True)
+                        options = self.create_nonblind_menu(True)
                         options.append(
                             Separator("--------------------Other--------------------"))
                         options.append("Cancel ability.")
@@ -5053,7 +5070,7 @@ class Player(Character):
                         if card.suit == "Hearts" or card.suit == "Diamonds":
                             usable_cards.append(card)
                     if len(usable_cards) > 0:
-                        options = self.create_str_nonblind_menu(True)
+                        options = self.create_nonblind_menu(True)
                         options.append(
                             Separator("--------------------Other--------------------"))
                         options.append("Cancel ability.")
@@ -5322,6 +5339,34 @@ class Player(Character):
                         print(
                             f"  >> Ruler Ability: Exalt; {self.character} has allowed 1 card to be added to {players[target_index].character}'s hand.")
 
+    def check_exertion(self, source_player_index=None, mode="Check"):
+        # "Exertion: Whenever another player has cards taken or discarded by another player, you can lose one health to let that player draw two cards."
+        for player_index, player in enumerate(players):
+            if (player.character_ability2.startswith("Exertion:") or player.character_ability3.startswith("Exertion:")):
+                user_index = player_index
+                break
+
+        if mode == "Check":
+            for player_index, player in enumerate(players):
+                if player.character == self.character:
+                    source_player_index = player_index
+                    break
+            if user_index != None:
+                players[user_index].check_exertion(
+                    source_player_index, "Reaction")
+
+        if mode == "Reaction":
+            if (self.character_ability2.startswith("Exertion:") or self.character_ability3.startswith("Exertion:")):
+                message = f"{self.character}: Choose to activate Exertion and lose 1 health ({self.current_health}/{self.max_health} HP remaining), to let {players[source_player_index].character} draw 2 cards?"
+                if self.character != players[source_player_index].character:
+                    if question_yes_no(message):
+                        self.current_health -= 1
+                        print(
+                            f"  >> Character Ability: Exertion; {self.character} has lost 1 health ({self.current_health}/{self.max_health} HP remaining), and allowed {players[source_player_index].character} to draw 2 cards!")
+                        self.check_brink_of_death_loop(user_index, "Self")
+                        players[source_player_index].hand_cards.draw(
+                            main_deck, 2, False)
+
     def check_exile(self):
         # "Exile: Every instance that you suffer damage, you can force any other player to draw X number of cards (X being the units of health you have missing from your maximum after damage). By doing so the targeted player will have to flip their character card. Flipped character cards must miss their next turn."
         if (self.character_ability2.startswith("Exile:") or self.character_ability3.startswith("Exile:")):
@@ -5470,6 +5515,7 @@ class Player(Character):
                 print(
                     f"{self.character} discarded two hand-cards due to {players[user_index].character}'s an Eye for an Eye.")
                 self.check_amassing_terrain()
+                self.check_exertion(None, "Check")
                 self.check_one_after_another()
 
     def check_false_ruler(self):
@@ -5534,7 +5580,7 @@ class Player(Character):
 
             message = f"{self.character}: Discard a HEARTS card to activate Fantasy, and redirect the incoming damage to another player? They, then draw X cards; X being the number of health points they have missing after the damage is passed."
             if question_yes_no(message):
-                options_str = self.create_str_nonblind_menu(True)
+                options_str = self.create_nonblind_menu(True)
                 options_str.append(
                     Separator("--------------------Other--------------------"))
                 options_str.append("Cancel ability.")
@@ -5599,7 +5645,7 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Fearsome Advance; {self.character} has activated Fearsome Advance, forcing {players[selected_index].character} to discard a card.")
 
-                    options_str = players[selected_index].create_str_semiblind_menu(
+                    options_str = players[selected_index].create_semiblind_menu(
                     )
                     question = [
                         {
@@ -5621,6 +5667,7 @@ class Player(Character):
                         print(
                             f"  >> Character Ability: Fearsome Advance; {self.character} has made {players[selected_index].character} discard {card_discarded} from their hand.")
                         players[selected_index].check_amassing_terrain()
+                        players[selected_index].check_exertion(None, "Check")
                         players[selected_index].check_one_after_another()
 
                     # Check if equipment-card
@@ -5763,7 +5810,7 @@ class Player(Character):
                             f"{self.character}: You cannot use this ability as you have no red-suited cards.")
 
                     else:
-                        options_str = self.create_str_nonblind_menu()
+                        options_str = self.create_nonblind_menu()
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -5883,7 +5930,7 @@ class Player(Character):
                                 draw_from_players -= 1
 
                         for player_index in selected_indexes:
-                            options = players[player_index].create_str_blind_menu(
+                            options = players[player_index].create_blind_menu(
                             )
                             question = [
                                 {
@@ -5902,6 +5949,7 @@ class Player(Character):
                             print(
                                 f"  >> Character Ability: Flexibility; {self.character} has drawn {card_stolen} from {players[player_index].character}'s hand.")
                             players[player_index].check_amassing_terrain()
+                            players[player_index].check_exertion(None, "Check")
                             players[player_index].check_one_after_another()
                         return True
 
@@ -5937,7 +5985,7 @@ class Player(Character):
                             answer = prompt(question, style=custom_style_2)
                             target_index = answer.get('Selected')
 
-                            options = players[target_index].create_str_nohands_menu(
+                            options = players[target_index].create_nohands_menu(
                                 True)
                             question = [
                                 {
@@ -6351,7 +6399,7 @@ class Player(Character):
                             f"{self.character}: You cannot use this ability as you have no black-suited cards in your hand.")
 
                     else:
-                        options_str = self.create_str_nonblind_menu(True)
+                        options_str = self.create_nonblind_menu(True)
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -6641,10 +6689,16 @@ class Player(Character):
                             if difference > cards_discardable:
                                 players[selected_index].discard_all_cards()
                                 players[selected_index].check_amassing_terrain()
+                                players[selected_index].check_exertion(
+                                    None, "Check")
+                                players[selected_index].check_one_after_another()
                             else:
                                 players[selected_index].discard_from_hand_or_equip(
                                     difference)
                                 players[selected_index].check_amassing_terrain()
+                                players[selected_index].check_exertion(
+                                    None, "Check")
+                                players[selected_index].check_one_after_another()
                         elif option_chosen == f"Draw {difference}, discard 1":
                             print(
                                 f"  >> Character Ability: Lingering Spirit; {self.character} has forced {players[selected_index].character} to draw {difference}, discard 1!")
@@ -6653,6 +6707,9 @@ class Player(Character):
                             players[selected_index].discard_from_hand_or_equip(
                                 1)
                             players[selected_index].check_amassing_terrain()
+                            players[selected_index].check_exertion(
+                                None, "Check")
+                            players[selected_index].check_one_after_another()
                     else:
                         print(
                             f"  >> Character Ability: Lingering Spirit; {self.character} has forced {players[selected_index].character} to draw 1, discard 1!")
@@ -6660,6 +6717,8 @@ class Player(Character):
                             main_deck, 1, False)
                         players[selected_index].discard_from_hand_or_equip(1)
                         players[selected_index].check_amassing_terrain()
+                        players[selected_index].check_exertion(None, "Check")
+                        players[selected_index].check_one_after_another()
 
     def check_mediocrity(self, phase="Draw"):
         # "Mediocrity: During your drawing phase, you draw an extra X cards, X being the total number of allegiances still in play. During your discard phase, you must discard at least as many card as there are allegiances still in play. If you have less cards than there are allegiances, you must discard all of them."
@@ -6720,7 +6779,7 @@ class Player(Character):
                     self.hand_cards.draw(main_deck, 1, False)
                     print(
                         f"  >> Character Ability: Plotting for Power; {self.character} has drawn one card.")
-                    options_str = self.create_str_nonblind_menu(True)
+                    options_str = self.create_nonblind_menu(True)
                     question = [
                         {
                             'type': 'list',
@@ -6791,7 +6850,7 @@ class Player(Character):
                         draw_from_players -= 1
 
                 for player_index in selected_indexes:
-                    options = players[player_index].create_str_blind_menu()
+                    options = players[player_index].create_blind_menu()
                     question = [
                         {
                             'type': 'list',
@@ -6809,6 +6868,7 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Raid; {self.character} has drawn {card_stolen} from {players[player_index].character}'s hand.")
                     players[player_index].check_amassing_terrain()
+                    players[player_index].check_exertion(None, "Check")
                     players[player_index].check_one_after_another()
                 return True
 
@@ -6875,6 +6935,33 @@ class Player(Character):
                 self.character_ability3 = "Astrology: Before your judgement phase, you can view the top X cards of the deck (X being the number of players still in play, with a maximum of five). Of these X cards, you can rearrange the order of the cards, and choose any number to place at the top or bottom of the draw-deck."
                 if self.max_health == 0:
                     self.check_brink_of_death_loop()
+
+    def check_refusing_death(self, mode="Brink of Death"):
+        # "Refusing Death: Whenever you are brought to the brink of death, you take a card from the deck and place it atop your character card. If the number on the card is different to all of the others, you return with one health. If the number matches another card, you discard this card and continue to be on the brink of death. When you have cards atop your character card, your hand limit becomes the number of cards atop your character card."
+        if (self.character_ability1.startswith("Refusing Death:") or self.character_ability3.startswith("Refusing Death:")):
+            if mode == "Brink of Death":
+                main_deck.check_if_empty()
+                refusing_death_card = main_deck.remove_from_top()
+                self.refusing_death.append(refusing_death_card)
+                card_numbers = []
+                for card in self.refusing_death:
+                    card_numbers.append(card.val)
+                print(f"{self.character}: Refusing Death Values: {card_numbers}")
+                if len(card_numbers) == len(set(card_numbers)):
+                    print(
+                        f"  >> Character Ability: Refusing Death; {self.character} has flipped a {refusing_death_card}! He returns with one health.")
+                    self.current_health = 1
+                else:
+                    discard_deck.add_to_top(self.refusing_death.pop())
+                    print(
+                        f"  >> Character Ability: Refusing Death; {self.character} has flipped a {refusing_death_card}, but discards it and remains on the brink of death!")
+                return False
+
+            if mode == "Discard":
+                if len(self.refusing_death) > 0:
+                    limit_increase = (len(self.refusing_death) - 1)
+                    return limit_increase
+        return False
 
     def check_relief(self):
         # "Relief: When anyone is on the brink of death, you are able to play an ATTACK on the player taking their turn. If you hit, no damage is dealt, and instead a PEACH is automatically used on the character on the brink of death. This can only be activated outside of your turn."
@@ -6998,7 +7085,7 @@ class Player(Character):
                 if cards_discardable > 0:
                     message = f"{self.character}: Choose to activate Retaliation, and take a card (on-hand or equipped) from {players[source_player_index].character}?"
                     if question_yes_no(message):
-                        options_str = players[source_player_index].create_str_semiblind_menu(
+                        options_str = players[source_player_index].create_semiblind_menu(
                         )
                         question = [
                             {
@@ -7022,6 +7109,8 @@ class Player(Character):
                             if not amassed:
                                 players[source_player_index].check_amassing_terrain()
                                 amassed = True
+                            players[source_player_index].check_exertion(
+                                None, "Check")
                             players[source_player_index].check_one_after_another()
 
                         # Check if equipment-card
@@ -7226,7 +7315,7 @@ class Player(Character):
                         stabilization = Player("Temporary")
                         stabilization.hand_cards.draw(
                             discard_deck, cards_discarded, False)
-                        options_str = stabilization.create_str_nonblind_menu(
+                        options_str = stabilization.create_nonblind_menu(
                             only_hand_cards=True)
                         question = [
                             {
@@ -7446,7 +7535,7 @@ class Player(Character):
                         f"{self.character}: You cannot use this ability as you have no black-suited cards.")
 
                 else:
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -7527,6 +7616,115 @@ class Player(Character):
                         print(
                             f"{options[discarded_index]} cannot be used as RATIONS DEPLETED as it is NOT a black-suited, basic/equipment card.")
 
+    def activate_blunt_advice(self):
+        # "Blunt Advice: During your action phase, you can put an on-hand equipment card in the equipment area of another character (you cannot replace something already equipped). If you do so, you draw a card."
+        if (self.character_ability1.startswith("Blunt Advice:") or self.character_ability3.startswith("Blunt Advice:")):
+            usable_cards = []
+            for card in self.hand_cards.contents:
+                if card.effect == "Weapon" or card.effect == "Armor" or card.effect == "-1 Horse" or card.effect == "+1 Horse":
+                    usable_cards.append(card)
+
+            if len(usable_cards) < 1:
+                print(
+                    f"{self.character}: You cannot use this ability as you do not have any equipment cards in your hand!")
+
+            else:
+                options = self.create_nonblind_menu(True)
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+                options = self.create_actual_menu()
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f"{self.character}: Please select an equipment card to pass to another player:",
+                        'choices': options,
+                        'filter': lambda card: options.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card_index = answer.get('Selected')
+                card = self.hand_cards.contents[card_index]
+                if (card.type != "Weapon" and card.type != "Armor" and card.type != "-1 Horse" and card.type != "+1 Horse"):
+                    print(
+                        f"{self.character}: You can't use this card as it is not an equipment card!")
+                    return None
+                else:
+                    self.hand_cards.contents.pop(card_index)
+
+                if card.type == "Weapon":
+                    for player in players:
+                        if len(player.equipment_weapon) == 0:
+                            options.append(str(
+                                player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                        else:
+                            options.append(Separator(
+                                "------" + str(player) + f" (has a weapon!)" + "------"))
+                elif card.type == "Armor":
+                    for player in players:
+                        if len(player.equipment_armor) == 0:
+                            options.append(str(
+                                player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                        else:
+                            options.append(Separator(
+                                "------" + str(player) + f" (has armor!)" + "------"))
+                elif card.type == "-1 Horse":
+                    for player in players:
+                        if len(player.equipment_offensive_horse) == 0:
+                            options.append(str(
+                                player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                        else:
+                            options.append(Separator(
+                                "------" + str(player) + f" (has a -1 horse!)" + "------"))
+                elif card.type == "+1 Horse":
+                    for player in players:
+                        if len(player.equipment_defensive_horse) == 0:
+                            options.append(str(
+                                player) + f" ///  W:[{len(player.equipment_weapon)}] / A:[{len(player.equipment_armor)}] / H:[{len(player.equipment_offensive_horse)}] / H:[{len(player.equipment_defensive_horse)}] / PJ:[{len(player.pending_judgements)}]")
+                        else:
+                            options.append(Separator(
+                                "------" + str(player) + f" (has a -1 horse!)" + "------"))
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select to whom you would like to donate {card}:',
+                        'choices': options,
+                        'filter': lambda player: options.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target_index = answer.get('Selected')
+
+                if card.type == "Weapon":
+                    players[target_index].equipment_weapon.append(card)
+                    players[target_index].weapon_range = card.weapon_range
+                    print(
+                        f"  >> Character Ability: Blunt Advice; {self.character} has placed {card} in the weapon-slot of {players[target_index].character}! {self.character} draws a card.")
+                    self.hand_cards.draw(main_deck, 1, False)
+
+                elif card.type == "Armor":
+                    players[target_index].equipment_armor.append(card)
+                    print(
+                        f"  >> Character Ability: Blunt Advice; {self.character} has placed {card} in the armor-slot of {players[target_index].character}! {self.character} draws a card.")
+                    self.hand_cards.draw(main_deck, 1, False)
+
+                elif card.type == "-1 Horse":
+                    players[target_index].equipment_offensive_horse.append(
+                        card)
+                    print(
+                        f"  >> Character Ability: Blunt Advice; {self.character} has placed {card} in the horse-slot of {players[target_index].character}! {self.character} draws a card.")
+                    self.hand_cards.draw(main_deck, 1, False)
+
+                elif card.type == "+1 Horse":
+                    players[target_index].equipment_defensive_horse.append(
+                        card)
+                    print(
+                        f"  >> Character Ability: Blunt Advice; {self.character} has placed {card} in the horse-slot of {players[target_index].character}! {self.character} draws a card.")
+                    self.hand_cards.draw(main_deck, 1, False)
+
     def activate_dragon_heart(self, mode="Check"):
         # "Dragon Heart: Your ATTACK and DEFEND cards can be used interchangeably."
         if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
@@ -7546,7 +7744,7 @@ class Player(Character):
                             f"{self.character}: You cannot use this ability as you have no ATTACK or DEFEND cards.")
 
                     else:
-                        options_str = self.create_str_nonblind_menu(True)
+                        options_str = self.create_nonblind_menu(True)
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -7615,7 +7813,7 @@ class Player(Character):
                         f"{self.character}: You cannot use this ability as you have no hand-cards that are SPADES.")
 
                 else:
-                    options_str = self.create_str_nonblind_menu(True)
+                    options_str = self.create_nonblind_menu(True)
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -7684,7 +7882,7 @@ class Player(Character):
                             f"{self.character}: You cannot use this ability as you have no EQUIPMENT cards.")
 
                     else:
-                        options_str = self.create_str_nonblind_menu()
+                        options_str = self.create_nonblind_menu()
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -7812,7 +8010,7 @@ class Player(Character):
                         f"{self.character}: You cannot use this ability as you have no DIAMOND-suited cards.")
 
                 else:
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -7897,7 +8095,7 @@ class Player(Character):
         # "Random Strike: You can use any two hand-cards which have the same suit as RAIN OF ARROWS."
         if (self.character_ability1.startswith("Random Strike:") or self.character_ability3.startswith("Random Strike:")):
             if len(self.hand_cards.contents) > 1:
-                options = self.create_str_nonblind_menu(True)
+                options = self.create_nonblind_menu(True)
                 options.append(
                     Separator("--------------------Other--------------------"))
                 options.append("Cancel ability.")
@@ -8140,7 +8338,7 @@ class Player(Character):
                         f"{self.character}: You cannot use this ability as you have no black-suited cards.")
 
                 else:
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -8270,7 +8468,7 @@ class Player(Character):
                             f"{self.character}: You cannot use this ability as you have no red-suited cards.")
 
                     else:
-                        options_str = self.create_str_nonblind_menu()
+                        options_str = self.create_nonblind_menu()
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel ability.")
@@ -8464,7 +8662,7 @@ class Player(Character):
                         else:
                             target = players[false_ruler_index]
 
-                options = self.create_str_nonblind_menu(True)
+                options = self.create_nonblind_menu(True)
                 options.append(
                     Separator("--------------------Other--------------------"))
                 options.append("Cancel ability.")
@@ -8507,7 +8705,7 @@ class Player(Character):
 
             else:
                 cards_to_donate = 0
-                options = self.create_str_nonblind_menu(True)
+                options = self.create_nonblind_menu(True)
                 options.append(
                     Separator("--------------------Other--------------------"))
                 options.append("No more cards.")
@@ -8608,7 +8806,7 @@ class Player(Character):
                     if options[scheme_index] == "Cancel ability.":
                         return (' ')
 
-                    options = self.create_str_nonblind_menu()
+                    options = self.create_nonblind_menu()
                     options.append(
                         Separator("--------------------Other--------------------"))
                     options.append("Cancel ability.")
@@ -8768,7 +8966,7 @@ class Player(Character):
                     return(' ')
 
                 if chosen_option == "Discard a weapon.":
-                    options_str = self.create_str_nonblind_menu(
+                    options_str = self.create_nonblind_menu(
                         False, False, "Non-weapon")
                     question = [
                         {
@@ -8907,7 +9105,7 @@ class Player(Character):
                     if options_str[player_healed_index] == "Cancel ability.":
                         return(' ')
 
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -9000,7 +9198,7 @@ class Player(Character):
                     if options[player_healed_index] == "Cancel ability.":
                         return (' ')
 
-                    options = self.create_str_nonblind_menu(True)
+                    options = self.create_nonblind_menu(True)
                     options.append(
                         Separator("--------------------Other--------------------"))
                     options.append("Cancel ability.")
@@ -9057,7 +9255,7 @@ class Player(Character):
                             f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
 
     def activate_reconsider(self):
-        # "Reconsider: Once per turn, you can discard any number of cards to then draw the same number."
+        # "Reconsider: You can discard any number of cards to then draw the same number. Limited to one use per turn."
         if (self.character_ability1.startswith("Reconsider:") or self.character_ability3.startswith("Reconsider:")):
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
@@ -9068,7 +9266,7 @@ class Player(Character):
 
             else:
                 cards_to_replace = 0
-                options = self.create_str_nonblind_menu()
+                options = self.create_nonblind_menu()
                 options.append(
                     Separator("--------------------Other--------------------"))
                 options.append("No more cards.")
@@ -9145,7 +9343,7 @@ class Player(Character):
                         f"{self.character}: You can only use Seed of Animosity once per turn.")
 
                 else:
-                    options_str = self.create_str_nonblind_menu()
+                    options_str = self.create_nonblind_menu()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     options_str.append("Cancel ability.")
@@ -9282,7 +9480,7 @@ class Player(Character):
                     if options[target_index] == "Cancel ability.":
                         return(' ')
                     else:
-                        options = self.create_str_nonblind_menu(True)
+                        options = self.create_nonblind_menu(True)
                         options.append(
                             Separator("--------------------Other--------------------"))
                         options.append("Cancel ability.")
@@ -9362,6 +9560,7 @@ class Player(Character):
                     cards_to_parse -= 1
 
                 self.check_amassing_terrain()
+                self.check_exertion(None, "Check")
                 self.check_one_after_another()
 
     def activate_taunt(self):
@@ -9414,7 +9613,7 @@ class Player(Character):
                     if cards_discardable > 0:
                         print(
                             f"  >> Character Ability: Taunt; {players[target_index].character} didn't ATTACK! {self.character} will discard one of their cards!")
-                        options = players[target_index].create_str_semiblind_menu(
+                        options = players[target_index].create_semiblind_menu(
                         )
                         options.append(
                             Separator("--------------------Other--------------------"))
@@ -9559,7 +9758,7 @@ class Player(Character):
             options = []
             options.append(
                 Separator("--------------------Cards--------------------"))
-            playing_card_options = self.create_str_nonblind_menu(True)
+            playing_card_options = self.create_nonblind_menu(True)
             for card in playing_card_options:
                 options.append(card)
             options.append(
@@ -9606,6 +9805,8 @@ class Player(Character):
                     self.activate_blitz()
                 if options[action_taken_index] == " Character Ability >> Blockade":
                     self.activate_blockade()
+                if options[action_taken_index] == " Character Ability >> Blunt Advice":
+                    self.activate_blunt_advice()
                 if options[action_taken_index] == " Character Ability >> Brilliant Scheme":
                     self.activate_brilliant_scheme("Activate")
                 if options[action_taken_index] == " Character Ability >> Dragon Heart":
@@ -9679,7 +9880,10 @@ class Player(Character):
             difference = mediocrity[1]
         else:
             # Check for characters that have increased hand-card limits at end of their turn
-            limit_increase = self.check_bloodline() + self.check_plotting_for_power(0, "Discard")
+            limit_increase1 = self.check_bloodline()
+            limit_increase2 = self.check_plotting_for_power(0, "Discard")
+            limit_increase3 = self.check_refusing_death("Discard")
+            limit_increase = limit_increase1 + limit_increase2 + limit_increase3
 
             # Discard down to your current health level
             if len(self.hand_cards.list_cards()) > (self.current_health + limit_increase):
