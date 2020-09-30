@@ -1704,7 +1704,7 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Reconsider")
             if self.character_ability3.startswith("Rejection:"):
                 char_abils.append(" Character Ability >> Rejection")
-            if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
+            if (self.role == "Emperor" or self.character_ability2.startswith("False Ruler:") or self.character_ability3.startswith("False Ruler:")) and (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
                 char_abils.append(" Ruler Ability >> Rouse")
             if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
                 char_abils.append(" Character Ability >> Seed of Animosity")
@@ -1716,6 +1716,9 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Taunt")
             if (self.character_ability1.startswith("Trojan Flesh:") or self.character_ability3.startswith("Trojan Flesh:")):
                 char_abils.append(" Character Ability >> Trojan Flesh")
+            if self.character_ability2.startswith("Upheaval (Single-Use Ability):"):
+                char_abils.append(
+                    " Character Ability >> Upheaval (Single-Use Ability)")
             if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
             return char_abils
@@ -1727,7 +1730,7 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Horsebow")
             if (self.character_ability2.startswith("Warrior Saint:") or self.character_ability3.startswith("Warrior Saint:")):
                 char_abils.append(" Character Ability >> Warrior Saint")
-            if (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
+            if (self.role == "Emperor" or self.character_ability2.startswith("False Ruler:") or self.character_ability3.startswith("False Ruler:")) and (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
                 char_abils.append(" Ruler Ability >> Rouse")
             return char_abils
 
@@ -3227,6 +3230,8 @@ class Player(Character):
                     message = f"{self.character}: You have opted to play an ATTACK against {players[0].character}; please choose a response (an ATTACK card or do nothing)!"
                 elif other_effect == "Taunt":
                     message = f"{self.character}: You have been TAUNTED by {players[0].character}. Please choose a response (an ATTACK card or do nothing)!"
+                elif other_effect == "Upheaval":
+                    message = f"{self.character}: Please choose a response (an ATTACK card), or take one damage!"
                 elif other_effect == "Rouse":
                     message = f"{self.character}: You have been requested to play an ATTACK by {players[reacting_player_index].character}; please choose a response (an ATTACK card or do nothing)!"
                 else:
@@ -3477,7 +3482,7 @@ class Player(Character):
             source_player_index=coerced)
         if redirect[0]:
             return self.activate_attack(discarded, redirect[1], coerced, discarded2)
-        elif players[selected].check_relish(source_player_index=0, mode="Activate"):
+        elif players[selected].check_relish(source_player_index=coerced, mode="Activate"):
             return(' ')
         elif players[selected].used_delayed_wisdom:
             return(' ')
@@ -4519,7 +4524,7 @@ class Player(Character):
                     self.role, players[dying_player_index].role = players[dying_player_index].role, self.role
                     self.character_ability2 = "Burning Heart (INACTIVE Ability): When you kill another character, you can exchange role cards with the player you just killed. You cannot activate this ability if you are the emperor, or just killed the emperor."
                     print(
-                        f"  >> Character Ability: Burning Heart; {self.character} has swapped role cards with {players[dying_player_index]}")
+                        f"  >> Character Ability: Burning Heart; {self.character} has swapped role cards with {players[dying_player_index]}!")
 
     def check_conduit(self):
         # "Conduit (Awakening Ability): At the beginning of your turn, if you have three or more TERRAINS, you must reduce your maximum health by one unit. You then permanently gain the ability 'Blitz'."
@@ -7008,7 +7013,7 @@ class Player(Character):
                 cards_discardable = len(
                     players[source_player_index].hand_cards.contents)
                 if cards_discardable > 0:
-                    if not (players[source_player_index].check_relish(0, "Reaction")):
+                    if not (players[source_player_index].check_relish(source_player_index, "Reaction")):
                         return True
                 else:
                     print(
@@ -7029,7 +7034,7 @@ class Player(Character):
                 {
                     'type': 'list',
                     'name': 'Selected',
-                    'message': f'{self.character} - You cannot affect {players[relish_player_index].character} with an ATTACK unless you discard another basic card.',
+                    'message': f'{players[source_player_index].character} - You cannot affect {players[relish_player_index].character} with an ATTACK unless you discard another basic card.',
                     'choices': options_str,
                     'filter': lambda card: options_str.index(card)
                 },
@@ -7038,19 +7043,19 @@ class Player(Character):
             card_index = answer.get('Selected')
             if options_str[card_index] == "Do nothing.":
                 print(
-                    f"  >> Character Ability: Relish; {self.character} didn't discard a basic card! {players[relish_player_index].character} is unaffected.")
+                    f"  >> Character Ability: Relish; {players[source_player_index].character} didn't discard a basic card! {players[relish_player_index].character} is unaffected.")
                 return False
             card = self.hand_cards.contents.pop(card_index)
             discard_deck.add_to_top(card)
 
             if card.type == "Basic":
                 print(
-                    f"  >> Character Ability: Relish; {self.character} has discarded a basic card! {players[relish_player_index].character} must DEFEND as normal.")
+                    f"  >> Character Ability: Relish; {players[source_player_index].character} has discarded a basic card! {players[relish_player_index].character} must DEFEND as normal.")
                 self.check_one_after_another()
                 return True
             else:
                 print(
-                    f"  >> Character Ability: Relish; {self.character} didn't discard a basic card! {players[relish_player_index].character} is unaffected.")
+                    f"  >> Character Ability: Relish; {players[source_player_index].character} didn't discard a basic card! {players[relish_player_index].character} is unaffected.")
                 self.hand_cards.draw(discard_deck, 1, False)
                 return False
 
@@ -9678,6 +9683,94 @@ class Player(Character):
                                 players[target_index].check_warrior_woman()
                 self.used_taunt = True
 
+# Activatable abilities (once-per-game)
+    def activate_upheaval(self):
+        # "Upheaval (Single-Use Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right."
+        if self.character_ability2.startswith("Upheaval (Single-Use Ability):"):
+            message = f"{self.character}: Confirm you want to use Upheaval? Note this can only be used ONCE PER GAME!"
+            if question_yes_no(message):
+                print(
+                    f"  >> Character Ability: Upheaval (Single-Use Ability); {self.character} has forced every player to attack a player. If they do not, they lose 1 health!")
+                for player_index, player in enumerate(players):
+                    if player.character != self.character:
+                        options = player.create_targeting_menu(
+                            "Weapon", player_index)
+                        options.append(
+                            Separator("--------------------Other--------------------"))
+                        options.append("Do not attack.")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{player.character}: Please a select a target to ATTACK, or lose one health:',
+                                'choices': options,
+                                'filter': lambda player: options.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        target_index = answer.get('Selected')
+                        if options[target_index] == "Do not attack.":
+                            player.current_health -= 1
+                            print(
+                                f"{player.character} chose not to ATTACK, they lose one health ({player.current_health}/{player.max_health} HP remaining)!")
+                            for player in players:
+                                player.check_relief()
+                            if player.current_health < 1:
+                                player.check_brink_of_death_loop(
+                                    player_index, 0)
+
+                        else:
+                            card_played = Card(
+                                0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
+                            discarded = players[player_index].use_reaction_effect(
+                                "Attack", 1, card_played, player_index, target_index, "Upheaval")
+                            if type(discarded) == Card:
+                                if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                                    discarded.effect2 = "Attack"
+                                    players[player_index].activate_attack(
+                                        discarded, target_index, player_index)
+                            else:
+                                print(
+                                    f"{player.character} chose not to ATTACK, they lose one health ({player.current_health}/{player.max_health} HP remaining)!")
+                                player.current_health -= 1
+                                for player in players:
+                                    player.check_relief()
+                                if player.current_health < 1:
+                                    player.check_brink_of_death_loop(
+                                        player_index, 0)
+
+                options = self.create_targeting_menu("Weapon", 0)
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Do not attack.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please a select a target to ATTACK, or do nothing:',
+                        'choices': options,
+                        'filter': lambda player: options.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target_index = answer.get('Selected')
+                if options[target_index] == "Do not attack.":
+                    pass
+
+                else:
+                    card_played = Card(
+                        0, 'NONE', 'NONE', 'Tool', 'Barbarians', 'NONE', None, 'Barbarians')
+                    discarded = self.use_reaction_effect(
+                        "Attack", 1, card_played, 0, target_index, "Upheaval")
+                    if type(discarded) == Card:
+                        if (discarded.effect == "Attack") or (discarded.effect2 == "Attack"):
+                            discarded.effect2 = "Attack"
+                            self.activate_attack(discarded, target_index, 0)
+
+            self.awakened = True
+            self.character_ability2 == "Upheaval (INACTIVE Ability): During your action phase, you can force every player, other than yourself, to use an ATTACK on another player with the least distance away. If a player is unable to do so, the player will lose one unit of health. Recipients of the ATTACK need to DEFEND to evade. This ability will proceed in succession starting from the player on your right."
+            print("Upheaval has CONCLUDED!")
+
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
@@ -9841,6 +9934,8 @@ class Player(Character):
                     self.activate_taunt()
                 if options[action_taken_index] == " Character Ability >> Trojan Flesh":
                     self.activate_trojan_flesh()
+                if options[action_taken_index] == " Character Ability >> Upheaval (Single-Use Ability)":
+                    self.activate_upheaval()
                 if options[action_taken_index] == " Character Ability >> Warrior Saint":
                     self.activate_warrior_saint("Activate")
                 if options[action_taken_index] == " Ruler Ability >> Amber Sky":
