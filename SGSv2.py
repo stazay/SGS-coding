@@ -1007,6 +1007,8 @@ class Player(Character):
         self.armor_popped = False
         self.off_horse_popped = False
         self.def_horse_popped = False
+        self.tools_disabled = False
+        self.tools_immunity = False
 
     def __repr__(self):
         character_details = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining"
@@ -2227,7 +2229,9 @@ class Player(Character):
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use a BLACK ATTACK against {players[selected]}."
-                    if question_yes_no(message):
+                    if not question_yes_no(message):
+                        return False
+                    else:
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
                         self.hand_cards.contents.insert(
@@ -2238,14 +2242,59 @@ class Player(Character):
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
-                        return True
+                        if not self.card_double:
+                            return True
                 else:
                     print(
                         f"{self.character}: You have insufficient range to reach anyone with {card}.")
             elif (self.attacks_this_turn > 0):
                 print(
                     f"{self.character}: You can only play one ATTACK card per turn.")
-            return False
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to ATTACK.',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                if players[selected].check_empty_city():
+                    return False
+                if players[selected].used_delayed_wisdom:
+                    return False
+
+                print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                message = f"{self.character}: Please confirm you would like to use a BLACK ATTACK against {players[selected]}."
+                if question_yes_no(message):
+                    extra_targets = self.check_weapon_sky_scorcher_halberd(
+                        selected)
+                    if (extra_targets == None) or (extra_targets[0] == 0):
+                        self.activate_attack(card, selected)
+                    elif (extra_targets[0] == 1):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                    elif (extra_targets[0] == 2):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                        self.activate_attack(card, extra_targets[2])
+                    self.activate_attack(card1, selected, card2)
 
         if card.effect2 == "Red Attack":
             if (self.attacks_this_turn == 0) or (self.check_berserk()) or (self.check_weapon_zhuge_crossbow()):
@@ -2272,7 +2321,9 @@ class Player(Character):
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use a RED ATTACK against {players[selected]}."
-                    if question_yes_no(message):
+                    if not question_yes_no(message):
+                        return False
+                    else:
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
                         self.hand_cards.contents.insert(
@@ -2283,14 +2334,59 @@ class Player(Character):
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
-                        return True
+                        if not self.card_double:
+                            return True
                 else:
                     print(
                         f"{self.character}: You have insufficient range to reach anyone with {card}.")
             elif (self.attacks_this_turn > 0):
                 print(
                     f"{self.character}: You can only play one ATTACK card per turn.")
-            return False
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to ATTACK.',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                if players[selected].check_empty_city():
+                    return False
+                if players[selected].used_delayed_wisdom:
+                    return False
+
+                print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                message = f"{self.character}: Please confirm you would like to use a RED ATTACK against {players[selected]}."
+                if question_yes_no(message):
+                    extra_targets = self.check_weapon_sky_scorcher_halberd(
+                        selected)
+                    if (extra_targets == None) or (extra_targets[0] == 0):
+                        self.activate_attack(card, selected)
+                    elif (extra_targets[0] == 1):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                    elif (extra_targets[0] == 2):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                        self.activate_attack(card, extra_targets[2])
+                    self.activate_attack(card1, selected, card2)
 
         if card.effect2 == "Colourless Attack":
             if (self.attacks_this_turn == 0) or (self.check_berserk()) or (self.check_weapon_zhuge_crossbow()):
@@ -2317,7 +2413,9 @@ class Player(Character):
 
                     print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use a COLOURLESS ATTACK against {players[selected]}."
-                    if question_yes_no(message):
+                    if not question_yes_no(message):
+                        return False
+                    else:
                         self.attacks_this_turn += 1
                         card1 = self.hand_cards.contents.pop(card_index)
                         self.hand_cards.contents.insert(
@@ -2328,14 +2426,59 @@ class Player(Character):
                         self.hand_cards.contents.remove("Placeholder")
                         self.check_one_after_another()
                         self.activate_attack(card1, selected, card2)
-                        return True
+                        if not self.card_double:
+                            return True
                 else:
                     print(
                         f"{self.character}: You have insufficient range to reach anyone with {card}.")
             elif (self.attacks_this_turn > 0):
                 print(
                     f"{self.character}: You can only play one ATTACK card per turn.")
-            return False
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to ATTACK.',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                if players[selected].check_empty_city():
+                    return False
+                if players[selected].used_delayed_wisdom:
+                    return False
+
+                print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                message = f"{self.character}: Please confirm you would like to use a COLOURLESS ATTACK against {players[selected]}."
+                if question_yes_no(message):
+                    extra_targets = self.check_weapon_sky_scorcher_halberd(
+                        selected)
+                    if (extra_targets == None) or (extra_targets[0] == 0):
+                        self.activate_attack(card, selected)
+                    elif (extra_targets[0] == 1):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                    elif (extra_targets[0] == 2):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                        self.activate_attack(card, extra_targets[2])
+                    self.activate_attack(card1, selected, card2)
 
         # card.type == 'Basic':
         elif card.effect2 == 'Attack':
@@ -2363,7 +2506,9 @@ class Player(Character):
 
                     print(f"{card} - ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                     message = f"{self.character}: Please confirm you would like to use {card} against {players[selected]}."
-                    if question_yes_no(message):
+                    if not question_yes_no(message):
+                        return False
+                    else:
                         self.attacks_this_turn += 1
                         if card_index == "Special":
                             pass
@@ -2383,14 +2528,58 @@ class Player(Character):
                             self.activate_attack(card, selected)
                             self.activate_attack(card, extra_targets[1])
                             self.activate_attack(card, extra_targets[2])
-                        return True
+                        if not self.card_double:
+                            return True
                 else:
                     print(
                         f"{self.character}: You have insufficient range to reach anyone with {card}.")
             elif (self.attacks_this_turn > 0):
                 print(
                     f"{self.character}: You can only play one ATTACK card per turn.")
-            return False
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to ATTACK.',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                if players[selected].check_empty_city():
+                    return False
+                if players[selected].used_delayed_wisdom:
+                    return False
+
+                print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
+                message = f"{self.character}: Please confirm you would like to use {card} against {players[selected]}."
+                if question_yes_no(message):
+                    extra_targets = self.check_weapon_sky_scorcher_halberd(
+                        selected)
+                    if (extra_targets == None) or (extra_targets[0] == 0):
+                        self.activate_attack(card, selected)
+                    elif (extra_targets[0] == 1):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                    elif (extra_targets[0] == 2):
+                        self.activate_attack(card, selected)
+                        self.activate_attack(card, extra_targets[1])
+                        self.activate_attack(card, extra_targets[2])
 
         elif card.effect2 == 'Defend':
             print(
@@ -2415,6 +2604,34 @@ class Player(Character):
                 print(
                     f"{self.character}: {card} cannot currently be used on yourself as you are at full-health.")
 
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    if player.max_health > player.current_health:
+                        options_str.append(str(player))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a secondary character to PEACH.',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                else:
+                    players[selected].current_health += 1
+                    print(
+                        f"{self.character} has used a PEACH to heal {players[selected]} by one from {self.current_health -1} to {self.current_health}.")
+                    self.check_grudge(selected, "Heal")
+
         # card.type == 'Tool':
         elif card.effect2 == 'Barbarians':
             print(f"{card} - BARBARIANS - {card.flavour_text}")
@@ -2426,9 +2643,34 @@ class Player(Character):
                     self.hand_cards.contents.pop(card_index))
                 self.check_one_after_another()
                 self.check_wisdom()
+
+                if self.card_double:
+                    options_str = [
+                        (Separator("------<Cannot target yourself>------"))]
+                    for player in players[1:]:
+                        options_str.append(str(player))
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("No second target")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a character to prevent being affected by BARBARIANS:',
+                            'choices': options_str,
+                            'filter': lambda player: options_str.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    selected = answer.get('Selected')
+                    if options_str[selected] == "No second target":
+                        pass
+                    else:
+                        players[selected].tools_immunity = True
+
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player_index, player in enumerate(players):
-                    if (player != players[0]) and (player.current_health > 0):
+                    if (player != players[0]) and (player.current_health > 0) and (not player.tools_immunity):
                         beauty = self.check_beauty(card)
                         if (not player.check_behind_the_curtain(card, beauty)) and (not player.check_giant_elephant(card, "Reaction")) and (not player.used_delayed_wisdom):
                             barb_response = player.use_reaction_effect(
@@ -2503,29 +2745,59 @@ class Player(Character):
                     self.hand_cards.contents.pop(card_index))
                 self.check_one_after_another()
                 self.check_wisdom()
+
+                if self.card_double:
+                    options_str = [
+                        (Separator("------<Cannot target yourself>------"))]
+                    for player in players[1:]:
+                        options_str.append(str(player))
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("No second target")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a character to prevent being affected by GRANARY:',
+                            'choices': options_str,
+                            'filter': lambda player: options_str.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    selected = answer.get('Selected')
+                    if options_str[selected] == "No second target":
+                        pass
+                    else:
+                        players[selected].tools_immunity = True
+
+                # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 granary = Player("Temporary")
                 granary.hand_cards.draw(main_deck, len(players), False)
                 options_str = granary.create_nonblind_menu(
                     only_hand_cards=True)
                 for player in players:
-                    beauty = self.check_beauty(card)
-                    if (not player.check_behind_the_curtain(card, beauty)) and (not player.used_delayed_wisdom):
-                        question = [
-                            {
-                                'type': 'list',
-                                'name': 'Selected',
-                                'message': f'{player.character}: Please select which card you would like to take:',
-                                'choices': options_str,
-                                'filter': lambda card: options_str.index(card)
-                            },
-                        ]
-                        answer = prompt(question, style=custom_style_2)
-                        card_index = answer.get('Selected')
-                        drawn = granary.hand_cards.contents.pop(card_index)
-                        player.hand_cards.add_to_top(drawn)
-                        options_str.pop(card_index)
-                        print(
-                            f"{player.character} has taken {drawn} via GRANARY!")
+                    if not player.tools_immunity:
+                        beauty = self.check_beauty(card)
+                        if (not player.check_behind_the_curtain(card, beauty)) and (not player.used_delayed_wisdom):
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{player.character}: Please select which card you would like to take:',
+                                    'choices': options_str,
+                                    'filter': lambda card: options_str.index(card)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            card_index = answer.get('Selected')
+                            drawn = granary.hand_cards.contents.pop(card_index)
+                            player.hand_cards.add_to_top(drawn)
+                            options_str.pop(card_index)
+                            print(
+                                f"{player.character} has taken {drawn} via GRANARY!")
+
+                for item in granary.hand_cards.contents:
+                    discard_deck.add_to_top(granary.hand_cards.remove_from_top)
 
         elif card.effect2 == 'Peach Gardens':
             print(f"{card} - PEACH GARDENS - {card.flavour_text}")
@@ -2537,13 +2809,40 @@ class Player(Character):
                     self.hand_cards.contents.pop(card_index))
                 self.check_one_after_another()
                 self.check_wisdom()
+
+                if self.card_double:
+                    options_str = [
+                        (Separator("------<Cannot target yourself>------"))]
+                    for player in players[1:]:
+                        options_str.append(str(player))
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("No second target")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please select a character to prevent being affected by PEACH GARDENS:',
+                            'choices': options_str,
+                            'filter': lambda player: options_str.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    selected = answer.get('Selected')
+                    if options_str[selected] == "No second target":
+                        pass
+                    else:
+                        players[selected].tools_immunity = True
+
+                # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player in players:
                     beauty = self.check_beauty(card)
                     if (not player.check_behind_the_curtain(card, beauty)) and (not player.used_delayed_wisdom):
-                        if player.max_health > player.current_health:
-                            player.current_health += 1
-                            print(
-                                f"{player.character} has been healed by one. ({player.current_health}/{player.max_health} HP remaining)")
+                        if not player.tools_immunity:
+                            if player.max_health > player.current_health:
+                                player.current_health += 1
+                                print(
+                                    f"{player.character} has been healed by one. ({player.current_health}/{player.max_health} HP remaining)")
 
         elif card.effect2 == 'Rain of Arrows':
             print(
@@ -2561,9 +2860,34 @@ class Player(Character):
                     self.hand_cards.contents.pop(card_index))
             self.check_one_after_another()
             self.check_wisdom()
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a character to prevent being affected by RAIN OF ARROWS:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    pass
+                else:
+                    players[selected].tools_immunity = True
+
             # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
             for player_index, player in enumerate(players):
-                if (player != players[0]) and (player.current_health > 0):
+                if (player != players[0]) and (player.current_health > 0) and (not player.tools_immunity):
                     beauty = self.check_beauty(card)
                     if (not player.check_behind_the_curtain(card, beauty)) and (not player.used_delayed_wisdom):
                         roa_response = player.use_reaction_effect(
@@ -2704,7 +3028,68 @@ class Player(Character):
                         self.check_wisdom()
                         players[selected].activate_coerce(
                             card, selected, attacked)
-                        return True
+                        if not self.card_double:
+                            return True
+
+                        if self.card_double:
+                            possible_targets -= 1
+                            options_str = [
+                                (Separator("------<Cannot target yourself>------"))]
+                            for player in players[1:]:
+                                options_str.append(str(player))
+                            options_str.pop(selected)
+                            options_str.insert(selected, (Separator(
+                                "------<Already targetted>------")))
+                            options_str.append(
+                                Separator("--------------------Other--------------------"))
+                            options_str.append("No second target")
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select a secondary character to target with {card}:',
+                                    'choices': options_str,
+                                    'filter': lambda player: options_str.index(player)
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            selected = answer.get('Selected')
+                            if options_str[selected] == "No second target":
+                                return False
+                            beauty = self.check_beauty(card)
+                            if players[selected].check_behind_the_curtain(card, beauty):
+                                return False
+
+                            if len(players[selected].calculate_targets_in_weapon_range(selected)) > 0:
+                                options_str = players[selected].create_targeting_menu(
+                                    "Weapon", selected)
+                                options_str.append(
+                                    Separator("--------------------Other--------------------"))
+                                options_str.append("Cancel")
+
+                                question = [
+                                    {
+                                        'type': 'list',
+                                        'name': 'Selected',
+                                        'message': f'{self.character}: Please select a target for {players[selected].character} to ATTACK!',
+                                        'choices': options_str,
+                                        'filter': lambda player: options_str.index(player)
+                                    },
+                                ]
+                                answer = prompt(question, style=custom_style_2)
+                                attacked = answer.get('Selected')
+                                if options_str[attacked] == "Cancel":
+                                    return False
+                                if players[attacked].used_delayed_wisdom:
+                                    return False
+                                else:
+                                    print(
+                                        f"{self.character} has coerced {players[selected].character} into attacking {players[attacked].character}. If they refuse, {self.character} gets their weapon.")
+                                    discard_deck.add_to_top(self.hand_cards.contents.pop(
+                                        card_index))
+                                    players[selected].activate_coerce(
+                                        card, selected, attacked)
+                            return True
 
         elif card.effect2 == 'Dismantle':
             options_str = list_character_options(players)
@@ -2752,7 +3137,48 @@ class Player(Character):
                 self.check_one_after_another()
                 self.check_wisdom()
                 self.activate_dismantle(card, selected)
-                return True
+                if not self.card_double:
+                    return True
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a secondary character to target with {card}:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                elif players[selected].used_delayed_wisdom:
+                    return False
+                beauty = self.check_beauty(card)
+                if players[selected].check_behind_the_curtain(card, beauty):
+                    return False
+
+                cards_discardable = (len(players[selected].hand_cards.contents) + len(players[selected].equipment_weapon) + len(
+                    players[selected].equipment_armor) + len(players[selected].equipment_offensive_horse) + len(players[selected].equipment_defensive_horse) + len(players[selected].pending_judgements))
+                if cards_discardable == 0:
+                    print(
+                        f"{players[selected].character} has no cards that can be dismantled.")
+                    return False
+                if cards_discardable > 0:
+                    self.activate_dismantle(card, selected)
+                    return True
 
         elif card.effect2 == 'Duel':
             options_str = []
@@ -2797,7 +3223,44 @@ class Player(Character):
             players[selected].check_ardour(card)
             self.check_one_after_another()
             self.activate_duel(card, selected)
-            return True
+            if not self.card_double:
+                return True
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a secondary character to target with {card}:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                elif players[selected].check_empty_city():
+                    return False
+                elif players[selected].used_delayed_wisdom:
+                    return False
+                beauty = self.check_beauty(card)
+                if players[selected].check_behind_the_curtain(card, beauty):
+                    return False
+
+                players[selected].check_ardour(card)
+                self.activate_duel(card, selected)
+                return True
 
         elif card.effect2 == 'Negate':
             print(
@@ -2816,6 +3279,30 @@ class Player(Character):
                 self.check_wisdom()
                 print(f"{self.character} has played {card}.")
                 self.hand_cards.draw(main_deck, 2)
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a secondary character to target with {card}:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                else:
+                    players[selected].hand_cards.draw(main_deck, 2, False)
 
         elif card.effect2 == 'Steal':
             choices_index = self.calculate_targets_in_physical_range(
@@ -2868,11 +3355,54 @@ class Player(Character):
                     self.check_one_after_another()
                     self.check_wisdom()
                     self.activate_steal(card, selected)
-                    return True
+                    if not self.card_double:
+                        return True
             else:
                 print(
                     f"{self.character}: You have insufficient range to reach anyone with {card}.")
                 return False
+
+            if self.card_double:
+                options_str = [
+                    (Separator("------<Cannot target yourself>------"))]
+                for player in players[1:]:
+                    options_str.append(str(player))
+                options_str.pop(selected)
+                options_str.insert(selected, (Separator(
+                    "------<Already targetted>------")))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("No second target")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a secondary character to target with {card}:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                selected = answer.get('Selected')
+                if options_str[selected] == "No second target":
+                    return False
+                elif players[selected].check_humility():
+                    return False
+                elif players[selected].used_delayed_wisdom:
+                    return False
+                beauty = self.check_beauty(card)
+                if players[selected].check_behind_the_curtain(card, beauty):
+                    return False
+
+                cards_discardable = (len(players[selected].hand_cards.contents) + len(players[selected].equipment_weapon) + len(players[selected].equipment_armor) + len(
+                    players[selected].equipment_offensive_horse) + len(players[selected].equipment_defensive_horse) + len(players[selected].pending_judgements))
+                if cards_discardable == 0:
+                    print(
+                        f"{players[selected].character} has no cards that can be stolen.")
+                    return False
+                else:
+                    self.activate_steal(card, selected)
+                    return True
 
         # card.type == 'Delay-Tool':
         elif card.effect2 == 'Acedia':
@@ -6749,12 +7279,12 @@ class Player(Character):
                     },
                 ]
                 answer = prompt(question, style=custom_style_2)
-                target_index = answer.get('Selected')
-                if options[target_index] == "Cancel ability.":
+                selected_index = answer.get('Selected')
+                if options[selected_index] == "Cancel ability.":
                     return(' ')
                 else:
                     my_card = self.activate_compete()
-                    their_card = players[target_index].activate_compete()
+                    their_card = players[selected_index].activate_compete()
                     if my_card > their_card:
                         print(
                             f"  >> Character Ability: Persuasion; {self.character} won vs {players[selected_index].character} in their COMPETITION! He can increase/decrease targets on his next tool-card!")
@@ -9556,6 +10086,7 @@ class Player(Character):
 
 # Action Phase
     def start_action_phase(self):
+        self.check_persuasion()
         if self.check_flexibility("Action") or self.check_godspeed("Action"):
             return self.start_discard_phase()
         action_phase_active = True
@@ -9612,9 +10143,10 @@ class Player(Character):
                 if (self.tools_disabled) and (card.type == "Tool"):
                     print(
                         f"  >> Character Ability: Persuasion; You cannot use tool cards this turn as you lost your COMPETITION!")
-                    return(' ')
-                card.effect2 = card.effect
-                self.use_card_effect(card_index, card)
+                else:
+                    card.effect2 = card.effect
+                    self.use_card_effect(card_index, card)
+                    self.card_double = False
 
             # For activating an ability
             else:
