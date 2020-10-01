@@ -520,7 +520,7 @@ wei_characters = [
     Character("Xu Huang", "Wei", 4, "Male",
               "Blockade: During your action phase, you can choose to use any of your basic or equipment cards with suit \u2663 or \u2660 as RATIONS DEPLETED with a physical range of -1 in distance calculations. RATIONS DEPLETED acts as a time-delay tool card, in which a player will have to flip a judgement at the start of their turn. If the judgement is any suit other than \u2663, the target fails the judgement and must skip their drawing phase."),
     Character("Xun Yu", "Wei", 3, "Male",
-              "Rouse The Tiger: During your action phase, you can choose to COMPETE with any character with more health than you; you both show a card simultaneously, and whoever has the higher value wins. If you win, that player will cause one unit of damage to another player within their attacking range of your choosing. If you lose, the target causes one unit of damage to you. Limited to one use per turn.",
+              "Rouse the Tiger: During your action phase, you can choose to COMPETE with any character with more health than you; you both show a card simultaneously, and whoever has the higher value wins. If you win, that player will cause one unit of damage to another player within their attacking range of your choosing. If you lose, the target causes one unit of damage to you. Limited to one use per turn.",
               "Eternal Loyalty: For every one unit of damage you suffer, you can allow any player of your choice (including yourself) to replenish that player’s on-hand cards to their maximum health level."),
     Character("Zhang He", "Wei", 4, "Male",
               "Flexibility: You can discard one on-hand card to skip any of your phases (excluding the beginning and end phases). If you skip your drawing phase using this method, you can draw one on-hand card from a maximum of two other players. If you skip your action phase using this method, you can relocate a card (in the equipment area or pending time-delay tool card area) from its original location to an identical location."),
@@ -1692,6 +1692,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Ferocious Assault")
             if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
                 char_abils.append(" Character Ability >> Green Salve")
+            if (self.character_ability1.startswith("Heaven's Justice:") or self.character_ability3.startswith("Heaven's Justice:")):
+                char_abils.append(" Character Ability >> Heaven's Justice")
             if (self.character_ability1.startswith("Horsebow:") or self.character_ability3.startswith("Horsebow:")):
                 char_abils.append(" Character Ability >> Horsebow")
             if (self.character_ability1.startswith("Marriage:") or self.character_ability3.startswith("Marriage:")):
@@ -1706,6 +1708,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Rejection")
             if (self.role == "Emperor" or self.character_ability2.startswith("False Ruler:") or self.character_ability3.startswith("False Ruler:")) and (self.character_ability2.startswith("Rouse (Ruler Ability):") or self.character_ability3.startswith("Rouse (Ruler Ability):") or self.character_ability4.startswith("Rouse (Ruler Ability):")):
                 char_abils.append(" Ruler Ability >> Rouse")
+            if (self.character_ability1.startswith("Rouse the Tiger:") or self.character_ability3.startswith("Rouse the Tiger:")):
+                char_abils.append(" Character Ability >> Rouse the Tiger")
             if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
                 char_abils.append(" Character Ability >> Seed of Animosity")
             if (self.character_ability2.startswith("Sow Dissension:") or self.character_ability3.startswith("Sow Dissension:")):
@@ -1739,6 +1743,9 @@ class Player(Character):
         self.wine_active = False
         self.acedia_active = False
         self.rations_depleted_active = False
+        self.card_double = False
+        self.tools_disabled = False
+        self.tools_immunity = False
         self.weapon_popped = False
         self.armor_popped = False
         self.off_horse_popped = False
@@ -1753,8 +1760,10 @@ class Player(Character):
         self.used_dual_heroes = False
         self.used_ferocious_assault = False
         self.used_green_salve = False
+        self.used_heavens_justice = False
         self.used_marriage = False
         self.used_reconsider = False
+        self.used_rouse_the_tiger = False
         self.used_seed_of_animosity = False
         self.used_sow_dissension = False
         self.used_taunt = False
@@ -3614,6 +3623,7 @@ class Player(Character):
                 players[selected].hand_cards.draw(
                     main_deck, cards_to_draw, False)
 
+            self.check_fearsome_blade(selected)
             self.check_lament(coerced, selected)
             self.check_grudge(selected, "Damage")
             players[selected].check_bequeathed_strategy(damage_dealt)
@@ -4137,6 +4147,23 @@ class Player(Character):
                     self.hand_cards.add_to_top(card_stolen)
                     print(
                         f"{self.character} has taken {card_stolen} from {players[selected].character}'s pending judgements!")
+
+    def activate_compete(self):
+        options = self.create_nonblind_menu(True)
+        question = [
+            {
+                'type': 'list',
+                'name': 'Selected',
+                'message': f'{self.character}: Please select a card to use for your COMPETITION:',
+                'choices': options,
+                'filter': lambda card: options.index(card)
+            },
+        ]
+        answer = prompt(question, style=custom_style_2)
+        my_card_index = answer.get('Selected')
+        card = self.hand_cards.contents.pop(my_card_index)
+        discard_deck.add_to_top(card)
+        return card
 
 # Discarding cards (to use primarily as player-effects)
     def discard_from_hand_boolpop(self, suit1=None, suit2=None):
@@ -5212,9 +5239,9 @@ class Player(Character):
                         difference = options[selected_index].max_health - \
                             len(options[selected_index].hand_cards.contents)
                         options[selected_index].hand_cards.draw(
-                            difference, False)
+                            main_deck, difference, False)
                         print(
-                            f"  >> Character Ability: Eternal Loyalty; {self.character} has refilled {options[selected_index]}'s hand to their maximum health limit! (+{difference} cards)")
+                            f"  >> Character Ability: Eternal Loyalty; {self.character} has refilled {options[selected_index].character}'s hand to their maximum health limit! (+{difference} cards)")
                         damage_dealt -= 1
                 else:
                     print(
@@ -5729,6 +5756,26 @@ class Player(Character):
                             user_index, damage_dealt)
                     return True
 
+    def check_fearsome_blade(self, selected_index=0):
+        # "Fearsome Blade: Whenever you successfully damage a target player with an ATTACK, you can choose to COMPETE against them; you both show a card simultaneously, and whoever has the higher value wins. If you win, you can take one card from the target, on-hand or equipped. This takes effect before any retaliatory abilities."
+        if (self.character_ability2.startswith("Fearsome Blade:") or self.character_ability3.startswith("Fearsome Blade:")):
+            if (len(self.hand_cards.contents) > 0) and (len(players[selected_index].hand_cards.contents) > 0):
+                message = f"{self.character}: Choose to activate Fearsome Blade against {players[selected_index].character}, causing you to COMPETE? If you win, you take 1 of their cards!"
+                if question_yes_no(message):
+                    my_card = self.activate_compete()
+                    their_card = players[selected_index].activate_compete()
+                    if my_card > their_card:
+                        print(
+                            f"  >> Character Ability: Fearsome Blade; {self.character} won vs {players[selected_index].character} in their COMPETITION! She takes one of their cards!")
+                        players[selected_index].check_ignore_formalities(
+                            my_card, their_card)
+                        self.activate_steal("Special", selected_index, False)
+                    else:
+                        print(
+                            f"  >> Character Ability: Fearsome Blade; {players[selected_index].character} won vs {self.character} in their COMPETITION!")
+                        players[selected_index].check_ignore_formalities(
+                            my_card, their_card)
+
     def check_first_aid(self, dying_player_index=0, mode="Check"):
         # "First Aid: Outside of your turn, you can use any red-suited cards (on-hand or equipped) as a PEACH."
         if (self.character_ability1.startswith("First Aid:") or self.character_ability3.startswith("First Aid:")):
@@ -6215,6 +6262,26 @@ class Player(Character):
                 f"  >> Character Ability: Humility; {self.character} cannot be targeted by STEAL or ACEDIA.")
             return True
 
+    def check_ignore_formalities(self, card1, card2):
+        # "Ignore Formalities: Whenever you COMPETE, you can keep the card played by the loser."
+        if (self.character_ability2.startswith("Ignore Formalities:") or self.character_ability3.startswith("Ignore Formalities:")):
+            print(
+                f"  >> Character Ability: Ignore Formalities; {self.character} keeps any COMPETITION cards played by the loser!")
+            if card1 > card2:
+                if card2 in discard_deck.contents:
+                    discard_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+                elif card2 in main_deck.contents:
+                    discard_deck.contents.remove(card2)
+                    self.hand_cards.add_to_top(card2)
+            else:
+                if card1 in discard_deck.contents:
+                    discard_deck.contents.remove(card1)
+                    self.hand_cards.add_to_top(card1)
+                elif card1 in main_deck.contents:
+                    discard_deck.contents.remove(card1)
+                    self.hand_cards.add_to_top(card1)
+
     def check_iron_cavalry(self, discarded, discarded2=None, selected_index=0):
         # "Iron Cavalry: Whenever you ATTACK a player, you can flip a judgement card. If it is red, the ATTACK cannot be dodged."
         if (self.character_ability2.startswith("Iron Cavalry:") or self.character_ability3.startswith("Iron Cavalry:")):
@@ -6655,6 +6722,49 @@ class Player(Character):
                 print(
                     f"  >> Character Ability: One After Another; {self.character} can draw a card whenever they use or lose their last on-hand card.")
                 self.hand_cards.draw(main_deck, 1, False)
+
+    def check_persuasion(self):
+        # "Persuasion: At the beginning of your action phase, you can COMPETE with any other player; you both show a card simultaneously, and whoever has the higher value wins. If you win, you can either increase or decrease the number of targets to your next basic or non-delay tool card by one for this turn. There are no range restrictions to the extra target. If you lose, you cannot use any tool cards for this turn."
+        if (self.character_ability1.startswith("Persuasion:") or self.character_ability3.startswith("Persuasion:")):
+            message = f"{self.character}: Choose to activate Persuasion, and COMPETE with a player? If you win, you can increase the number of targets for your next tool-card. If you lose, you can't use them for this turn!"
+            if question_yes_no(message):
+                options = [Separator("------<Cannot target yourself>------")]
+                for player in players[1:]:
+                    if len(player.hand_cards.contents) > 0:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    else:
+                        options.append(
+                            Separator("------" + str(player) + "------"))
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please a target to COMPETE with:',
+                        'choices': options,
+                        'filter': lambda player: options.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target_index = answer.get('Selected')
+                if options[target_index] == "Cancel ability.":
+                    return(' ')
+                else:
+                    my_card = self.activate_compete()
+                    their_card = players[target_index].activate_compete()
+                    if my_card > their_card:
+                        print(
+                            f"  >> Character Ability: Persuasion; {self.character} won vs {players[selected_index].character} in their COMPETITION! He can increase/decrease targets on his next tool-card!")
+                        self.check_ignore_formalities(my_card, their_card)
+                        self.card_double = True
+                    else:
+                        print(
+                            f"  >> Character Ability: Persuasion; {players[selected_index].character} won vs {self.character} in their COMPETITION! {self.character} can't use any tool cards for this turn!")
+                        self.check_ignore_formalities(my_card, their_card)
+                        self.tools_disabled = True
 
     def check_plotting_for_power(self, damage_dealt, mode="Reaction"):
         # "Plotting for Power: For every unit of damage you recieve, you can choose to draw one card and then set one hand-card face down as a RITE. Your hand limit is increased by one for each RITE."
@@ -7626,6 +7736,11 @@ class Player(Character):
                     else:
                         print(
                             f"{self.character}: That card cannot be used as WINE as is it NOT of suit \u2660.")
+
+    def activate_heavens_justice(self):
+        # "Heaven's Justice: Once per turn, you can COMPETE with any player; you both show a card simultaneously, and whoever has the higher value wins. If you win, you can use an additional ATTACK, and each ATTACK has unlimited range and can target an additional player. If you lose, you cannot attack this turn."
+        if (self.character_ability1.startswith("Heaven's Justice:") or self.character_ability3.startswith("Heaven's Justice:")):
+            pass
 
     def activate_horsebow(self, mode="Check"):
         # "Horsebow: You can use any equipment cards as an ATTACK. Whenever you do so, that ATTACK has unlimited range."
@@ -8867,6 +8982,123 @@ class Player(Character):
                 self.used_reconsider = True
                 return(' ')
 
+    def activate_rouse_the_tiger(self):
+        # "Rouse the Tiger: During your action phase, you can choose to COMPETE with any character with more health than you; you both show a card simultaneously, and whoever has the higher value wins. If you win, that player will cause one unit of damage to another player within their attacking range of your choosing. If you lose, the target causes one unit of damage to you. Limited to one use per turn."
+        if (self.character_ability1.startswith("Rouse the Tiger:") or self.character_ability3.startswith("Rouse the Tiger:")):
+            if self.used_rouse_the_tiger:
+                print(
+                    f"{self.character}: You can only use Rouse the Tiger once per turn.")
+
+            else:
+                options = [Separator("------<Cannot target yourself>------")]
+                for player in players[1:]:
+                    if len(player.hand_cards.contents) > 0:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    else:
+                        options.append(
+                            Separator("------" + str(player) + "------"))
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please a target to COMPETE with:',
+                        'choices': options,
+                        'filter': lambda player: options.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target_index = answer.get('Selected')
+                if options[target_index] == "Cancel ability.":
+                    return(' ')
+                else:
+                    my_card = self.activate_compete()
+                    their_card = players[target_index].activate_compete()
+                    self.used_rouse_the_tiger = True
+                    if my_card > their_card:
+                        print(
+                            f"  >> Character Ability: Rouse the Tiger; {self.character} won vs {players[target_index].character} in their COMPETITION! {self.character} chooses who they hurt!")
+                        players[target_index].check_ignore_formalities(
+                            my_card, their_card)
+                        options = players[target_index].create_targeting_menu(
+                            "Weapon", target_index)
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please a target for {players[target_index].character} to do 1 damage to:',
+                                'choices': options,
+                                'filter': lambda player: options.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        selected = answer.get('Selected')
+
+                        damage_dealt = 1
+                        fantasy = players[selected].check_fantasy(
+                            damage_dealt, 0)
+                        if fantasy[0]:
+                            selected = fantasy[1]
+
+                        deplete_karma = self.check_deplete_karma(
+                            damage_dealt, None, selected)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+                        deplete_karma = players[selected].check_deplete_karma(
+                            damage_dealt, 0, None)
+                        if deplete_karma[0]:
+                            damage_dealt = deplete_karma[1]
+
+                        players[selected].current_health -= damage_dealt
+                        print(
+                            f"  >> Character Ability: Rouse the Tiger; {players[target_index].character} did 1 damage to {players[selected].character} ({players[selected].current_health}/{players[selected].max_health} HP remaining)!")
+
+                        for player_index, player in enumerate(players):
+                            player.check_relief()
+                            if player.current_health < 1:
+                                if players[player_index].check_brink_of_death_loop(player_index, target_index) == "Break":
+                                    return "Break"
+
+                        if fantasy[0]:
+                            cards_to_draw = (
+                                players[selected].max_health - players[selected].current_health)
+                            print(
+                                f"  >> Character Ability: Fantasy; {players[selected].character} draws {cards_to_draw} from the deck.")
+                            players[selected].hand_cards.draw(
+                                main_deck, cards_to_draw, False)
+
+                        self.check_lament(target_index, selected)
+                        players[target_index].check_grudge(selected, "Damage")
+                        players[selected].check_bequeathed_strategy(
+                            damage_dealt)
+                        players[selected].check_delayed_wisdom()
+                        players[selected].check_eternal_loyalty(
+                            damage_dealt)
+                        players[selected].check_exile()
+                        if players[selected].check_eye_for_an_eye(
+                                source_player_index=target_index, mode="Activate") == "Break":
+                            return(' ')
+                        players[selected].check_geminate(damage_dealt)
+                        players[selected].check_plotting_for_power(
+                            damage_dealt, mode="Reaction")
+                        players[selected].check_retaliation(
+                            target_index, damage_dealt)
+                    else:
+                        print(
+                            f"  >> Character Ability: Rouse the Tiger; {players[target_index].character} won vs {self.character} in their COMPETITION! {self.character} takes 1 damage ({self.current_health}/{self.max_health} HP remaining)!")
+                        players[target_index].check_ignore_formalities(
+                            my_card, their_card)
+                        self.current_health -= 1
+                        for player in players:
+                            player.check_relief()
+                        if self.current_health < 1:
+                            if self.check_brink_of_death_loop(0, target_index) == "Break":
+                                return(' ')
+                        self.check_eternal_loyalty(1)
+
     def activate_seed_of_animosity(self):
         # "Seed of Animosity: During your action phase, you can discard one card (on-hand or equipped) and select two male characters to undergo a DUEL with eachother. This ability cannot be prevented using NEGATE, and is limited to one use per turn."
         if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
@@ -9377,6 +9609,10 @@ class Player(Character):
             elif action_taken_index <= (len(playing_card_options) + 1):
                 card_index = (action_taken_index - 1)
                 card = self.hand_cards.contents[card_index]
+                if (self.tools_disabled) and (card.type == "Tool"):
+                    print(
+                        f"  >> Character Ability: Persuasion; You cannot use tool cards this turn as you lost your COMPETITION!")
+                    return(' ')
                 card.effect2 = card.effect
                 self.use_card_effect(card_index, card)
 
@@ -9406,6 +9642,8 @@ class Player(Character):
                     self.activate_ferocious_assault()
                 if options[action_taken_index] == " Character Ability >> Green Salve":
                     self.activate_green_salve()
+                if options[action_taken_index] == " Character Ability >> Heaven's Justice":
+                    self.activate_heavens_justice()
                 if options[action_taken_index] == " Character Ability >> Horsebow":
                     self.activate_horsebow("Activate")
                 if options[action_taken_index] == " Character Ability >> Marriage":
@@ -9418,6 +9656,8 @@ class Player(Character):
                     self.activate_reconsider()
                 if options[action_taken_index] == " Character Ability >> Rejection":
                     self.activate_rejection()
+                if options[action_taken_index] == " Character Ability >> Rouse the Tiger":
+                    self.activate_rouse_the_tiger()
                 if options[action_taken_index] == " Character Ability >> Seed of Animosity":
                     self.activate_seed_of_animosity()
                 if options[action_taken_index] == " Character Ability >> Sow Dissension":
