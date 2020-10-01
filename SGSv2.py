@@ -1679,6 +1679,8 @@ class Player(Character):
                 char_abils.append(" Character Ability >> Blunt Advice")
             if (self.character_ability1.startswith("Brilliant Scheme:") or self.character_ability3.startswith("Brilliant Scheme")):
                 char_abils.append(" Character Ability >> Brilliant Scheme")
+            if (self.character_ability2.startswith("Dazzle:") or self.character_ability3.startswith("Dazzle:")):
+                char_abils.append(" Character Ability >> Dazzle")
             if (self.character_ability1.startswith("Dragon Heart:") or self.character_ability3.startswith("Dragon Heart:")):
                 char_abils.append(" Character Ability >> Dragon Heart")
             if (self.character_ability1.startswith("Drown in Wine:") or self.character_ability3.startswith("Drown in Wine:")):
@@ -1747,6 +1749,7 @@ class Player(Character):
         self.used_bare_chested = False
         self.used_benevolence = False
         self.used_brilliant_scheme = False
+        self.used_dazzle = False
         self.used_dual_heroes = False
         self.used_ferocious_assault = False
         self.used_green_salve = False
@@ -5546,27 +5549,15 @@ class Player(Character):
 
             message = f"{self.character}: Discard a \u2665 card to activate Fantasy, and redirect the incoming damage to another player? They, then draw X cards; X being the number of health points they have missing after the damage is passed."
             if question_yes_no(message):
-                options_str = self.create_nonblind_menu(True)
-                options_str.append(
-                    Separator("--------------------Other--------------------"))
-                options_str.append("Cancel ability.")
+                if (self.character_ability2.startswith("Beauty:") or self.character_ability3.startswith("Beauty:")):
+                    discarded = self.discard_from_equip_or_hand_boolpop(
+                        "\u2660", "\u2665")
+                else:
+                    discarded = self.discard_from_equip_or_hand_boolpop(
+                        "\u2665")
 
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{self.character}: Please select a card of suit \u2665:',
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                discarded_index = answer.get('Selected')
-                if options_str[discarded_index] == "Cancel ability.":
-                    return [False]
-
-                discarded = self.hand_cards.contents[discarded_index]
-                if (self.check_beauty(discarded) and (discarded.suit == "\u2660" or discarded.suit == "\u2665")) or (discarded.suit == "\u2665"):
+                if discarded != None:
+                    self.check_beauty(discarded)
                     targets_str = []
                     for player in players:
                         targets_str.append(
@@ -5574,10 +5565,6 @@ class Player(Character):
                     targets_str.pop(user_index)
                     targets_str.insert(user_index, Separator(
                         f"--{self.character} (Can't target yourself!)--"))
-                    targets_str.append(
-                        Separator("--------------------Other--------------------"))
-                    targets_str.append("Cancel ability.")
-
                     question = [
                         {
                             'type': 'list',
@@ -5589,15 +5576,12 @@ class Player(Character):
                     ]
                     answer = prompt(question, style=custom_style_2)
                     selected = answer.get('Selected')
-                    if targets_str[selected] == "Cancel ability.":
-                        return [False]
-                    else:
-                        discarded = self.hand_cards.contents.pop(
-                            discarded_index)
-                        discard_deck.add_to_top(discarded)
-                        print(
-                            f"  >> Character Ability: Fantasy; {self.character} redirected {damage_dealt} damage to {players[selected].character}!")
-                        return [True, selected]
+                    print(
+                        f"  >> Character Ability: Fantasy; {self.character} redirected {damage_dealt} damage to {players[selected].character}!")
+                    return [True, selected]
+                else:
+                    print(
+                        f"{self.character}: That card cannot be used for Fantasy as is it NOT of suit \u2665.")
         return [False]
 
     def check_fearsome_advance(self, discarded, selected_index=0):
@@ -7782,7 +7766,6 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: National Colours; {self.character} has discarded {card} to use as ACEDIA.")
                     card.effect2 = "Acedia"
-                    print(card)
                     if not self.use_card_effect("Special", card):
                         if self.weapon_popped:
                             self.equipment_weapon.append(card)
@@ -8033,7 +8016,6 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: National Colours; {self.character} has discarded {card} to use as DISMANTLE.")
                     card.effect2 = "Dismantle"
-                    print(card)
                     if not self.use_card_effect("Special", card):
                         if self.weapon_popped:
                             self.equipment_weapon.append(card)
@@ -8085,7 +8067,6 @@ class Player(Character):
                         print(
                             f"  >> Character Ability: Warrior Saint; {self.character} has discarded {card} to use as ATTACK.")
                         card.effect2 = "Attack"
-                        print(card)
                         if not self.use_card_effect("Special", card):
                             if self.weapon_popped:
                                 self.equipment_weapon.append(card)
@@ -8249,12 +8230,12 @@ class Player(Character):
     def activate_benevolence(self):
         # "Benevolence: You can give any number of your hand-cards to any players. If you give away more than one card, you recovers one unit of health."
         if (self.character_ability1.startswith("Benevolence:") or self.character_ability3.startswith("Benevolence:")):
-            cards_discardable = len(self.hand_cards.contents)
             if self.used_benevolence:
                 print(
                     f"{self.character}: You can only use Benevolence once per turn!")
 
             else:
+                cards_discardable = len(self.hand_cards.contents)
                 cards_to_donate = 0
                 options = self.create_nonblind_menu(True)
                 options.append(
@@ -8327,13 +8308,13 @@ class Player(Character):
         # "Brilliant Scheme: Once per turn, you can give another player an ATTACK or equipment card. The player can then choose to draw one card or allow you to choose one character within their attacking range. This character is ATTACKed by the player that recieved the card."
         if mode == "Activate":
             if (self.character_ability1.startswith("Brilliant Scheme:") or self.character_ability3.startswith("Brilliant Scheme:")):
-                cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-                    self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
                 if self.used_brilliant_scheme:
                     print(
                         f"{self.character}: You can only use Brilliant Scheme once per turn.")
 
-                elif cards_discardable > 0:
+                cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                    self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+                if cards_discardable > 0:
                     options = [
                         Separator("------<Cannot target yourself>------")]
                     for player in players[1:]:
@@ -8464,10 +8445,65 @@ class Player(Character):
                     f"  >> Character Ability: Brilliant Scheme; {self.character} chose to attack a player!")
                 return True
 
+    def activate_dazzle(self):
+        # "Dazzle: During your action phase, you can give a card with suit of \u2665 to another player. Then, you can take any of their cards (on-hand or equipped), and give it to any character. Limited to one use per turn."
+        if (self.character_ability2.startswith("Dazzle:") or self.character_ability3.startswith("Dazzle:")):
+            if self.used_dazzle:
+                print(f"{self.character}: You can only use Dazzle once per turn.")
+
+            elif len(self.hand_cards.contents) > 0:
+                card = self.discard_from_hand_boolpop("\u2665")
+                if card != None:
+                    options = [
+                        Separator("------<Cannot target yourself>------")]
+                    for player in players[1:]:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please decide to whom you would like to give {card} to:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    player_index = answer.get('Selected')
+                    print(
+                        f"  >> Character Ability: Dazzle; {self.character} has given {players[player_index].character} a {card}. Now, he can take one of their cards, and redistribute it!")
+                    players[player_index].hand_cards.shuffle()
+                    self.activate_steal("Special", player_index, False)
+                    gift_card = self.hand_cards.remove_from_top()
+                    options = []
+                    for player in players:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    options.pop(player_index)
+                    options.insert(player_index, Separator(
+                        "-------<Cannot target player>-------"))
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Please decide to whom you would like to give {gift_card} to:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    player_index = answer.get('Selected')
+                    players[player_index].hand_cards.add_to_top(gift_card)
+                    print(
+                        f"  >> Character Ability: Dazzle; {self.character} has given {gift_card} to {players[player_index].character}!")
+                    self.used_dazzle = True
+                else:
+                    print(
+                        f"{self.character}: That card cannot be used for DAZZLE as is it NOT of suit \u2665.")
+
     def activate_ferocious_assault(self):
         # "Ferocious Assault: During your action phase, you can inflict one unit of damage to any player within your attacking range by either; reducing one unit of your own health, or discarding one weapon card (on-hand or equipped). Limited to one use per turn."
         if (self.character_ability1.startswith("Ferocious Assault:") or self.character_ability3.startswith("Ferocious Assault:")):
-
             if self.used_ferocious_assault:
                 print(
                     f"{self.character}: You can only use Ferocious Assault once per turn.")
@@ -8623,13 +8659,13 @@ class Player(Character):
     def activate_green_salve(self):
         # "Green Salve: During your action phase, you can discard any card and allow any player to regain one unit of health. Limited to one use per turn."
         if (self.character_ability2.startswith("Green Salve:") or self.character_ability3.startswith("Green Salve:")):
-            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
             if self.used_green_salve:
                 print(
                     f"{self.character}: You can only use Green Salve once per turn.")
 
-            elif cards_discardable > 0:
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            if cards_discardable > 0:
                 options_str = []
                 options = []
                 for player_index, player in enumerate(players):
@@ -8668,109 +8704,108 @@ class Player(Character):
     def activate_marriage(self):
         # "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."
         if (self.character_ability1.startswith("Marriage:") or self.character_ability3.startswith("Marriage:")):
+            if self.used_marriage:
+                print(
+                    f"{self.character}: You can only use Marriage once per turn.")
+
             if len(self.hand_cards.contents) > 1:
-                if self.used_marriage:
-                    print(
-                        f"{self.character}: You can only use Marriage once per turn.")
-
-                else:
-                    options = [
-                        Separator("------<Cannot target yourself>------")]
-                    for player in players[1:]:
-                        if (player.gender == "Male") and (player.current_health < player.max_health):
-                            options.append(str(player))
-                        elif player.gender != "Male":
-                            options.append(
-                                Separator(str(f"--{player.character} (FEMALE - cannot be targeted)--")))
-                        else:
-                            options.append(
-                                Separator(str(f"--{player.character} (FULL HEALTH - cannot be targeted)--")))
-                    options.append(
-                        Separator("--------------------Other--------------------"))
-                    options.append("Cancel ability.")
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Who would you like to marry (you both heal one)?',
-                            'choices': options,
-                            'filter': lambda player: options.index(player)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    player_healed_index = answer.get('Selected')
-
-                    if options[player_healed_index] == "Cancel ability.":
-                        return (' ')
-
-                    options = self.create_nonblind_menu(True)
-                    options.append(
-                        Separator("--------------------Other--------------------"))
-                    options.append("Cancel ability.")
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select two hand-cards to discard?',
-                            'choices': options,
-                            'filter': lambda card: options.index(card)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    card1_index = answer.get('Selected')
-
-                    if options[card1_index] == "Cancel ability.":
-                        return (' ')
-
-                    card1 = self.hand_cards.contents[card1_index]
-                    options.pop(card1_index)
-                    options.insert(card1_index, Separator(
-                        "------" + str(card1) + "------"))
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select one more card to discard:',
-                            'choices': options,
-                            'filter': lambda card: options.index(card)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    card2_index = answer.get('Selected')
-                    if options[card2_index] == "Cancel ability.":
-                        return (' ')
-
-                    discarded1 = self.hand_cards.contents.pop(card1_index)
-                    discard_deck.add_to_top(discarded1)
-                    self.hand_cards.contents.insert(card1_index, "Placeholder")
-                    discarded2 = self.hand_cards.contents.pop(card2_index)
-                    discard_deck.add_to_top(discarded2)
-                    self.hand_cards.contents.remove("Placeholder")
-                    if self.max_health > self.current_health:
-                        self.current_health += 1
-                        players[player_healed_index].current_health += 1
-                        print(
-                            f"  >> Character Ability: Marriage; {self.character} ({self.current_health}/{self.max_health} HP remaining) has healed both themselves and {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
+                options = [
+                    Separator("------<Cannot target yourself>------")]
+                for player in players[1:]:
+                    if (player.gender == "Male") and (player.current_health < player.max_health):
+                        options.append(str(player))
+                    elif player.gender != "Male":
+                        options.append(
+                            Separator(str(f"--{player.character} (FEMALE - cannot be targeted)--")))
                     else:
-                        players[player_healed_index].current_health += 1
-                        print(
-                            f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
-                    self.check_grudge(player_healed_index, "Heal")
+                        options.append(
+                            Separator(str(f"--{player.character} (FULL HEALTH - cannot be targeted)--")))
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Who would you like to marry (you both heal one)?',
+                        'choices': options,
+                        'filter': lambda player: options.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                player_healed_index = answer.get('Selected')
+
+                if options[player_healed_index] == "Cancel ability.":
+                    return (' ')
+
+                options = self.create_nonblind_menu(True)
+                options.append(
+                    Separator("--------------------Other--------------------"))
+                options.append("Cancel ability.")
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select two hand-cards to discard?',
+                        'choices': options,
+                        'filter': lambda card: options.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card1_index = answer.get('Selected')
+
+                if options[card1_index] == "Cancel ability.":
+                    return (' ')
+
+                card1 = self.hand_cards.contents[card1_index]
+                options.pop(card1_index)
+                options.insert(card1_index, Separator(
+                    "------" + str(card1) + "------"))
+
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select one more card to discard:',
+                        'choices': options,
+                        'filter': lambda card: options.index(card)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                card2_index = answer.get('Selected')
+                if options[card2_index] == "Cancel ability.":
+                    return (' ')
+
+                discarded1 = self.hand_cards.contents.pop(card1_index)
+                discard_deck.add_to_top(discarded1)
+                self.hand_cards.contents.insert(card1_index, "Placeholder")
+                discarded2 = self.hand_cards.contents.pop(card2_index)
+                discard_deck.add_to_top(discarded2)
+                self.hand_cards.contents.remove("Placeholder")
+                if self.max_health > self.current_health:
+                    self.current_health += 1
+                    players[player_healed_index].current_health += 1
+                    print(
+                        f"  >> Character Ability: Marriage; {self.character} ({self.current_health}/{self.max_health} HP remaining) has healed both themselves and {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
+                else:
+                    players[player_healed_index].current_health += 1
+                    print(
+                        f"  >> Character Ability: Marriage; {self.character} has healed {players[player_healed_index].character} ({players[player_healed_index].current_health}/{players[player_healed_index].max_health} HP remaining) by discarding two cards!")
+                self.check_grudge(player_healed_index, "Heal")
 
     def activate_reconsider(self):
         # "Reconsider: You can discard any number of cards to then draw the same number. Limited to one use per turn."
         if (self.character_ability1.startswith("Reconsider:") or self.character_ability3.startswith("Reconsider:")):
-            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
-            total_hand_cards = len(self.hand_cards.contents)
             if self.used_reconsider:
                 print(
                     f"{self.character}: You can only use Reconsider once per turn!")
 
             else:
+                cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                    self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+                total_hand_cards = len(self.hand_cards.contents)
                 cards_to_replace = 0
                 options = self.create_nonblind_menu()
                 options.append(
@@ -8835,114 +8870,65 @@ class Player(Character):
     def activate_seed_of_animosity(self):
         # "Seed of Animosity: During your action phase, you can discard one card (on-hand or equipped) and select two male characters to undergo a DUEL with eachother. This ability cannot be prevented using NEGATE, and is limited to one use per turn."
         if (self.character_ability1.startswith("Seed of Animosity:") or self.character_ability3.startswith("Seed of Animosity:")):
+            if self.used_seed_of_animosity:
+                print(
+                    f"{self.character}: You can only use Seed of Animosity once per turn.")
+
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
-
             targetable = []
             for player in players:
                 if player.gender == "Male":
                     targetable.append(player)
 
             if (len(targetable) > 1) and (cards_discardable > 0):
-                if self.used_seed_of_animosity:
-                    print(
-                        f"{self.character}: You can only use Seed of Animosity once per turn.")
-
-                else:
-                    options_str = self.create_nonblind_menu()
-                    options_str.append(
-                        Separator("--------------------Other--------------------"))
-                    options_str.append("Cancel ability.")
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select a card to discard for Seed of Animosity:',
-                            'choices': options_str,
-                            'filter': lambda player: options_str.index(player)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    discarded_index = answer.get('Selected')
-
-                    options_str = []
-                    for player in players:
-                        if player.gender == "Male":
-                            options_str.append(str(player))
-                        else:
-                            options_str.append(
-                                Separator("------" + str(player) + "------"))
-                    options_str.append(
-                        Separator("--------------------Other--------------------"))
-                    options_str.append("Cancel ability.")
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select two targets to DUEL eachother:',
-                            'choices': options_str,
-                            'filter': lambda player: options_str.index(player)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    target1_index = answer.get('Selected')
-                    if options_str[target1_index] == "Cancel ability.":
-                        return(' ')
-
-                    options_str.pop(target1_index)
-                    options_str.insert(target1_index, Separator(
-                        f"--{players[target1_index].character} (Already selected)--"))
-
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: Please select a second target to DUEL {players[target1_index].character}:',
-                            'choices': options_str,
-                            'filter': lambda player: options_str.index(player)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    target2_index = answer.get('Selected')
-                    if options_str[target2_index] == "Cancel ability.":
-                        return(' ')
-
-                    if players[target2_index].check_empty_city():
-                        return (' ')
-
-                    # Check if hand-card
-                    elif discarded_index < len(self.hand_cards.contents):
-                        card = self.hand_cards.contents.pop(
-                            discarded_index)
-                        discard_deck.add_to_top(card)
-
-                    # Check if equipment-card
+                options_str = []
+                for player in players:
+                    if player.gender == "Male":
+                        options_str.append(str(player))
                     else:
-                        if discarded_index == (len(self.hand_cards.contents) + 1):
-                            card = self.equipment_weapon.pop()
-                            discard_deck.add_to_top(card)
-                            self.weapon_range = 1
-                            print(
-                                f"{self.character} has discarded {card} from their weapon-slot.")
+                        options_str.append(
+                            Separator("------" + str(player) + "------"))
+                options_str.append(
+                    Separator("--------------------Other--------------------"))
+                options_str.append("Cancel ability.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select two targets to DUEL eachother:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target1_index = answer.get('Selected')
+                if options_str[target1_index] == "Cancel ability.":
+                    return(' ')
 
-                        if discarded_index == (len(self.hand_cards.contents) + 2):
-                            card = self.equipment_armor.pop()
-                            discard_deck.add_to_top(card)
-                            print(
-                                f"{self.character} has discarded {card} from their armor-slot.")
+                options_str.pop(target1_index)
+                options_str.insert(target1_index, Separator(
+                    f"--{players[target1_index].character} (Already selected)--"))
 
-                        if discarded_index == (len(self.hand_cards.contents) + 3):
-                            card = self.equipment_offensive_horse.pop()
-                            discard_deck.add_to_top(card)
-                            print(
-                                f"{self.character} has discarded {card} from their horse-slot.")
+                question = [
+                    {
+                        'type': 'list',
+                        'name': 'Selected',
+                        'message': f'{self.character}: Please select a second target to DUEL {players[target1_index].character}:',
+                        'choices': options_str,
+                        'filter': lambda player: options_str.index(player)
+                    },
+                ]
+                answer = prompt(question, style=custom_style_2)
+                target2_index = answer.get('Selected')
+                if options_str[target2_index] == "Cancel ability.":
+                    return(' ')
 
-                        if discarded_index == (len(self.hand_cards.contents) + 4):
-                            card = self.equipment_defensive_horse.pop()
-                            discard_deck.add_to_top(card)
-                            print(
-                                f"{self.character} has discarded {card} from their horse-slot.")
+                if players[target2_index].check_empty_city():
+                    return (' ')
 
+                card = self.discard_from_equip_or_hand()
+                if card != None:
                     print(
                         f"  >> Character Ability: Seed of Animosity; {self.character} has forced {players[target1_index].character} to DUEL vs {players[target2_index].character}!")
                     self.used_seed_of_animosity = True
@@ -9408,6 +9394,8 @@ class Player(Character):
                     self.activate_blunt_advice()
                 if options[action_taken_index] == " Character Ability >> Brilliant Scheme":
                     self.activate_brilliant_scheme("Activate")
+                if options[action_taken_index] == " Character Ability >> Dazzle":
+                    self.activate_dazzle()
                 if options[action_taken_index] == " Character Ability >> Dragon Heart":
                     self.activate_dragon_heart("Activate")
                 if options[action_taken_index] == " Character Ability >> Drown in Wine":
