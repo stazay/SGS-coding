@@ -555,11 +555,11 @@ wu_characters = [
     Character("Lu Xun", "Wu", 3, "Male",
               "Humility: You cannot become the target of STEAL or ACEDIA.",
               "One After Another: Whenever you use or lose your last on-hand card, you can immediately draw one card from the deck."),
+    Character("Sun Jian", "Wu", 4, "Male",
+              "Lingering Spirit: If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum."),
     Character("Sun Shang Xiang", "Wu", 3, "Female",
               "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn.",
               "Warrior Woman: Whenever any equipped card is removed from your equipment, you can immediately draw two cards from the deck."),
-    Character("Tai Shi Ci", "Wu", 4, "Male",
-              "Heaven's Justice: Once per turn, you can COMPETE with any player; you both show a card simultaneously, and whoever has the higher value wins. If you win, you can use an additional ATTACK, and each ATTACK has unlimited range and can target an additional player. If you lose, you cannot attack this turn."),
     Character("Xiao Qiao", "Wu", 3, "Female",
               "Fantasy: Whenever you recieve damage, you can choose to pass the damage onto any other player by discarding an on-hand card that has the suit \u2665. The victim that recieves the damage gets to draw X number of cards from the deck, X being the amount of health missing from the maximum level after damage.",
               "Beauty: All of your \u2660 will be regarded as \u2665."),
@@ -1669,6 +1669,22 @@ class Player(Character):
                     if self.role != "Emperor":
                         char_abils.append(" Ruler Ability >> Amber Sky")
 
+        if types == None:
+            emperor_index = None
+            false_ruler_index = None
+            for player_index, player in enumerate(players):
+                if (player.character_ability3.startswith("Hegemony (Ruler Ability):") or player.character_ability4.startswith("Hegemony (Ruler Ability):")) or player.character_ability5.startswith("Hegemony (Ruler Ability):"):
+                    if player.role == "Emperor":
+                        emperor_index = player_index
+                    else:
+                        false_ruler_index = player_index
+            if self.allegiance == "Wu":
+                if (emperor_index != None) and (false_ruler_index != None):
+                    char_abils.append(" Ruler Ability >> Hegemony")
+                elif emperor_index != None:
+                    if self.role != "Emperor":
+                        char_abils.append(" Ruler Ability >> Hegemony")
+
             if (self.character_ability2.startswith("Alliance:") or self.character_ability3.startswith("Alliance:")):
                 char_abils.append(" Character Ability >> Alliance")
             if (self.character_ability1.startswith("Benevolence:") or self.character_ability3.startswith("Benevolence:")):
@@ -1763,6 +1779,7 @@ class Player(Character):
         self.used_ferocious_assault = False
         self.used_green_salve = False
         self.used_heavens_justice = False
+        self.used_hegemony = False
         self.used_marriage = False
         self.used_reconsider = False
         self.used_rouse_the_tiger = False
@@ -1904,7 +1921,8 @@ class Player(Character):
                                 f"  >> Character Ability: Fantasy; {self.character} draws {cards_to_draw} from the deck.")
                             players[target_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
-                        self.check_lament(user_index, target_index)
+                        for player in players:
+                            player.check_lament(user_index, target_index)
                         self.check_grudge(target_index, "Damage")
                         players[target_index].check_bequeathed_strategy(
                             damage_dealt)
@@ -2261,7 +2279,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -2273,7 +2291,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 if players[selected].check_empty_city():
                     return False
@@ -2283,17 +2301,6 @@ class Player(Character):
                 print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                 message = f"{self.character}: Please confirm you would like to use a BLACK ATTACK against {players[selected]}."
                 if question_yes_no(message):
-                    extra_targets = self.check_weapon_sky_scorcher_halberd(
-                        selected)
-                    if (extra_targets == None) or (extra_targets[0] == 0):
-                        self.activate_attack(card, selected)
-                    elif (extra_targets[0] == 1):
-                        self.activate_attack(card, selected)
-                        self.activate_attack(card, extra_targets[1])
-                    elif (extra_targets[0] == 2):
-                        self.activate_attack(card, selected)
-                        self.activate_attack(card, extra_targets[1])
-                        self.activate_attack(card, extra_targets[2])
                     self.activate_attack(card1, selected, card2)
 
         if card.effect2 == "Red Attack":
@@ -2353,7 +2360,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -2365,7 +2372,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 if players[selected].check_empty_city():
                     return False
@@ -2375,17 +2382,6 @@ class Player(Character):
                 print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                 message = f"{self.character}: Please confirm you would like to use a RED ATTACK against {players[selected]}."
                 if question_yes_no(message):
-                    extra_targets = self.check_weapon_sky_scorcher_halberd(
-                        selected)
-                    if (extra_targets == None) or (extra_targets[0] == 0):
-                        self.activate_attack(card, selected)
-                    elif (extra_targets[0] == 1):
-                        self.activate_attack(card, selected)
-                        self.activate_attack(card, extra_targets[1])
-                    elif (extra_targets[0] == 2):
-                        self.activate_attack(card, selected)
-                        self.activate_attack(card, extra_targets[1])
-                        self.activate_attack(card, extra_targets[2])
                     self.activate_attack(card1, selected, card2)
 
         if card.effect2 == "Colourless Attack":
@@ -2445,7 +2441,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -2457,7 +2453,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 if players[selected].check_empty_city():
                     return False
@@ -2467,17 +2463,6 @@ class Player(Character):
                 print(f"ATTACK - Once per turn, you can use this card to attack any player within your attacking range. They must play a DEFEND or else suffer one damage.")
                 message = f"{self.character}: Please confirm you would like to use a COLOURLESS ATTACK against {players[selected]}."
                 if question_yes_no(message):
-                    extra_targets = self.check_weapon_sky_scorcher_halberd(
-                        selected)
-                    if (extra_targets == None) or (extra_targets[0] == 0):
-                        self.activate_attack(card, selected)
-                    elif (extra_targets[0] == 1):
-                        self.activate_attack(card, selected)
-                        self.activate_attack(card, extra_targets[1])
-                    elif (extra_targets[0] == 2):
-                        self.activate_attack(card, selected)
-                        self.activate_attack(card, extra_targets[1])
-                        self.activate_attack(card, extra_targets[2])
                     self.activate_attack(card1, selected, card2)
 
         # card.type == 'Basic':
@@ -2547,7 +2532,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -2559,7 +2544,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 if players[selected].check_empty_city():
                     return False
@@ -2612,7 +2597,7 @@ class Player(Character):
                         options_str.append(str(player))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -2624,7 +2609,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 else:
                     players[selected].current_health += 1
@@ -2651,7 +2636,7 @@ class Player(Character):
                         options_str.append(str(player))
                     options_str.append(
                         Separator("--------------------Other--------------------"))
-                    options_str.append("No second target")
+                    options_str.append("Cancel Ability.")
                     question = [
                         {
                             'type': 'list',
@@ -2663,7 +2648,7 @@ class Player(Character):
                     ]
                     answer = prompt(question, style=custom_style_2)
                     selected = answer.get('Selected')
-                    if options_str[selected] == "No second target":
+                    if options_str[selected] == "Cancel Ability.":
                         pass
                     else:
                         players[selected].tools_immunity = True
@@ -2753,7 +2738,7 @@ class Player(Character):
                         options_str.append(str(player))
                     options_str.append(
                         Separator("--------------------Other--------------------"))
-                    options_str.append("No second target")
+                    options_str.append("Cancel Ability.")
                     question = [
                         {
                             'type': 'list',
@@ -2765,7 +2750,7 @@ class Player(Character):
                     ]
                     answer = prompt(question, style=custom_style_2)
                     selected = answer.get('Selected')
-                    if options_str[selected] == "No second target":
+                    if options_str[selected] == "Cancel Ability.":
                         pass
                     else:
                         players[selected].tools_immunity = True
@@ -2817,7 +2802,7 @@ class Player(Character):
                         options_str.append(str(player))
                     options_str.append(
                         Separator("--------------------Other--------------------"))
-                    options_str.append("No second target")
+                    options_str.append("Cancel Ability.")
                     question = [
                         {
                             'type': 'list',
@@ -2829,7 +2814,7 @@ class Player(Character):
                     ]
                     answer = prompt(question, style=custom_style_2)
                     selected = answer.get('Selected')
-                    if options_str[selected] == "No second target":
+                    if options_str[selected] == "Cancel Ability.":
                         pass
                     else:
                         players[selected].tools_immunity = True
@@ -2868,7 +2853,7 @@ class Player(Character):
                     options_str.append(str(player))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -2880,7 +2865,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     pass
                 else:
                     players[selected].tools_immunity = True
@@ -3042,7 +3027,7 @@ class Player(Character):
                                 "------<Already targetted>------")))
                             options_str.append(
                                 Separator("--------------------Other--------------------"))
-                            options_str.append("No second target")
+                            options_str.append("Cancel Ability.")
                             question = [
                                 {
                                     'type': 'list',
@@ -3054,7 +3039,7 @@ class Player(Character):
                             ]
                             answer = prompt(question, style=custom_style_2)
                             selected = answer.get('Selected')
-                            if options_str[selected] == "No second target":
+                            if options_str[selected] == "Cancel Ability.":
                                 return False
                             beauty = self.check_beauty(card)
                             if players[selected].check_behind_the_curtain(card, beauty):
@@ -3150,7 +3135,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -3162,7 +3147,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 elif players[selected].used_delayed_wisdom:
                     return False
@@ -3236,7 +3221,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -3248,7 +3233,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 elif players[selected].check_empty_city():
                     return False
@@ -3287,7 +3272,7 @@ class Player(Character):
                     options_str.append(str(player))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -3299,7 +3284,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 else:
                     players[selected].hand_cards.draw(main_deck, 2, False)
@@ -3372,7 +3357,7 @@ class Player(Character):
                     "------<Already targetted>------")))
                 options_str.append(
                     Separator("--------------------Other--------------------"))
-                options_str.append("No second target")
+                options_str.append("Cancel Ability.")
                 question = [
                     {
                         'type': 'list',
@@ -3384,7 +3369,7 @@ class Player(Character):
                 ]
                 answer = prompt(question, style=custom_style_2)
                 selected = answer.get('Selected')
-                if options_str[selected] == "No second target":
+                if options_str[selected] == "Cancel Ability.":
                     return False
                 elif players[selected].check_humility():
                     return False
@@ -4096,10 +4081,10 @@ class Player(Character):
                     f"{players[selected].character} successfully defended the ATTACK with {attack_defended}.")
 
                 # DEFENDED - reactionary abilities
+                players[selected].check_lightning_strike()
                 self.check_weapon_axe(discarded, selected)
                 self.check_fearsome_advance(
                     discarded, selected)
-                players[selected].check_lightning_strike()
                 self.check_weapon_green_dragon_halberd(selected)
             elif attack_defended.effect == 0:
                 pass
@@ -4154,7 +4139,8 @@ class Player(Character):
                     main_deck, cards_to_draw, False)
 
             self.check_fearsome_blade(selected)
-            self.check_lament(coerced, selected)
+            for player in players:
+                player.check_lament(coerced, selected)
             self.check_grudge(selected, "Damage")
             players[selected].check_bequeathed_strategy(damage_dealt)
             players[selected].check_delayed_wisdom()
@@ -4693,6 +4679,13 @@ class Player(Character):
         my_card_index = answer.get('Selected')
         card = self.hand_cards.contents.pop(my_card_index)
         discard_deck.add_to_top(card)
+        if not self.amassed_terrain:
+            self.check_amassing_terrain()
+            self.amassed_terrain = True
+        if not self.used_cornering_maneuver:
+            self.check_cornering_maneuver(card)
+            self.used_cornering_maneuver = True
+        self.check_one_after_another()
         return card
 
 # Discarding cards (to use primarily as player-effects)
@@ -5096,7 +5089,8 @@ class Player(Character):
                                     main_deck, cards_to_draw, False)
 
                             self.check_grudge(selected_index, "Damage")
-                            self.check_lament(user_index, selected_index)
+                            for player in players:
+                                player.check_lament(user_index, selected_index)
                             players[selected_index].check_bequeathed_strategy(
                                 damage_dealt)
                             players[selected_index].check_delayed_wisdom()
@@ -5261,7 +5255,7 @@ class Player(Character):
                     flipped_card = main_deck.remove_from_top()
                     print(
                         f"  >> Character Ability: Cornering Maneuver; {self.character} flipped {flipped_card} from the deck!")
-                    if (card.type == "Basic" and flipped_card.card.type == "Basic") or (card.type == "Tool" and flipped_card.card.type == "Tool"):
+                    if (card.type == "Basic" and flipped_card.type == "Basic") or (card.type == "Tool" and flipped_card.type == "Tool") or ((card.type == "Weapon" or card.type == "Armor" or card.type == "-1 Horse" or card.type == "+1 Horse") and (flipped_card.type == "Weapon" or flipped_card.type == "Armor" or flipped_card.type == "-1 Horse" or flipped_card.type == "+1 Horse")):
                         options = []
                         for player in players:
                             options.append(
@@ -6264,7 +6258,8 @@ class Player(Character):
                                 f"  >> Character Ability: Fantasy; {players[selected_index].character} draws {cards_to_draw} from the deck.")
                             players[selected_index].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
-                        self.check_lament(user_index, selected_index)
+                        for player in players:
+                            player.check_lament(user_index, selected_index)
                         self.check_grudge(selected_index, "Damage")
                         players[selected_index].check_bequeathed_strategy(
                             damage_dealt)
@@ -6296,10 +6291,14 @@ class Player(Character):
                     their_card = players[selected_index].activate_compete()
                     if my_card > their_card:
                         print(
-                            f"  >> Character Ability: Fearsome Blade; {self.character} won vs {players[selected_index].character} in their COMPETITION! She takes one of their cards!")
-                        players[selected_index].check_ignore_formalities(
-                            my_card, their_card)
-                        self.activate_steal("Special", selected_index, False)
+                            f"  >> Character Ability: Fearsome Blade; {self.character} won vs {players[selected_index].character} in their COMPETITION! She can take one of their cards!")
+                        cards_discardable = (len(players[selected_index].hand_cards.contents) + len(players[selected_index].equipment_weapon) + len(
+                            players[selected_index].equipment_armor) + len(players[selected_index].equipment_offensive_horse) + len(players[selected_index].equipment_defensive_horse))
+                        if cards_discardable > 0:
+                            players[selected_index].check_ignore_formalities(
+                                my_card, their_card)
+                            self.activate_steal(
+                                "Special", selected_index, False)
                     else:
                         print(
                             f"  >> Character Ability: Fearsome Blade; {players[selected_index].character} won vs {self.character} in their COMPETITION!")
@@ -6875,7 +6874,8 @@ class Player(Character):
                                 main_deck, cards_to_draw, False)
 
                         self.check_grudge(selected_index, "Damage")
-                        self.check_lament(user_index, selected_index)
+                        for player in players:
+                            player.check_lament(user_index, selected_index)
                         players[selected_index].check_bequeathed_strategy(
                             damage_dealt)
                         players[selected_index].check_delayed_wisdom()
@@ -6973,67 +6973,66 @@ class Player(Character):
 
     def check_lament(self, source_player_index=0, targeted_index=0):
         # "Lament: Whenever any player is damaged by an ATTACK, you can discard any card, on-hand or equipped. The victim must then flip a judgement. If \u2660, the attacker flips their character card. If \u2665, the victim regains one health. If \u2663, the attacker discards two cards. If \u2666, the victim draws two cards."
-        for user in players:
-            if (user.character_ability1.startswith("Lament:") or user.character_ability3.startswith("Lament:")):
-                cards_discardable = (len(user.hand_cards.contents) + len(user.equipment_weapon) + len(
-                    user.equipment_armor) + len(user.equipment_offensive_horse) + len(user.equipment_defensive_horse))
-                if cards_discardable > 0:
+        if (self.character_ability1.startswith("Lament:") or self.character_ability3.startswith("Lament:")):
+            cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
+                self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+            if cards_discardable > 0:
+                print(
+                    f"If \u2660: {players[source_player_index].character} flips their character card.")
+                print(
+                    f"If \u2665: {players[targeted_index].character} recovers one health.")
+                print(
+                    f"If \u2663: {players[source_player_index].character} discards two cards.")
+                print(
+                    f"If \u2666: {players[targeted_index].character} draws two cards.")
+                message = f"{self.character}: Choose to activate Lament; discard a card and flip a judgement card, triggering one of the above effects?"
+                if question_yes_no(message):
+                    self.discard_from_equip_or_hand()
                     print(
-                        f"If \u2660: {players[source_player_index].character} flips their character card.")
+                        f"  >> Character Ability: Lament; {self.character} discarded a card, and will force {players[targeted_index].character} to flip a judgement...")
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
                     print(
-                        f"If \u2665: {players[targeted_index].character} recovers one health.")
-                    print(
-                        f"If \u2663: {players[source_player_index].character} discards two cards.")
-                    print(
-                        f"If \u2666: {players[targeted_index].character} draws two cards.")
-                    message = f"{user.character}: Choose to activate Lament; discard a card and flip a judgement card, triggering one of the above effects?"
-                    if question_yes_no(message):
-                        user.discard_from_equip_or_hand()
-                        print(
-                            f"  >> Character Ability: Lament; {user.character} discarded a card, and will force {players[targeted_index].character} to flip a judgement...")
-                        main_deck.discard_from_deck()
-                        judgement_card = discard_deck.contents[0]
-                        print(
-                            f"{players[targeted_index].character} flipped a {judgement_card}.")
-                        judgement_card = check_judgement_tinkering(
-                            judgement_card, targeted_index)
+                        f"{players[targeted_index].character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, targeted_index)
 
-                        players[targeted_index].check_envy_of_heaven()
-                        if players[targeted_index].check_beauty(judgement_card):
-                            if judgement_card.suit == "\u2660" or judgement_card.suit == "\u2665":
-                                if players[targeted_index].current_health < players[targeted_index].max_health:
-                                    players[targeted_index].current_health += 1
-                                    print(
-                                        f"  >> Character Ability: Lament; {user.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
-                                    user.check_grudge(targeted_index, "Heal")
-
-                        elif judgement_card.suit == "\u2660":
-                            players[source_player_index].flipped_char_card = True
-                            print(
-                                f"  >> Character Ability: Lament; {user.character} has forced {players[source_player_index].character} to flip their character card!")
-
-                        elif judgement_card.suit == "\u2665":
+                    players[targeted_index].check_envy_of_heaven()
+                    if players[targeted_index].check_beauty(judgement_card):
+                        if judgement_card.suit == "\u2660" or judgement_card.suit == "\u2665":
                             if players[targeted_index].current_health < players[targeted_index].max_health:
                                 players[targeted_index].current_health += 1
-                            print(
-                                f"  >> Character Ability: Lament; {user.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
+                                print(
+                                    f"  >> Character Ability: Lament; {self.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
+                                self.check_grudge(targeted_index, "Heal")
 
-                        elif judgement_card.suit == "\u2663":
-                            cards_discardable = (len(players[source_player_index].hand_cards.contents) + len(players[source_player_index].equipment_weapon) + len(
-                                players[source_player_index].equipment_armor) + len(players[source_player_index].equipment_offensive_horse) + len(players[source_player_index].equipment_defensive_horse))
-                            print(
-                                f"  >> Character Ability: Lament; {user.character} has forced {players[source_player_index].character} to discard two cards!")
-                            if cards_discardable < 2:
-                                players[source_player_index].discard_all_cards()
-                            else:
-                                players[source_player_index].discard_from_equip_or_hand(
-                                    2)
+                    elif judgement_card.suit == "\u2660":
+                        players[source_player_index].flipped_char_card = True
+                        print(
+                            f"  >> Character Ability: Lament; {self.character} has forced {players[source_player_index].character} to flip their character card!")
 
-                        elif judgement_card.suit == "\u2666":
-                            players[targeted_index].hand_cards.draw(
-                                main_deck, 2, False)
-                            print(
-                                f"  >> Character Ability: Lament; {user.character} has forced {players[targeted_index].character} to draw two cards!")
+                    elif judgement_card.suit == "\u2665":
+                        if players[targeted_index].current_health < players[targeted_index].max_health:
+                            players[targeted_index].current_health += 1
+                        print(
+                            f"  >> Character Ability: Lament; {self.character} has forced {players[targeted_index].character} to regain one health ({players[targeted_index].current_health}/{players[targeted_index].max_health} HP remaining)!")
+
+                    elif judgement_card.suit == "\u2663":
+                        cards_discardable = (len(players[source_player_index].hand_cards.contents) + len(players[source_player_index].equipment_weapon) + len(
+                            players[source_player_index].equipment_armor) + len(players[source_player_index].equipment_offensive_horse) + len(players[source_player_index].equipment_defensive_horse))
+                        print(
+                            f"  >> Character Ability: Lament; {self.character} has forced {players[source_player_index].character} to discard two cards!")
+                        if cards_discardable < 2:
+                            players[source_player_index].discard_all_cards()
+                        else:
+                            players[source_player_index].discard_from_equip_or_hand(
+                                2)
+
+                    elif judgement_card.suit == "\u2666":
+                        players[targeted_index].hand_cards.draw(
+                            main_deck, 2, False)
+                        print(
+                            f"  >> Character Ability: Lament; {self.character} has forced {players[targeted_index].character} to draw two cards!")
 
     def check_lightning_strike(self):
         # "Lightning Strike: Whenever you use a DEFEND card, you can target any other player to make a judgement. If the judgement card is of the suit \u2660, the target player suffers two points of lightning damage."
@@ -7127,7 +7126,7 @@ class Player(Character):
 
     def check_lingering_spirit(self):
         # "Lingering Spirit: If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum."
-        if self.character_ability4.startswith("Lingering Spirit:"):
+        if (self.character_ability1.startswith("Lingering Spirit:") or self.character_ability4.startswith("Lingering Spirit:")):
             if self.max_health > self.current_health:
                 difference = (self.max_health - self.current_health)
                 message = f"{self.character}: Activate Lingering Spirit, forcing anyone to draw 1, then discard {difference} cards; OR draw {difference} cards then discard 1?"
@@ -9284,7 +9283,8 @@ class Player(Character):
                         players[selected_index].hand_cards.draw(
                             main_deck, cards_to_draw, False)
 
-                    self.check_lament(0, selected_index)
+                    for player in players:
+                        player.check_lament(0, selected_index)
                     self.check_grudge(selected_index, "Damage")
                     players[selected_index].check_bequeathed_strategy(
                         damage_dealt)
@@ -9345,6 +9345,98 @@ class Player(Character):
                     print(
                         f"  >> Character Ability: Green Salve; {self.character} discarded {card} to heal {options[player_healed_index].character} by one! ({options[player_healed_index].current_health}/{options[player_healed_index].max_health} HP remaining)")
                     self.check_grudge(player_healed_index, "Heal")
+
+    def activate_hegemony(self, mode="Activate"):
+        # "Hegemony (Ruler Ability): During the action phase of any other Wu characters, they can choose to COMPETE against you; you both show a card simultaneously, and whoever has the higher value wins. If they do not win, you can take both cards used. After your awakening ability activates, you are able to refuse COMPETE effects."
+        if mode == "Activate":
+            emperor_index = None
+            false_ruler_index = None
+            if self.used_amber_sky:
+                print(f"{self.character}: You can only use Hegemony once per turn.")
+
+            else:
+                for player_index, player in enumerate(players):
+                    if (player.character_ability3.startswith("Hegemony (Ruler Ability):") or player.character_ability4.startswith("Hegemony (Ruler Ability):") or player.character_ability5.startswith("Hegemony (Ruler Ability):")):
+                        if player.role == "Emperor":
+                            emperor_index = player_index
+                        else:
+                            false_ruler_index = player_index
+
+                if len(self.hand_cards.contents) < 1:
+                    return (' ')
+
+                if self.allegiance == "Wu":
+                    if self.role == "Emperor":
+                        if (false_ruler_index != None):
+                            target = players[false_ruler_index]
+
+                    elif self.role != "Emperor":
+                        if false_ruler_index == None:
+                            target = players[emperor_index]
+
+                        elif (false_ruler_index != None) and (self.character == players[false_ruler_index].character):
+                            target = players[emperor_index]
+
+                        else:
+                            options = [str(players[emperor_index]),
+                                       str(players[false_ruler_index])]
+
+                            question = [
+                                {
+                                    'type': 'list',
+                                    'name': 'Selected',
+                                    'message': f'{self.character}: Please select who you will target with Hegemony:',
+                                    'choices': options,
+                                },
+                            ]
+                            answer = prompt(question, style=custom_style_2)
+                            selected = answer.get('Selected')
+                            if selected == str(players[emperor_index]):
+                                target = players[emperor_index]
+                                if len(target.hand_cards.contents) < 1:
+                                    print(
+                                        f"{self.character}: you cannot COMPETE with {target.character} as they have no hand-cards!")
+                                    return(' ')
+                                elif target.character_ability2.startswith("Divinity (INACTIVE Ability):"):
+                                    if not target.activate_hegemony("Reaction"):
+                                        print(
+                                            f"{target.character} has refused the COMPETITION!")
+                                        return(' ')
+                            else:
+                                target = players[false_ruler_index]
+                                if len(target.hand_cards.contents) < 1:
+                                    print(
+                                        f"{self.character}: you cannot COMPETE with {target.character} as they have no hand-cards!")
+                                    return(' ')
+
+                    print(
+                        f"  >> Ruler Ability: Hegemony; {self.character} challenged {target.character} to COMPETE! If {target.character} wins, he keeps both cards!")
+                    my_card = self.activate_compete()
+                    their_card = target.activate_compete()
+                    self.used_hegemony = True
+                    if my_card > their_card:
+                        print(
+                            f"  >> Ruler Ability: Hegemony; {self.character} won the COMPETITION vs {target.character}!")
+                    else:
+                        print(
+                            f"  >> Ruler Ability: Hegemony; {target.character} won the COMPETITION vs {self.character}, and therefore gets to keep both cards!")
+                        if my_card in discard_deck.contents:
+                            discard_deck.contents.remove(my_card)
+                            target.hand_cards.add_to_top(my_card)
+                        elif my_card in main_deck.contents:
+                            discard_deck.contents.remove(my_card)
+                            self.hand_cards.add_to_top(my_card)
+                        if their_card in discard_deck.contents:
+                            discard_deck.contents.remove(their_card)
+                            target.hand_cards.add_to_top(their_card)
+                        elif their_card in main_deck.contents:
+                            discard_deck.contents.remove(their_card)
+                            self.hand_cards.add_to_top(their_card)
+
+        if mode == "Reaction":
+            message = f"{target.character}: Accept the COMPETITION?"
+            if question_yes_no(message):
+                return True
 
     def activate_marriage(self):
         # "Marriage: During your action phase, you can choose to discard two on-hand cards and pick any male character that is not at full-health. By doing so, both the male character and yourself will recover one unit of health. Limited to one use per turn."
@@ -9600,7 +9692,6 @@ class Player(Character):
                             players[selected].hand_cards.draw(
                                 main_deck, cards_to_draw, False)
 
-                        self.check_lament(target_index, selected)
                         players[target_index].check_grudge(selected, "Damage")
                         players[selected].check_bequeathed_strategy(
                             damage_dealt)
@@ -9930,6 +10021,13 @@ class Player(Character):
                                 print(
                                     f"{self.character} has discarded {card_discarded} from {players[target_index].character}'s horse-slot!")
                                 players[target_index].check_warrior_woman()
+
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
+                        if not self.used_cornering_maneuver:
+                            self.check_cornering_maneuver(card_discarded)
+                            self.used_cornering_maneuver = True
                 self.used_taunt = True
 
 # Activatable abilities (once-per-game)
@@ -10206,6 +10304,8 @@ class Player(Character):
                     self.activate_warrior_saint("Activate")
                 if options[action_taken_index] == " Ruler Ability >> Amber Sky":
                     self.activate_amber_sky()
+                if options[action_taken_index] == " Ruler Ability >> Hegemony":
+                    self.activate_hegemony()
                 if options[action_taken_index] == " Ruler Ability >> Rouse":
                     self.activate_rouse("Activate")
                 if options[action_taken_index] == " Weapon Ability >> Serpent Spear":
