@@ -413,7 +413,7 @@ shu_emperors = [
               "Rouse (Ruler Ability): If you need to use an ATTACK, you can ask Sun Shang Xiang or any member of Shu to play it on your behalf."),
     Character("Liu Shan", "Shu", 3, "Male",
               "Relish: Whenever another player targets an ATTACK against you, they must discard a basic card, or else that ATTACK has no net effect on you.",
-              "Devolution: You can skip your action phase. If you do so, you can discard an on-hand card at the end of your turn, in order to allow another player to take a turn directly after yours.",
+              "Decentralization: You can skip your action phase. If you do so, you can discard an on-hand card at the end of your turn, in order to allow another player to take a turn directly after yours.",
               "Eiron (Awakening/Ruler Ability): At the start of your turn, if your health is the least or among the least, you must raise your maximum health by one unit, regain one unit of health, and permanently gain the ability 'Rouse'.",
               "Rouse (INACTIVE Ability): If you need to use an ATTACK, you can ask any member of Shu to play it on your behalf.")
 ]
@@ -2689,11 +2689,11 @@ class Player(Character):
                                 self.check_insanity(player, damage_dealt)
                                 self.check_tyrant()
 
-                                for player in players:
-                                    player.check_relief()
-                                if player.current_health < 1:
-                                    player.check_brink_of_death_loop(
-                                        player_index, 0)
+                                for item in players:
+                                    item.check_relief()
+                                    if item.current_health < 1:
+                                        item.check_brink_of_death_loop(
+                                            player_index, 0)
 
                                 if player.current_health > 0:
                                     if fantasy[0]:
@@ -2906,11 +2906,11 @@ class Player(Character):
                             self.check_insanity(player, damage_dealt)
                             self.check_tyrant()
 
-                            for player in players:
-                                player.check_relief()
-                            if player.current_health < 1:
-                                player.check_brink_of_death_loop(
-                                    player_index, 0)
+                            for item in players:
+                                item.check_relief()
+                                if item.current_health < 1:
+                                    item.check_brink_of_death_loop(
+                                        player_index, 0)
 
                             if player.current_health > 0:
                                 if fantasy[0]:
@@ -5329,6 +5329,95 @@ class Player(Character):
                 f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
 
+    def check_decentralization(self):
+        # "Decentralization: You can skip your action phase. If you do so, you can discard an on-hand card at the end of your turn, in order to allow another player to take a turn directly after yours."
+        if (self.character_ability2.startswith("Decentralization:") or self.character_ability3.startswith("Decentralization:")):
+            if len(self.hand_cards.contents) > 0:
+                message = f"{self.character}: Skip your action-phase and discard a card to let another player take a turn immediately after you?"
+                if question_yes_no(message):
+                    options = [
+                        Separator("------<Cannot target yourself>------")]
+                    for player in players[1:]:
+                        options.append(
+                            str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                    options.append(
+                        Separator("--------------------Other--------------------"))
+                    options.append("Cancel ability.")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: Select a player to take a turn after you:',
+                            'choices': options,
+                            'filter': lambda player: options.index(player)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    player_index = answer.get('Selected')
+                    if options[player_index] == "Cancel ability.":
+                        return False
+                    else:
+                        self.start_discard_phase()
+                        self.hand_cards.discard_from_hand()
+                        print(
+                            f"  >> Character Ability: Decentralization; {self.character} is allowing {players[player_index].character} to take their turn next!")
+                        temp_players = players
+                        decent = players[0]
+                        for player in players[:player_index]:
+                            players.append(players.pop(0))
+                        players[0].start_beginning_phase()
+                        if decent in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if decent == players[0]:
+                                    return True
+                        elif temp_players[1] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[1] == players[0]:
+                                    return False
+                        elif temp_players[2] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[2] == players[0]:
+                                    return False
+                        elif temp_players[3] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[3] == players[0]:
+                                    return False
+                        elif temp_players[4] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[4] == players[0]:
+                                    return False
+                        elif temp_players[5] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[5] == players[0]:
+                                    return False
+                        elif temp_players[6] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[6] == players[0]:
+                                    return False
+                        elif temp_players[7] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[7] == players[0]:
+                                    return False
+                        elif temp_players[8] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[8] == players[0]:
+                                    return False
+                        elif temp_players[9] in players:
+                            for player in players:
+                                players.append(players.pop(0))
+                                if temp_players[9] == players[0]:
+                                    return False
+        return False
+
     def check_delayed_wisdom(self):
         # "Delayed Wisdom: Whenever you are damaged outside of your turn, you become immune to all ATTACKs and non-delay tool cards for the rest of that turn."
         if (self.character_ability2.startswith("Delayed Wisdom:") or self.character_ability3.startswith("Delayed Wisdom:")):
@@ -7126,7 +7215,7 @@ class Player(Character):
 
     def check_lingering_spirit(self):
         # "Lingering Spirit: If your health is not at maximum in your drawing phase, you can force any player to draw X cards, and then discard 1 card, or draw 1 card, and discard X cards. X is the amount of health you have missing from your maximum."
-        if (self.character_ability1.startswith("Lingering Spirit:") or self.character_ability4.startswith("Lingering Spirit:")):
+        if (self.character_ability1.startswith("Lingering Spirit:") or self.character_ability3.startswith("Lingering Spirit:") or self.character_ability4.startswith("Lingering Spirit:")):
             if self.max_health > self.current_health:
                 difference = (self.max_health - self.current_health)
                 message = f"{self.character}: Activate Lingering Spirit, forcing anyone to draw 1, then discard {difference} cards; OR draw {difference} cards then discard 1?"
@@ -7255,7 +7344,7 @@ class Player(Character):
     def check_persuasion(self):
         # "Persuasion: At the beginning of your action phase, you can COMPETE with any other player; you both show a card simultaneously, and whoever has the higher value wins. If you win, you can either increase or decrease the number of targets to your next basic or non-delay tool card by one for this turn. There are no range restrictions to the extra target. If you lose, you cannot use any tool cards for this turn."
         if (self.character_ability1.startswith("Persuasion:") or self.character_ability3.startswith("Persuasion:")):
-            message = f"{self.character}: Choose to activate Persuasion, and COMPETE with a player? If you win, you can increase the number of targets for your next tool-card. If you lose, you can't use them for this turn!"
+            message = f"{self.character}: Activate Persuasion, and COMPETE with a player? If you win, you can increase/decrease the number of targets for your next card. If you lose, you can't use tool-cards!"
             if question_yes_no(message):
                 options = [Separator("------<Cannot target yourself>------")]
                 for player in players[1:]:
@@ -10185,11 +10274,12 @@ class Player(Character):
 # Action Phase
     def start_action_phase(self):
         self.check_persuasion()
+        if self.check_decentralization():
+            return self.start_end_phase()
         if self.check_flexibility("Action") or self.check_godspeed("Action"):
             return self.start_discard_phase()
         action_phase_active = True
         while action_phase_active:
-            check_win_conditions()
             if not game_started or self.current_health < 1:
                 return self.start_end_phase()
             for player in players:
