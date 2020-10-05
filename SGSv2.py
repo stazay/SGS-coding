@@ -1307,18 +1307,17 @@ class Player(Character):
             options.append(self.equipment_defensive_horse[0])
         else:
             options.append("Empty Horse Slot")
-        return(options)
+        return options
 
     def create_blind_menu(self):
         cards_discardable = (len(self.hand_cards.contents))
+        options_str = []
         if cards_discardable > 0:
-            options_str = []
             i = 1
             for item in self.hand_cards.contents:
                 options_str.append(f"Hand-Card {i}")
                 i += 1
-
-            return(options_str)
+        return options_str
 
     def create_semiblind_menu(self, append_judgements=False):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
@@ -1364,7 +1363,7 @@ class Player(Character):
                     for pending_judgement_card in self.pending_judgements:
                         options_str.append(str(pending_judgement_card))
 
-            return(options_str)
+        return options_str
 
     def create_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
@@ -1414,7 +1413,7 @@ class Player(Character):
                         for pending_judgement_card in self.pending_judgements:
                             options_str.append(str(pending_judgement_card))
 
-            return(options_str)
+        return options_str
 
     def create_nohands_menu(self, append_judgements=False):
         cards_discardable = (len(self.equipment_weapon) + len(self.equipment_armor) + len(
@@ -1454,7 +1453,7 @@ class Player(Character):
                     for pending_judgement_card in self.pending_judgements:
                         options_str.append(str(pending_judgement_card))
 
-            return(options_str)
+        return options_str
 
 # In-game Checks
     def check_break_brink_loop(self, amount_healed):
@@ -10210,6 +10209,7 @@ class Player(Character):
 # Beginning Phase
     def start_beginning_phase(self):
         print(" ")
+        print(f"{self.character} has started their turn!")
         self.reset_once_per_turn()
         self.check_shapeshift("Turn")
         self.check_false_ruler()
