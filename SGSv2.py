@@ -342,6 +342,30 @@ def check_judgement_tinkering(judgement_card, targeted_index):
     return judgement_card
 
 
+def check_negate_loop(given_list, card_played, card_player_index=0, reacting_player_index=0, original_card=None):
+    for player_index, player in enumerate(given_list):
+        response1 = player.use_reaction_effect(
+            "Negate", 1, card_played, card_player_index, reacting_player_index)
+        if response1[0]:
+            temp_players = players[player_index:] + players[:player_index]
+
+            for player_index2, player2 in enumerate(temp_players):
+                response2 = player2.use_reaction_effect(
+                    "Negate", 1, response1[1], player_index, card_player_index, None, card_played)
+                if response2[0]:
+                    given_list = players[player_index2:] + \
+                        players[:player_index2]
+                    return check_negate_loop(given_list, card_played, card_player_index, reacting_player_index)
+            else:
+                print("--------------------------------------------------")
+                print(f"{card_played} was negated!")
+                return True
+    else:
+        print("--------------------------------------------------")
+        print(f"{card_played} was activated!")
+        return False
+
+
 # A class for handling individual characters
 class Character:
     def __init__(self, character, allegiance, health, gender, character_ability1, character_ability2="None", character_ability3="None", character_ability4="None", character_ability5="None"):
@@ -1018,9 +1042,9 @@ class Player(Character):
             return (character_details)
 
     def __str__(self):
-        pending = ""
+        pending = " // Pending: "
         if game_started:
-            character_details = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining // <:{len(self.equipment_offensive_horse) + self.weapon_range}:> // Pending: "
+            character_details = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining // <:{len(self.equipment_offensive_horse) + self.weapon_range}:>"
             if self.flipped_char_card:
                 pending += "[F]"
             for item in self.pending_judgements:
@@ -1030,15 +1054,15 @@ class Player(Character):
                     pending += "[L]"
                 if item.effect2 == "Rations Depleted":
                     pending += "[R]"
-            if pending != "":
+            if pending != " // Pending: ":
                 if self.role == 'Emperor':
-                    return ("[E] " + character_details)
+                    return ("[E] " + character_details + pending)
                 else:
-                    return (character_details)
+                    return (character_details + pending)
             elif self.role == 'Emperor':
-                return ("[E] " + character_details + pending)
+                return ("[E] " + character_details)
             else:
-                return (character_details + pending)
+                return (character_details)
         else:
             character_details, abilities_list = f"{self.character} of {self.allegiance.upper()}, {self.gender} // {self.current_health}/{self.max_health} HP remaining \n", ability_formatting(self)
             if self.role == 'Emperor':
@@ -1553,31 +1577,9 @@ class Player(Character):
             print(" ")
             main_deck.check_if_empty()
             pending_judgement = self.pending_judgements.pop(0)
-            if pending_judgement.effect2 == 'Acedia':
-                print(
-                    f"{self.character} must face judgement for ACEDIA; (needs \u2665 to pass, or else misses action-phase of turn).")
-                main_deck.discard_from_deck()
-                judgement_card = discard_deck.contents[0]
-                print(f"{self.character} flipped a {judgement_card}.")
-                judgement_card = check_judgement_tinkering(judgement_card, 0)
-                self.check_envy_of_heaven()
-                self.check_exalt()
-                if self.check_beauty(judgement_card):
-                    if judgement_card.suit == "\u2660" or judgement_card.suit == "\u2665":
-                        print(
-                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
-                elif judgement_card.suit == "\u2665":
-                    print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
-                else:
-                    print(
-                        f"{self.character}'s judgement card is a {judgement_card} and thus they miss their action-phase of this turn.")
-                    self.acedia_active = True
-                discard_deck.add_to_top(pending_judgement)
-
             if pending_judgement.effect2 == 'Lightning':
                 print(
-                    f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of \u2660 or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto {players[1].character}.")
+                    f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of \u2660 or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto the next player!")
                 main_deck.discard_from_deck()
                 judgement_card = discard_deck.contents[0]
                 print(f"{self.character} flipped a {judgement_card}.")
@@ -1588,10 +1590,27 @@ class Player(Character):
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
                     players[1].pending_judgements.insert(0, pending_judgement)
+                    if len(players[1].pending_judgements) > 0:
+                        for possible_lightning in players[1].pending_judgements:
+                            if possible_lightning.effect2 == 'Lightning':
+                                if (len(players) < 3) and (players[1].check_behind_the_curtain(pending_judgement)):
+                                    print(
+                                        f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it stays put.")
+                                else:
+                                    if players[1].check_behind_the_curtain(pending_judgement):
+                                        print(
+                                            f"{self.character} is immune to {pending_judgement} so it passes on to {players[2]}.")
+                                        players[2].pending_judgements.insert(
+                                            0, pending_judgement)
+                                    else:
+                                        print(
+                                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
+                                        players[2].pending_judgements.insert(
+                                            0, pending_judgement)
 
                 elif judgement_card.suit == "\u2660" and (10 > judgement_card.rank > 1):
                     print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE!")
+                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE, then gets discarded!")
                     damage_dealt = 3
                     fantasy = self.check_fantasy(damage_dealt)
                     if not fantasy[0]:
@@ -1639,29 +1658,56 @@ class Player(Character):
                                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
                                     players[2].pending_judgements.insert(
                                         0, pending_judgement)
+
                 else:
                     print(
                         f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
                     players[1].pending_judgements.insert(
                         0, pending_judgement)
 
+            if pending_judgement.effect2 == 'Acedia':
+                if not check_negate_loop(players, pending_judgement):
+                    print(
+                        f"{self.character} must face judgement for ACEDIA; (needs \u2665 to pass, or else misses action-phase of turn).")
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(f"{self.character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, 0)
+                    self.check_envy_of_heaven()
+                    self.check_exalt()
+                    if self.check_beauty(judgement_card):
+                        if judgement_card.suit == "\u2660" or judgement_card.suit == "\u2665":
+                            print(
+                                f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
+                    elif judgement_card.suit == "\u2665":
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
+                    else:
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and thus they miss their action-phase of this turn.")
+                        self.acedia_active = True
+                discard_deck.add_to_top(pending_judgement)
+
             if pending_judgement.effect2 == 'Rations Depleted':
-                print(
-                    f"{self.character} must face judgement for RATIONS DEPLETED; (needs \u2663 to pass, or else misses drawing-phase of turn).")
-                main_deck.discard_from_deck()
-                judgement_card = discard_deck.contents[0]
-                print(f"{self.character} flipped a {judgement_card}.")
-                judgement_card = check_judgement_tinkering(judgement_card, 0)
-                self.check_envy_of_heaven()
-                self.check_exalt()
-                self.check_beauty(judgement_card)
-                if judgement_card.suit == "\u2663":
+                if not check_negate_loop(players, pending_judgement):
                     print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
-                else:
-                    print(
-                        f"{self.character}'s judgement card is a {judgement_card} and thus they miss their drawing-phase of this turn.")
-                    self.rations_depleted_active = True
+                        f"{self.character} must face judgement for RATIONS DEPLETED; (needs \u2663 to pass, or else misses drawing-phase of turn).")
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(f"{self.character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, 0)
+                    self.check_envy_of_heaven()
+                    self.check_exalt()
+                    self.check_beauty(judgement_card)
+                    if judgement_card.suit == "\u2663":
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} has no effect.")
+                    else:
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and thus they miss their drawing-phase of this turn.")
+                        self.rations_depleted_active = True
                 discard_deck.add_to_top(pending_judgement)
 
     def check_activatable_abilities(self, types=None):
@@ -3024,8 +3070,9 @@ class Player(Character):
                             card_index))
                         self.check_one_after_another()
                         self.check_wisdom()
-                        players[selected].activate_coerce(
-                            card, selected, attacked)
+                        if not check_negate_loop(players, card, 0, selected):
+                            players[selected].activate_coerce(
+                                card, selected, attacked)
                         if not self.card_double:
                             return True
 
@@ -3085,8 +3132,9 @@ class Player(Character):
                                         f"{self.character} has coerced {players[selected].character} into attacking {players[attacked].character}. If they refuse, {self.character} gets their weapon.")
                                     discard_deck.add_to_top(self.hand_cards.contents.pop(
                                         card_index))
-                                    players[selected].activate_coerce(
-                                        card, selected, attacked)
+                                    if not check_negate_loop(players, card, 0, selected):
+                                        players[selected].activate_coerce(
+                                            card, selected, attacked)
                             return True
 
         elif card.effect2 == 'Dismantle':
@@ -3134,7 +3182,8 @@ class Player(Character):
                         self.hand_cards.contents.pop(card_index))
                 self.check_one_after_another()
                 self.check_wisdom()
-                self.activate_dismantle(card, selected)
+                if not check_negate_loop(players, card, 0, selected):
+                    self.activate_dismantle(card, selected)
                 if not self.card_double:
                     return True
 
@@ -3175,7 +3224,8 @@ class Player(Character):
                         f"{players[selected].character} has no cards that can be dismantled.")
                     return False
                 if cards_discardable > 0:
-                    self.activate_dismantle(card, selected)
+                    if not check_negate_loop(players, card, 0, selected):
+                        self.activate_dismantle(card, selected)
                     return True
 
         elif card.effect2 == 'Duel':
@@ -3220,7 +3270,8 @@ class Player(Character):
             self.check_ardour(card)
             players[selected].check_ardour(card)
             self.check_one_after_another()
-            self.activate_duel(card, selected)
+            if not check_negate_loop(players, card, 0, selected):
+                self.activate_duel(card, selected)
             if not self.card_double:
                 return True
 
@@ -3257,7 +3308,8 @@ class Player(Character):
                     return False
 
                 players[selected].check_ardour(card)
-                self.activate_duel(card, selected)
+                if not check_negate_loop(players, card, 0, selected):
+                    self.activate_duel(card, selected)
                 return True
 
         elif card.effect2 == 'Negate':
@@ -3276,7 +3328,8 @@ class Player(Character):
                 self.check_one_after_another()
                 self.check_wisdom()
                 print(f"{self.character} has played {card}.")
-                self.hand_cards.draw(main_deck, 2)
+                if not check_negate_loop(players, card, 0, 0):
+                    self.hand_cards.draw(main_deck, 2)
 
             if self.card_double:
                 options_str = [
@@ -3300,7 +3353,8 @@ class Player(Character):
                 if options_str[selected] == "Cancel Ability.":
                     return False
                 else:
-                    players[selected].hand_cards.draw(main_deck, 2, False)
+                    if not check_negate_loop(players, card, 0, selected):
+                        players[selected].hand_cards.draw(main_deck, 2, False)
 
         elif card.effect2 == 'Steal':
             choices_index = self.calculate_targets_in_physical_range(
@@ -3352,7 +3406,8 @@ class Player(Character):
                             self.hand_cards.contents.pop(card_index))
                     self.check_one_after_another()
                     self.check_wisdom()
-                    self.activate_steal(card, selected)
+                    if not check_negate_loop(players, card, 0, selected):
+                        self.activate_steal(card, selected)
                     if not self.card_double:
                         return True
             else:
@@ -3399,7 +3454,8 @@ class Player(Character):
                         f"{players[selected].character} has no cards that can be stolen.")
                     return False
                 else:
-                    self.activate_steal(card, selected)
+                    if not check_negate_loop(players, card, 0, selected):
+                        self.activate_steal(card, selected)
                     return True
 
         # card.type == 'Delay-Tool':
@@ -3594,49 +3650,76 @@ class Player(Character):
                     print(f"{self.character} has equipped {card}.")
         popping = False
 
-    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, other_effect=None):
+    def use_reaction_effect(self, response_required, required=1, card_played=None, player_index=0, reacting_player_index=0, other_effect=None, other_card=None):
         reactions_possible = True
         output_value = 0
 
         while reactions_possible:
             print(" ")
             if response_required == "Brink Of Death":
-                options_str = self.hand_cards.list_cards()
-                options_str.append(
-                    Separator("--------------------Other--------------------"))
-                if (self.activate_drown_in_wine("Check")) and (self.character == players[player_index].character):
-                    options_str.append(" Character Ability >> Drown in Wine")
-                if self.check_first_aid(player_index, "Check"):
-                    options_str.append(" Character Ability >> First Aid")
-                options_str.append("Do nothing.")
+                message = f"{self.character} ---> {players[player_index].character} is on the brink of death - Do you want to respond?"
+                if question_yes_no(message):
+                    options_str = self.hand_cards.list_cards()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    if (self.activate_drown_in_wine("Check")) and (self.character == players[player_index].character):
+                        options_str.append(
+                            " Character Ability >> Drown in Wine")
+                    if self.check_first_aid(player_index, "Check"):
+                        options_str.append(" Character Ability >> First Aid")
+                    options_str.append("Do nothing.")
 
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f"{self.character}: {players[player_index].character} is on the brink of death; please choose a response (a PEACH card or do nothing)!",
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                card_index = answer.get('Selected')
-                if options_str[card_index] == "Do nothing.":
-                    reactions_possible = False
-                    return(output_value)
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f"{self.character}: {players[player_index].character} is on the brink of death; please choose a response (a PEACH card or do nothing)!",
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options_str[card_index] == "Do nothing.":
+                        reactions_possible = False
+                        return(output_value)
 
-                elif options_str[card_index] == " Character Ability >> Drown in Wine":
-                    if self.activate_drown_in_wine("Reaction"):
+                    elif options_str[card_index] == " Character Ability >> Drown in Wine":
+                        if self.activate_drown_in_wine("Reaction"):
+                            output_value += 1
+                            print(
+                                f"{self.character} has healed themselves using WINE! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                            if players[player_index].check_break_brink_loop(output_value):
+                                reactions_possible = False
+                                return(output_value)
+
+                    elif options_str[card_index] == " Character Ability >> First Aid":
+                        if (self.check_first_aid(player_index, "Reaction")):
+                            output_value += 1
+                            if self.character == players[player_index].character:
+                                print(
+                                    f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                            else:
+                                print(
+                                    f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
+                            self.check_grudge(player_index, "Heal")
+                            if players[player_index].check_break_brink_loop(output_value):
+                                reactions_possible = False
+                                return(output_value)
+
+                    elif self.hand_cards.contents[card_index].effect == "Peach":
+                        discarded = self.hand_cards.contents.pop(card_index)
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                        if not self.used_cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                        self.check_one_after_another()
+                        discard_deck.add_to_top(discarded)
                         output_value += 1
-                        print(
-                            f"{self.character} has healed themselves using WINE! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                        if players[player_index].check_break_brink_loop(output_value):
-                            reactions_possible = False
-                            return(output_value)
-
-                elif options_str[card_index] == " Character Ability >> First Aid":
-                    if (self.check_first_aid(player_index, "Reaction")):
-                        output_value += 1
+                        bonus_output = players[player_index].check_rescued(
+                            reacting_player_index)
+                        if bonus_output == 1:
+                            output_value += bonus_output
                         if self.character == players[player_index].character:
                             print(
                                 f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
@@ -3648,59 +3731,53 @@ class Player(Character):
                             reactions_possible = False
                             return(output_value)
 
-                elif self.hand_cards.contents[card_index].effect == "Peach":
-                    discarded = self.hand_cards.contents.pop(card_index)
-                    if not self.amassed_terrain:
-                        self.check_amassing_terrain()
-                    if not self.used_cornering_maneuver:
-                        self.check_cornering_maneuver(discarded)
-                    self.check_one_after_another()
-                    discard_deck.add_to_top(discarded)
-                    output_value += 1
-                    bonus_output = players[player_index].check_rescued(
-                        reacting_player_index)
-                    if bonus_output == 1:
-                        output_value += bonus_output
-                    if self.character == players[player_index].character:
-                        print(
-                            f"{self.character} has healed themselves using a PEACH! ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                    else:
-                        print(
-                            f"{self.character} has healed {players[player_index].character} using a PEACH. ({players[player_index].current_health + output_value}/{players[player_index].max_health} HP remaining!)")
-                    self.check_grudge(player_index, "Heal")
-                    if players[player_index].check_break_brink_loop(output_value):
-                        reactions_possible = False
-                        return(output_value)
-
             elif response_required == "Negate":
-                discarded = None
-                question = [
-                    {
-                        'type': 'list',
-                        'name': 'Selected',
-                        'message': f'{players[player_index].character} has played a {card_played} against {players[reacting_player_index].character}, please choose a response (a NEGATE or do nothing)!',
-                        'choices': options_str,
-                        'filter': lambda card: options_str.index(card)
-                    },
-                ]
-                answer = prompt(question, style=custom_style_2)
-                card_index = answer.get('Selected')
-                if options_str[card_index] == "Do nothing.":
-                    reactions_possible = False
-                    return [False, None]
+                if card_played.type == "Delay-Tool":
+                    message = f"{self.character}: {players[reacting_player_index].character} is about to face judgement for {card_played} - Do you want to respond with a NEGATE?"
+                elif card_played.effect2 == "Greed":
+                    message = f"{self.character}: {players[player_index].character} has played {card_played} - Do you want to respond with a NEGATE?"
+                elif other_card != None:
+                    if other_card.type == "Delay-Tool":
+                        message = f"{self.character}: {players[player_index].character} has played a {card_played} against pending judgement: {other_card} on {players[reacting_player_index].character} - Do you want to respond?"
+                    else:
+                        message = f"{self.character}: {players[player_index].character} has played a {card_played} against the {other_card} of {players[reacting_player_index].character} - Do you want to respond?"
+                else:
+                    message = f"{self.character}: {players[player_index].character} has played a {card_played} against {players[reacting_player_index].character} - Do you want to respond?"
+                if question_yes_no(message):
+                    options_str = self.hand_cards.list_cards()
+                    options_str.append(
+                        Separator("--------------------Other--------------------"))
+                    options_str.append("Do nothing.")
+                    question = [
+                        {
+                            'type': 'list',
+                            'name': 'Selected',
+                            'message': f'{self.character}: {players[player_index].character} has played a {card_played} against {players[reacting_player_index].character}, please choose a response (a NEGATE or do nothing)!',
+                            'choices': options_str,
+                            'filter': lambda card: options_str.index(card)
+                        },
+                    ]
+                    answer = prompt(question, style=custom_style_2)
+                    card_index = answer.get('Selected')
+                    if options_str[card_index] == "Do nothing.":
+                        reactions_possible = False
+                        return [False, None]
 
-                elif self.hand_cards.contents[card_index].effect == "Negate":
-                    discarded = self.hand_cards.contents.pop(card_index)
-                    if not self.amassed_terrain:
-                        self.check_amassing_terrain()
-                        self.amassed_terrain = True
-                    if not self.used_cornering_maneuver:
-                        self.check_cornering_maneuver(discarded)
-                        self.used_cornering_maneuver = True
-                    self.check_one_after_another()
-                    discard_deck.add_to_top(discarded)
-                    discarded.effect2 = "Negate"
-                    return [True, discarded]
+                    elif self.hand_cards.contents[card_index].effect == "Negate":
+                        discarded = self.hand_cards.contents.pop(card_index)
+                        if not self.amassed_terrain:
+                            self.check_amassing_terrain()
+                            self.amassed_terrain = True
+                        if not self.used_cornering_maneuver:
+                            self.check_cornering_maneuver(discarded)
+                            self.used_cornering_maneuver = True
+                        self.check_one_after_another()
+                        self.check_wisdom()
+                        discard_deck.add_to_top(discarded)
+                        discarded.effect2 = "Negate"
+                        return [True, discarded]
+                else:
+                    return [False, None]
 
             elif response_required == "AoE Negate":
                 pass
