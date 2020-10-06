@@ -3817,13 +3817,13 @@ class Player(Character):
                     message = f"{self.character}: {players[player_index].character} has played a {card_played}. Do you want to respond by negating it for ANY player?"
                     if question_yes_no(message):
                         options_str = []
-                        beauty = self.check_beauty(card)
+                        beauty = self.check_beauty(card_played)
                         for player in players:
                             if (not player.check_behind_the_curtain(card_played, beauty)) and (not player.check_giant_elephant(card_played, "Reaction")) and (not player.used_delayed_wisdom) and (not player.tools_immunity):
                                 options_str.append(
                                     str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
                             else:
-                                options.append(
+                                options_str.append(
                                     Separator("------" + str(player) + "------"))
                         options_str.append(
                             Separator("--------------------Other--------------------"))
@@ -9255,6 +9255,7 @@ class Player(Character):
                 if self.used_brilliant_scheme:
                     print(
                         f"{self.character}: You can only use Brilliant Scheme once per turn.")
+                    return False
 
                 cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                     self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
@@ -9607,6 +9608,7 @@ class Player(Character):
             if self.used_green_salve:
                 print(
                     f"{self.character}: You can only use Green Salve once per turn.")
+                return False
 
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
@@ -9651,8 +9653,9 @@ class Player(Character):
         if mode == "Activate":
             emperor_index = None
             false_ruler_index = None
-            if self.used_amber_sky:
+            if self.used_hegemony:
                 print(f"{self.character}: You can only use Hegemony once per turn.")
+                return False
 
             else:
                 for player_index, player in enumerate(players):
@@ -9745,7 +9748,7 @@ class Player(Character):
                 print(
                     f"{self.character}: You can only use Marriage once per turn.")
 
-            if len(self.hand_cards.contents) > 1:
+            elif len(self.hand_cards.contents) > 1:
                 options = [
                     Separator("------<Cannot target yourself>------")]
                 for player in players[1:]:
@@ -10026,6 +10029,7 @@ class Player(Character):
             if self.used_seed_of_animosity:
                 print(
                     f"{self.character}: You can only use Seed of Animosity once per turn.")
+                    return False
 
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
