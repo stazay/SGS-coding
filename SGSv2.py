@@ -343,18 +343,21 @@ def check_judgement_tinkering(judgement_card, targeted_index):
 
 
 def check_negate_loop(given_list, card_played, card_player_index=0, reacting_player_index=0, original_card=None):
+    x = 1 - len(players)
+    given_list = given_list[(0 + x):] + given_list[:(0 + x)]
     for player_index, player in enumerate(given_list):
         response1 = player.use_reaction_effect(
             "Negate", 1, card_played, card_player_index, reacting_player_index)
         if response1[0]:
-            temp_players = players[player_index:] + players[:player_index]
+            given_list = given_list[(player_index + x):] + \
+                given_list[:(player_index + x)]
 
-            for player_index2, player2 in enumerate(temp_players):
+            for player_index2, player2 in enumerate(given_list):
                 response2 = player2.use_reaction_effect(
-                    "Negate", 1, response1[1], player_index, card_player_index, None, card_played)
+                    "Negate", 1, response1[1], (player_index + x), card_player_index, None, card_played)
                 if response2[0]:
-                    given_list = players[player_index2:] + \
-                        players[:player_index2]
+                    given_list = given_list[(player_index2 + x):] + \
+                        given_list[:(player_index2 + x)]
                     return check_negate_loop(given_list, card_played, card_player_index, reacting_player_index)
             else:
                 print("--------------------------------------------------")
@@ -1577,94 +1580,156 @@ class Player(Character):
             print(" ")
             main_deck.check_if_empty()
             pending_judgement = self.pending_judgements.pop(0)
+
+            # LIGHTNING
             if pending_judgement.effect2 == 'Lightning':
                 print(
                     f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of \u2660 or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto the next player!")
-                main_deck.discard_from_deck()
-                judgement_card = discard_deck.contents[0]
-                print(f"{self.character} flipped a {judgement_card}.")
-                judgement_card = check_judgement_tinkering(judgement_card, 0)
-                self.check_envy_of_heaven()
-                self.check_exalt()
-                if self.check_beauty(judgement_card):
-                    print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
-                    players[1].pending_judgements.insert(0, pending_judgement)
-                    if len(players[1].pending_judgements) > 0:
-                        for possible_lightning in players[1].pending_judgements:
-                            if possible_lightning.effect2 == 'Lightning':
-                                if (len(players) < 3) and (players[1].check_behind_the_curtain(pending_judgement)):
-                                    print(
-                                        f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it stays put.")
-                                else:
-                                    if players[1].check_behind_the_curtain(pending_judgement):
-                                        print(
-                                            f"{self.character} is immune to {pending_judgement} so it passes on to {players[2]}.")
-                                        players[2].pending_judgements.insert(
-                                            0, pending_judgement)
+                if not check_negate_loop(players, pending_judgement):
+                    main_deck.discard_from_deck()
+                    judgement_card = discard_deck.contents[0]
+                    print(f"{self.character} flipped a {judgement_card}.")
+                    judgement_card = check_judgement_tinkering(
+                        judgement_card, 0)
+                    self.check_envy_of_heaven()
+                    self.check_exalt()
+
+                    # IMMUNITY CHECK (BEAUTY)!
+                    if self.check_beauty(judgement_card):
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to the next player!")
+
+                        # IF CARD CAN POSSIBLY PASS TO OTHER PLAYERS
+                        possible_players = (len(players) - 1)
+                        next_player = 1
+                        while possible_players > 0:
+                            if len(players[next_player].pending_judgements) > 0:
+                                for possible_lightning in players[next_player].pending_judgements:
+                                    if possible_lightning.effect2 == 'Lightning' or players[next_player].check_behind_the_curtain(pending_judgement):
+                                        next_player += 1
+                                        possible_players -= 1
                                     else:
-                                        print(
-                                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
-                                        players[2].pending_judgements.insert(
+                                        players[next_player].pending_judgements.insert(
                                             0, pending_judgement)
-
-                elif judgement_card.suit == "\u2660" and (10 > judgement_card.rank > 1):
-                    print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE, then gets discarded!")
-                    damage_dealt = 3
-                    fantasy = self.check_fantasy(damage_dealt)
-                    if not fantasy[0]:
-                        self.current_health -= damage_dealt
-                        if self.current_health < 1:
-                            if self.check_brink_of_death_loop(0, "Self") == "Break":
-                                return "Break"
-                        discard_deck.add_to_top(pending_judgement)
-                        self.check_bequeathed_strategy(damage_dealt)
-                        self.check_eternal_loyalty(damage_dealt)
-                        self.check_evil_hero(pending_judgement)
-                        self.check_exile()
-                        self.check_geminate(damage_dealt)
-                    else:
-                        redirected = fantasy[1]
-                        players[redirected].current_health -= damage_dealt
-
-                        if players[redirected].current_health < 1:
-                            if players[redirected].check_brink_of_death_loop(redirected, "Self") == "Break":
-                                return "Break"
-
-                        discard_deck.add_to_top(pending_judgement)
-                        players[redirected].check_bequeathed_strategy(
-                            damage_dealt)
-                        players[redirected].check_delayed_wisdom()
-                        players[redirected].check_eternal_loyalty(damage_dealt)
-                        players[redirected].check_evil_hero(pending_judgement)
-                        players[redirected].check_exile()
-                        players[redirected].check_geminate(damage_dealt)
-
-                elif len(players[1].pending_judgements) > 0:
-                    for possible_lightning in players[1].pending_judgements:
-                        if possible_lightning.effect2 == 'Lightning':
-                            if (len(players) < 3) and (players[1].check_behind_the_curtain(pending_judgement)):
-                                print(
-                                    f"{self.character}'s judgement card is a {judgement_card}, but there are no other players to pass to, so it stays put.")
+                                        possible_players = 0
+                                        lightning_passed = True
+                                        break
                             else:
-                                if players[1].check_behind_the_curtain(pending_judgement):
-                                    print(
-                                        f"{self.character} is immune to {pending_judgement} so it passes on to {players[2]}.")
-                                    players[2].pending_judgements.insert(
-                                        0, pending_judgement)
-                                else:
-                                    print(
-                                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[2].character}.")
-                                    players[2].pending_judgements.insert(
-                                        0, pending_judgement)
+                                players[next_player].pending_judgements.insert(
+                                    0, pending_judgement)
+                                possible_players = 0
+                                lightning_passed = True
 
+                            # OTHERWISE STAYS!
+                            if not lightning_passed:
+                                print(
+                                    f"{self.character}: There is no next player; {pending_judgement} stays put!")
+                                players[0].pending_judgments.insert(
+                                    0, pending_judgement)
+
+                    # IF JUDGEMENT OCCURS AND HITS PLAYER!
+                    elif judgement_card.suit == "\u2660" and (10 > judgement_card.rank > 1):
+                        print(
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE, then gets discarded!")
+                        damage_dealt = 3
+                        fantasy = self.check_fantasy(damage_dealt)
+                        if not fantasy[0]:
+                            self.current_health -= damage_dealt
+                            if self.current_health < 1:
+                                if self.check_brink_of_death_loop(0, "Self") == "Break":
+                                    return "Break"
+                            discard_deck.add_to_top(pending_judgement)
+                            self.check_bequeathed_strategy(damage_dealt)
+                            self.check_eternal_loyalty(damage_dealt)
+                            self.check_evil_hero(pending_judgement)
+                            self.check_exile()
+                            self.check_geminate(damage_dealt)
+                        else:
+                            redirected = fantasy[1]
+                            players[redirected].current_health -= damage_dealt
+
+                            if players[redirected].current_health < 1:
+                                if players[redirected].check_brink_of_death_loop(redirected, "Self") == "Break":
+                                    return "Break"
+
+                            discard_deck.add_to_top(pending_judgement)
+                            players[redirected].check_bequeathed_strategy(
+                                damage_dealt)
+                            players[redirected].check_delayed_wisdom()
+                            players[redirected].check_eternal_loyalty(
+                                damage_dealt)
+                            players[redirected].check_evil_hero(
+                                pending_judgement)
+                            players[redirected].check_exile()
+                            players[redirected].check_geminate(damage_dealt)
+
+                    # JUDGEMENT OCCURS AND DOESN'T HIT!
+                    else:
+                        print(
+                            f"{self.character}'s {pending_judgement} passes on to the next player!")
+
+                        # IF CARD CAN POSSIBLY PASS TO OTHER PLAYERS
+                        possible_players = (len(players) - 1)
+                        next_player = 1
+                        while possible_players > 0:
+                            if len(players[next_player].pending_judgements) > 0:
+                                for possible_lightning in players[next_player].pending_judgements:
+                                    if possible_lightning.effect2 == 'Lightning' or players[next_player].check_behind_the_curtain(pending_judgement):
+                                        next_player += 1
+                                        possible_players -= 1
+                                    else:
+                                        players[next_player].pending_judgements.insert(
+                                            0, pending_judgement)
+                                        possible_players = 0
+                                        lightning_passed = True
+                                        break
+                            else:
+                                players[next_player].pending_judgements.insert(
+                                    0, pending_judgement)
+                                possible_players = 0
+                                lightning_passed = True
+
+                        # OTHERWISE STAYS!
+                        if not lightning_passed:
+                            print(
+                                f"{self.character}: There is no next player; {pending_judgement} stays put!")
+                            players[0].pending_judgments.insert(
+                                0, pending_judgement)
+
+                # JUDGEMENT IS NEGATED!
                 else:
                     print(
-                        f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to {players[1].character}.")
-                    players[1].pending_judgements.insert(
-                        0, pending_judgement)
+                        f"{self.character}'s {pending_judgement} passes on to the next player!")
 
+                    # IF CARD CAN POSSIBLY PASS TO OTHER PLAYERS
+                    possible_players = (len(players) - 1)
+                    next_player = 1
+                    while possible_players > 0:
+                        if len(players[next_player].pending_judgements) > 0:
+                            for possible_lightning in players[next_player].pending_judgements:
+                                if possible_lightning.effect2 == 'Lightning' or players[next_player].check_behind_the_curtain(pending_judgement):
+                                    next_player += 1
+                                    possible_players -= 1
+                                else:
+                                    players[next_player].pending_judgements.insert(
+                                        0, pending_judgement)
+                                    possible_players = 0
+                                    lightning_passed = True
+                                    break
+                        else:
+                            players[next_player].pending_judgements.insert(
+                                0, pending_judgement)
+                            possible_players = 0
+                            lightning_passed = True
+
+                    # OTHERWISE STAYS!
+                    if not lightning_passed:
+                        print(
+                            f"{self.character}: There is no next player; {pending_judgement} stays put!")
+                        players[0].pending_judgments.insert(
+                            0, pending_judgement)
+
+            # ACEDIA
             if pending_judgement.effect2 == 'Acedia':
                 if not check_negate_loop(players, pending_judgement):
                     print(
@@ -1689,6 +1754,7 @@ class Player(Character):
                         self.acedia_active = True
                 discard_deck.add_to_top(pending_judgement)
 
+            # RATIONS DEPLETED
             if pending_judgement.effect2 == 'Rations Depleted':
                 if not check_negate_loop(players, pending_judgement):
                     print(
