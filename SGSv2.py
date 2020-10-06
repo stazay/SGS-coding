@@ -7,7 +7,7 @@
 /________// /_//|_||/_//  |___// /________// /________// /________//  /________// /_//  /_// /_//| || /_//
                                 SanGuoSha Coding by Saba Tazayoni               /||______________| ||
                     Started: 21/07/2020                                        /___________________||
-Current Version: 05/10/2020
+Current Version: 06/10/2020
 """
 
 from __future__ import print_function, unicode_literals
@@ -1585,7 +1585,11 @@ class Player(Character):
             if pending_judgement.effect2 == 'Lightning':
                 print(
                     f"{self.character} must face judgement for LIGHTNING; (needs anything but TWO to NINE of \u2660 or else they suffer THREE points of lightning damage)! If no hit, LIGHTNING will pass onto the next player!")
-                if not check_negate_loop(players, pending_judgement):
+                negated = check_negate_loop(players, pending_judgement)
+                if negated:
+                    move_lightning = True
+
+                if not negated:
                     main_deck.discard_from_deck()
                     judgement_card = discard_deck.contents[0]
                     print(f"{self.character} flipped a {judgement_card}.")
@@ -1598,37 +1602,10 @@ class Player(Character):
                     if self.check_beauty(judgement_card):
                         print(
                             f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to the next player!")
-
-                        # IF CARD CAN POSSIBLY PASS TO OTHER PLAYERS
-                        possible_players = (len(players) - 1)
-                        next_player = 1
-                        while possible_players > 0:
-                            if len(players[next_player].pending_judgements) > 0:
-                                for possible_lightning in players[next_player].pending_judgements:
-                                    if possible_lightning.effect2 == 'Lightning' or players[next_player].check_behind_the_curtain(pending_judgement):
-                                        next_player += 1
-                                        possible_players -= 1
-                                    else:
-                                        players[next_player].pending_judgements.insert(
-                                            0, pending_judgement)
-                                        possible_players = 0
-                                        lightning_passed = True
-                                        break
-                            else:
-                                players[next_player].pending_judgements.insert(
-                                    0, pending_judgement)
-                                possible_players = 0
-                                lightning_passed = True
-
-                            # OTHERWISE STAYS!
-                            if not lightning_passed:
-                                print(
-                                    f"{self.character}: There is no next player; {pending_judgement} stays put!")
-                                players[0].pending_judgments.insert(
-                                    0, pending_judgement)
+                        move_lightning = True
 
                     # IF JUDGEMENT OCCURS AND HITS PLAYER!
-                    elif judgement_card.suit == "\u2660" and (10 > judgement_card.rank > 1):
+                    elif (judgement_card.suit == "\u2660") and (10 > judgement_card.rank > 1):
                         print(
                             f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} deals THREE DAMAGE, then gets discarded!")
                         damage_dealt = 3
@@ -1663,43 +1640,13 @@ class Player(Character):
                             players[redirected].check_exile()
                             players[redirected].check_geminate(damage_dealt)
 
-                    # JUDGEMENT OCCURS AND DOESN'T HIT!
                     else:
                         print(
-                            f"{self.character}'s {pending_judgement} passes on to the next player!")
+                            f"{self.character}'s judgement card is a {judgement_card} and therefore {pending_judgement} passes on to the next player!")
+                        move_lightning = True
 
-                        # IF CARD CAN POSSIBLY PASS TO OTHER PLAYERS
-                        possible_players = (len(players) - 1)
-                        next_player = 1
-                        while possible_players > 0:
-                            if len(players[next_player].pending_judgements) > 0:
-                                for possible_lightning in players[next_player].pending_judgements:
-                                    if possible_lightning.effect2 == 'Lightning' or players[next_player].check_behind_the_curtain(pending_judgement):
-                                        next_player += 1
-                                        possible_players -= 1
-                                    else:
-                                        players[next_player].pending_judgements.insert(
-                                            0, pending_judgement)
-                                        possible_players = 0
-                                        lightning_passed = True
-                                        break
-                            else:
-                                players[next_player].pending_judgements.insert(
-                                    0, pending_judgement)
-                                possible_players = 0
-                                lightning_passed = True
-
-                        # OTHERWISE STAYS!
-                        if not lightning_passed:
-                            print(
-                                f"{self.character}: There is no next player; {pending_judgement} stays put!")
-                            players[0].pending_judgments.insert(
-                                0, pending_judgement)
-
-                # JUDGEMENT IS NEGATED!
-                else:
-                    print(
-                        f"{self.character}'s {pending_judgement} passes on to the next player!")
+                # JUDGEMENT NEGATED OR OCCURS AND DOESN'T HIT!
+                if move_lightning:
 
                     # IF CARD CAN POSSIBLY PASS TO OTHER PLAYERS
                     possible_players = (len(players) - 1)
@@ -1713,12 +1660,16 @@ class Player(Character):
                                 else:
                                     players[next_player].pending_judgements.insert(
                                         0, pending_judgement)
+                                    print(
+                                        f"{self.character}'s {pending_judgement} passes on to {players[next_player].character}!")
                                     possible_players = 0
                                     lightning_passed = True
                                     break
                         else:
                             players[next_player].pending_judgements.insert(
                                 0, pending_judgement)
+                            print(
+                                f"{self.character}'s {pending_judgement} passes on to {players[next_player].character}!")
                             possible_players = 0
                             lightning_passed = True
 
@@ -5513,7 +5464,7 @@ class Player(Character):
 
     def check_dashing_hero(self):
         # "Dashing Hero: Draw an extra card at the start of your turn."
-        if (self.character_ability1.startswith("Dashing Hero:") or self.character_ability2.startswith("Dashing Hero:") or self.character_ability3.startswith("Dashing Hero:") or self.character_ability4.startswith("Dashing Hero:") or self.character_ability1.startswith("Dashing Hero:")):
+        if (self.character_ability1.startswith("Dashing Hero:") or self.character_ability3.startswith("Dashing Hero:")):
             print(
                 f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
             return True
