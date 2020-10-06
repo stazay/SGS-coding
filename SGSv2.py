@@ -369,6 +369,21 @@ def check_negate_loop(given_list, card_played, card_player_index=0, reacting_pla
         return False
 
 
+def check_aoe_negate_loop(given_list, card_played, card_player_index=0, reacting_player_index=0, original_card=None):
+    x = 1 - len(players)
+    given_list = given_list[(0 + x):] + given_list[:(0 + x)]
+    for player_index, player in enumerate(given_list):
+        response1 = player.use_reaction_effect(
+            "AoE Negate", 1, card_played, card_player_index, reacting_player_index)
+        if response1[0]:
+            given_list = given_list[(player_index + x):] + \
+                given_list[:(player_index + x)]
+            if not check_negate_loop(given_list, response1[1], (player_index + x), response1[2], card_played):
+                players[response1[2]].tools_immunity = True
+                print(
+                    f"{players[response1[2]].character} will be unaffected by {original_card}!")
+
+
 # A class for handling individual characters
 class Character:
     def __init__(self, character, allegiance, health, gender, character_ability1, character_ability2="None", character_ability3="None", character_ability4="None", character_ability5="None"):
@@ -1351,125 +1366,73 @@ class Player(Character):
         return options
 
     def create_blind_menu(self):
-        cards_discardable = (len(self.hand_cards.contents))
         options_str = []
-        if cards_discardable > 0:
-            i = 1
-            for item in self.hand_cards.contents:
-                options_str.append(f"Hand-Card {i}")
-                i += 1
+        i = 1
+        for item in self.hand_cards.contents:
+            options_str.append(f"Hand-Card {i}")
+            i += 1
         return options_str
 
     def create_semiblind_menu(self, append_judgements=False):
-        cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         options_str = []
-        if append_judgements == 1:
-            cards_discardable += len(self.pending_judgements)
-        if cards_discardable > 0:
-            i = 1
-            for item in self.hand_cards.contents:
-                options_str.append(f"Hand-Card {i}")
-                i += 1
+        i = 1
+        for item in self.hand_cards.contents:
+            options_str.append(f"Hand-Card {i}")
+            i += 1
+        options_str.append(
+            Separator("---------------EQUIPPED--CARDS---------------"))
+        if len(self.equipment_weapon) > 0:
             options_str.append(
-                Separator("---------------EQUIPPED--CARDS---------------"))
-            if len(self.equipment_weapon) > 0:
-                options_str.append(
-                    str(self.equipment_weapon[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Weapon Slot>-----------  "))
-            if len(self.equipment_armor) > 0:
-                options_str.append(
-                    str(self.equipment_armor[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Armor Slot>------------  "))
-            if len(self.equipment_offensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_offensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if len(self.equipment_defensive_horse) > 0:
-                options_str.append(
-                    str(self.equipment_defensive_horse[0]))
-            else:
-                options_str.append(
-                    Separator("  -----------<Empty Horse Slot>------------  "))
-            if append_judgements:
-                options_str.append(
-                    Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                if len(self.pending_judgements) > 0:
-                    for pending_judgement_card in self.pending_judgements:
-                        options_str.append(str(pending_judgement_card))
+                str(self.equipment_weapon[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Weapon Slot>-----------  "))
+        if len(self.equipment_armor) > 0:
+            options_str.append(
+                str(self.equipment_armor[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Armor Slot>------------  "))
+        if len(self.equipment_offensive_horse) > 0:
+            options_str.append(
+                str(self.equipment_offensive_horse[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Horse Slot>------------  "))
+        if len(self.equipment_defensive_horse) > 0:
+            options_str.append(
+                str(self.equipment_defensive_horse[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Horse Slot>------------  "))
+        if append_judgements:
+            options_str.append(
+                Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+            if len(self.pending_judgements) > 0:
+                for pending_judgement_card in self.pending_judgements:
+                    options_str.append(str(pending_judgement_card))
 
         return options_str
 
     def create_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
-        cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
-            self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
         options_str = []
-        if append_judgements == 1:
-            cards_discardable += len(self.pending_judgements)
-        if cards_discardable > 0:
-            for card in self.hand_cards.contents:
-                options_str.append(str(card))
-            if only_hand_cards:
-                return options_str
-            else:
-                options_str.append(
-                    Separator("---------------EQUIPPED--CARDS---------------"))
-            if omit_item == "Weapon":
-                options_str.append(
-                    Separator("    ---------<Cannot use weapon>---------    "))
-            else:
-                if len(self.equipment_weapon) > 0:
-                    options_str.append(str(self.equipment_weapon[0]))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Weapon Slot>-----------  "))
-            if not omit_item == "Non-weapon":
-                if len(self.equipment_armor) > 0:
-                    options_str.append(str(self.equipment_armor[0]))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Armor Slot>------------  "))
-                if len(self.equipment_offensive_horse) > 0:
-                    options_str.append(
-                        str(self.equipment_offensive_horse[0]))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Horse Slot>------------  "))
-                if len(self.equipment_defensive_horse) > 0:
-                    options_str.append(
-                        str(self.equipment_defensive_horse[0]))
-                else:
-                    options_str.append(
-                        Separator("  -----------<Empty Horse Slot>------------  "))
-                if append_judgements:
-                    options_str.append(
-                        Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
-                    if len(self.pending_judgements) > 0:
-                        for pending_judgement_card in self.pending_judgements:
-                            options_str.append(str(pending_judgement_card))
-
-        return options_str
-
-    def create_nohands_menu(self, append_judgements=False):
-        cards_discardable = (len(self.equipment_weapon) + len(self.equipment_armor) + len(
-            self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
-        options_str = []
-        if append_judgements == 1:
-            cards_discardable += len(self.pending_judgements)
-        if cards_discardable > 0:
+        for card in self.hand_cards.contents:
+            options_str.append(str(card))
+        if only_hand_cards:
+            return options_str
+        else:
             options_str.append(
                 Separator("---------------EQUIPPED--CARDS---------------"))
+        if omit_item == "Weapon":
+            options_str.append(
+                Separator("    ---------<Cannot use weapon>---------    "))
+        else:
             if len(self.equipment_weapon) > 0:
                 options_str.append(str(self.equipment_weapon[0]))
             else:
                 options_str.append(
                     Separator("  -----------<Empty Weapon Slot>-----------  "))
+        if not omit_item == "Non-weapon":
             if len(self.equipment_armor) > 0:
                 options_str.append(str(self.equipment_armor[0]))
             else:
@@ -1493,6 +1456,41 @@ class Player(Character):
                 if len(self.pending_judgements) > 0:
                     for pending_judgement_card in self.pending_judgements:
                         options_str.append(str(pending_judgement_card))
+
+        return options_str
+
+    def create_nohands_menu(self, append_judgements=False):
+        options_str = []
+        options_str.append(
+            Separator("---------------EQUIPPED--CARDS---------------"))
+        if len(self.equipment_weapon) > 0:
+            options_str.append(str(self.equipment_weapon[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Weapon Slot>-----------  "))
+        if len(self.equipment_armor) > 0:
+            options_str.append(str(self.equipment_armor[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Armor Slot>------------  "))
+        if len(self.equipment_offensive_horse) > 0:
+            options_str.append(
+                str(self.equipment_offensive_horse[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Horse Slot>------------  "))
+        if len(self.equipment_defensive_horse) > 0:
+            options_str.append(
+                str(self.equipment_defensive_horse[0]))
+        else:
+            options_str.append(
+                Separator("  -----------<Empty Horse Slot>------------  "))
+        if append_judgements:
+            options_str.append(
+                Separator("-----------PENDING-JUDGEMENT-CARDS-----------"))
+            if len(self.pending_judgements) > 0:
+                for pending_judgement_card in self.pending_judgements:
+                    options_str.append(str(pending_judgement_card))
 
         return options_str
 
@@ -2729,6 +2727,8 @@ class Player(Character):
                     else:
                         players[selected].tools_immunity = True
 
+                check_aoe_negate_loop(players, card, 0, 0, card)
+
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player_index, player in enumerate(players):
                     if (player != players[0]) and (player.current_health > 0) and (not player.tools_immunity):
@@ -2831,6 +2831,8 @@ class Player(Character):
                     else:
                         players[selected].tools_immunity = True
 
+                check_aoe_negate_loop(players, card, 0, 0, card)
+
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 granary = Player("Temporary")
                 granary.hand_cards.draw(main_deck, len(players), False)
@@ -2895,6 +2897,8 @@ class Player(Character):
                     else:
                         players[selected].tools_immunity = True
 
+                check_aoe_negate_loop(players, card, 0, 0, card)
+
                 # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
                 for player in players:
                     beauty = self.check_beauty(card)
@@ -2945,6 +2949,8 @@ class Player(Character):
                     pass
                 else:
                     players[selected].tools_immunity = True
+
+            check_aoe_negate_loop(players, card, 0, 0, card)
 
             # NEED SOME SORT OF NEGATE LOOP HERE !?!?!?
             for player_index, player in enumerate(players):
@@ -3811,20 +3817,29 @@ class Player(Character):
                     if item.effect == "Negate":
                         possible_negates += 1
                 if possible_negates < 1:
-                    return False
+                    return [False]
 
                 else:
                     message = f"{self.character}: {players[player_index].character} has played a {card_played}. Do you want to respond by negating it for ANY player?"
                     if question_yes_no(message):
                         options_str = []
                         beauty = self.check_beauty(card_played)
-                        for player in players:
-                            if (not player.check_behind_the_curtain(card_played, beauty)) and (not player.check_giant_elephant(card_played, "Reaction")) and (not player.used_delayed_wisdom) and (not player.tools_immunity):
-                                options_str.append(
-                                    str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
-                            else:
-                                options_str.append(
-                                    Separator("------" + str(player) + "------"))
+                        if card_played.effect2 == "Barbarians" or card_played.effect2 == "Rain of Arrows":
+                            for player in players:
+                                if (not player.check_behind_the_curtain(card_played, beauty)) and (not player.check_giant_elephant(card_played, "Reaction")) and (not player.used_delayed_wisdom) and (not player.tools_immunity) and (player != players[0]):
+                                    options_str.append(
+                                        str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                                else:
+                                    options_str.append(
+                                        Separator("------" + str(player) + "------"))
+                        else:
+                            for player in players:
+                                if (not player.used_delayed_wisdom) and (not player.tools_immunity):
+                                    options_str.append(
+                                        str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                                else:
+                                    options_str.append(
+                                        Separator("------" + str(player) + "------"))
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel response.")
@@ -3873,6 +3888,7 @@ class Player(Character):
                             discard_deck.add_to_top(discarded)
                             discarded.effect2 = "Negate"
                             return [True, discarded, selected_player_index]
+                return [False, None]
 
             elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
                 discarded = None
