@@ -1363,10 +1363,10 @@ class Player(Character):
     def create_semiblind_menu(self, append_judgements=False):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
             self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        options_str = []
         if append_judgements == 1:
             cards_discardable += len(self.pending_judgements)
         if cards_discardable > 0:
-            options_str = []
             i = 1
             for item in self.hand_cards.contents:
                 options_str.append(f"Hand-Card {i}")
@@ -1409,14 +1409,14 @@ class Player(Character):
     def create_nonblind_menu(self, only_hand_cards=False, append_judgements=False, omit_item=None):
         cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
             self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        options_str = []
         if append_judgements == 1:
             cards_discardable += len(self.pending_judgements)
         if cards_discardable > 0:
-            options_str = []
             for card in self.hand_cards.contents:
                 options_str.append(str(card))
             if only_hand_cards:
-                return (options_str)
+                return options_str
             else:
                 options_str.append(
                     Separator("---------------EQUIPPED--CARDS---------------"))
@@ -1459,10 +1459,10 @@ class Player(Character):
     def create_nohands_menu(self, append_judgements=False):
         cards_discardable = (len(self.equipment_weapon) + len(self.equipment_armor) + len(
             self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
+        options_str = []
         if append_judgements == 1:
             cards_discardable += len(self.pending_judgements)
         if cards_discardable > 0:
-            options_str = []
             options_str.append(
                 Separator("---------------EQUIPPED--CARDS---------------"))
             if len(self.equipment_weapon) > 0:
@@ -3828,7 +3828,7 @@ class Player(Character):
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Cancel response.")
-                        question=[
+                        question = [
                             {
                                 'type': 'list',
                                 'name': 'Selected',
@@ -3844,7 +3844,7 @@ class Player(Character):
                         options_str.append(
                             Separator("--------------------Other--------------------"))
                         options_str.append("Do nothing.")
-                        question=[
+                        question = [
                             {
                                 'type': 'list',
                                 'name': 'Selected',
@@ -3864,32 +3864,32 @@ class Player(Character):
                                 card_index)
                             if not self.amassed_terrain:
                                 self.check_amassing_terrain()
-                                self.amassed_terrain=True
+                                self.amassed_terrain = True
                             if not self.used_cornering_maneuver:
                                 self.check_cornering_maneuver(discarded)
-                                self.used_cornering_maneuver=True
+                                self.used_cornering_maneuver = True
                             self.check_one_after_another()
                             self.check_wisdom()
                             discard_deck.add_to_top(discarded)
-                            discarded.effect2="Negate"
+                            discarded.effect2 = "Negate"
                             return [True, discarded, selected_player_index]
 
             elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
-                discarded=None
+                discarded = None
                 while required > 0:
                     if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
                         self.check_ardour(card_played, player_index)
 
                     if not players[player_index].check_weapon_black_pommel():
-                        armor_check=self.armor_eight_trigrams()
+                        armor_check = self.armor_eight_trigrams()
                         if not self.used_trigrams:
-                            self.used_trigrams=True
+                            self.used_trigrams = True
                             if armor_check[0]:
-                                self.used_trigrams=False
+                                self.used_trigrams = False
                                 required -= 1
-                                discarded=armor_check[1]
+                                discarded = armor_check[1]
 
-                    options_str=self.hand_cards.list_cards()
+                    options_str = self.hand_cards.list_cards()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     if self.activate_dragon_heart("Check"):
@@ -3902,13 +3902,13 @@ class Player(Character):
                     options_str.append("Do nothing.")
 
                     if other_effect == "Escort":
-                        message=f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
+                        message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
                     elif card_played.effect2 == "Attack":
-                        message=f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
+                        message = f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
                     else:
-                        message=f"{self.character}: You are being attacked by {players[player_index].character} using a {card_played.effect2.upper()}; please choose a response (a DEFEND card or do nothing)!"
+                        message = f"{self.character}: You are being attacked by {players[player_index].character} using a {card_played.effect2.upper()}; please choose a response (a DEFEND card or do nothing)!"
 
-                    question=[
+                    question = [
                         {
                             'type': 'list',
                             'name': 'Selected',
@@ -3932,11 +3932,11 @@ class Player(Character):
                                 if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                     print(
                                         f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
-                                    self.used_trigrams=False
+                                    self.used_trigrams = False
                                     required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Dragon Heart":
-                        discarded=(
+                        discarded = (
                             self.activate_dragon_heart("Reaction Defend"))
                         if discarded != None:
                             discarded.effect2 = "Defend"
@@ -9655,7 +9655,6 @@ class Player(Character):
             false_ruler_index = None
             if self.used_hegemony:
                 print(f"{self.character}: You can only use Hegemony once per turn.")
-                return False
 
             else:
                 for player_index, player in enumerate(players):
@@ -10029,7 +10028,7 @@ class Player(Character):
             if self.used_seed_of_animosity:
                 print(
                     f"{self.character}: You can only use Seed of Animosity once per turn.")
-                    return False
+                return False
 
             cards_discardable = (len(self.hand_cards.contents) + len(self.equipment_weapon) + len(
                 self.equipment_armor) + len(self.equipment_offensive_horse) + len(self.equipment_defensive_horse))
