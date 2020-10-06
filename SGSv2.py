@@ -3749,72 +3749,147 @@ class Player(Character):
                             return(output_value)
 
             elif response_required == "Negate":
-                if card_played.type == "Delay-Tool":
-                    message = f"{self.character}: {players[reacting_player_index].character} is about to face judgement for {card_played} - Do you want to respond with a NEGATE?"
-                elif card_played.effect2 == "Greed":
-                    message = f"{self.character}: {players[player_index].character} has played {card_played} - Do you want to respond with a NEGATE?"
-                elif other_card != None:
-                    if other_card.type == "Delay-Tool":
-                        message = f"{self.character}: {players[player_index].character} has played a {card_played} against pending judgement: {other_card} on {players[reacting_player_index].character} - Do you want to respond?"
-                    else:
-                        message = f"{self.character}: {players[player_index].character} has played a {card_played} against the {other_card} of {players[reacting_player_index].character} - Do you want to respond?"
-                else:
-                    message = f"{self.character}: {players[player_index].character} has played a {card_played} against {players[reacting_player_index].character} - Do you want to respond?"
-                if question_yes_no(message):
-                    options_str = self.hand_cards.list_cards()
-                    options_str.append(
-                        Separator("--------------------Other--------------------"))
-                    options_str.append("Do nothing.")
-                    question = [
-                        {
-                            'type': 'list',
-                            'name': 'Selected',
-                            'message': f'{self.character}: {players[player_index].character} has played a {card_played} against {players[reacting_player_index].character}, please choose a response (a NEGATE or do nothing)!',
-                            'choices': options_str,
-                            'filter': lambda card: options_str.index(card)
-                        },
-                    ]
-                    answer = prompt(question, style=custom_style_2)
-                    card_index = answer.get('Selected')
-                    if options_str[card_index] == "Do nothing.":
-                        reactions_possible = False
-                        return [False, None]
-
-                    elif self.hand_cards.contents[card_index].effect == "Negate":
-                        discarded = self.hand_cards.contents.pop(card_index)
-                        if not self.amassed_terrain:
-                            self.check_amassing_terrain()
-                            self.amassed_terrain = True
-                        if not self.used_cornering_maneuver:
-                            self.check_cornering_maneuver(discarded)
-                            self.used_cornering_maneuver = True
-                        self.check_one_after_another()
-                        self.check_wisdom()
-                        discard_deck.add_to_top(discarded)
-                        discarded.effect2 = "Negate"
-                        return [True, discarded]
-                else:
+                possible_negates = 0
+                for item in self.hand_cards.contents:
+                    if item.effect == "Negate":
+                        possible_negates += 1
+                if possible_negates < 1:
                     return [False, None]
 
+                else:
+                    if card_played.type == "Delay-Tool":
+                        message = f"{self.character}: {players[reacting_player_index].character} is about to face judgement for {card_played} - Do you want to respond with a NEGATE?"
+                    elif card_played.effect2 == "Greed":
+                        message = f"{self.character}: {players[player_index].character} has played {card_played} - Do you want to respond with a NEGATE?"
+                    elif other_card != None:
+                        if other_card.type == "Delay-Tool":
+                            message = f"{self.character}: {players[player_index].character} has played a {card_played} against pending judgement: {other_card} on {players[reacting_player_index].character} - Do you want to respond?"
+                        else:
+                            message = f"{self.character}: {players[player_index].character} has played a {card_played} against the {other_card} of {players[reacting_player_index].character} - Do you want to respond?"
+                    else:
+                        message = f"{self.character}: {players[player_index].character} has played a {card_played} against {players[reacting_player_index].character} - Do you want to respond?"
+                    if question_yes_no(message):
+                        options_str = self.hand_cards.list_cards()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Do nothing.")
+                        question = [
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: {players[player_index].character} has played a {card_played} against {players[reacting_player_index].character}, please choose a response (a NEGATE or do nothing)!',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        card_index = answer.get('Selected')
+                        if options_str[card_index] == "Do nothing.":
+                            reactions_possible = False
+                            return [False, None]
+
+                        elif self.hand_cards.contents[card_index].effect == "Negate":
+                            discarded = self.hand_cards.contents.pop(
+                                card_index)
+                            if not self.amassed_terrain:
+                                self.check_amassing_terrain()
+                                self.amassed_terrain = True
+                            if not self.used_cornering_maneuver:
+                                self.check_cornering_maneuver(discarded)
+                                self.used_cornering_maneuver = True
+                            self.check_one_after_another()
+                            self.check_wisdom()
+                            discard_deck.add_to_top(discarded)
+                            discarded.effect2 = "Negate"
+                            return [True, discarded]
+                    else:
+                        return [False, None]
+
             elif response_required == "AoE Negate":
-                pass
+                possible_negates = 0
+                for item in self.hand_cards.contents:
+                    if item.effect == "Negate":
+                        possible_negates += 1
+                if possible_negates < 1:
+                    return False
+
+                else:
+                    message = f"{self.character}: {players[player_index].character} has played a {card_played}. Do you want to respond by negating it for ANY player?"
+                    if question_yes_no(message):
+                        options_str = []
+                        beauty = self.check_beauty(card)
+                        for player in players:
+                            if (not player.check_behind_the_curtain(card_played, beauty)) and (not player.check_giant_elephant(card_played, "Reaction")) and (not player.used_delayed_wisdom) and (not player.tools_immunity):
+                                options_str.append(
+                                    str(player) + f" ({str(len(player.hand_cards.contents))} hand-cards)")
+                            else:
+                                options.append(
+                                    Separator("------" + str(player) + "------"))
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Cancel response.")
+                        question=[
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: Please select who you would like to NEGATE {card_played} for:',
+                                'choices': options_str,
+                                'filter': lambda player: options_str.index(player)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        selected_player_index = answer.get('Selected')
+
+                        options_str = self.hand_cards.list_cards()
+                        options_str.append(
+                            Separator("--------------------Other--------------------"))
+                        options_str.append("Do nothing.")
+                        question=[
+                            {
+                                'type': 'list',
+                                'name': 'Selected',
+                                'message': f'{self.character}: To NEGATE {card_played} for {players[selected_player_index].character}: Please choose a response (a NEGATE or do nothing)!',
+                                'choices': options_str,
+                                'filter': lambda card: options_str.index(card)
+                            },
+                        ]
+                        answer = prompt(question, style=custom_style_2)
+                        card_index = answer.get('Selected')
+                        if options_str[card_index] == "Do nothing.":
+                            reactions_possible = False
+                            return [False, None]
+
+                        elif self.hand_cards.contents[card_index].effect == "Negate":
+                            discarded = self.hand_cards.contents.pop(
+                                card_index)
+                            if not self.amassed_terrain:
+                                self.check_amassing_terrain()
+                                self.amassed_terrain=True
+                            if not self.used_cornering_maneuver:
+                                self.check_cornering_maneuver(discarded)
+                                self.used_cornering_maneuver=True
+                            self.check_one_after_another()
+                            self.check_wisdom()
+                            discard_deck.add_to_top(discarded)
+                            discarded.effect2="Negate"
+                            return [True, discarded, selected_player_index]
 
             elif response_required == "Defend" and ((card_played.effect2 == "Attack") or (card_played.effect2 == "Black Attack") or (card_played.effect2 == "Red Attack") or (card_played.effect2 == "Colourless Attack")):
-                discarded = None
+                discarded=None
                 while required > 0:
                     if card_played.effect2 == "Attack" or card_played.effect2 == "Red Attack":
                         self.check_ardour(card_played, player_index)
 
                     if not players[player_index].check_weapon_black_pommel():
-                        armor_check = self.armor_eight_trigrams()
+                        armor_check=self.armor_eight_trigrams()
                         if not self.used_trigrams:
-                            self.used_trigrams = True
+                            self.used_trigrams=True
                             if armor_check[0]:
-                                self.used_trigrams = False
+                                self.used_trigrams=False
                                 required -= 1
-                                discarded = armor_check[1]
+                                discarded=armor_check[1]
 
-                    options_str = self.hand_cards.list_cards()
+                    options_str=self.hand_cards.list_cards()
                     options_str.append(
                         Separator("--------------------Other--------------------"))
                     if self.activate_dragon_heart("Check"):
@@ -3827,13 +3902,13 @@ class Player(Character):
                     options_str.append("Do nothing.")
 
                     if other_effect == "Escort":
-                        message = f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
+                        message=f"{self.character}: You have been requested to play a DEFEND by {players[reacting_player_index].character}; please choose a response (a DEFEND card or do nothing)!"
                     elif card_played.effect2 == "Attack":
-                        message = f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
+                        message=f"{self.character}: You are being attacked by {players[player_index].character} using {card_played}; please choose a response (a DEFEND card or do nothing)!"
                     else:
-                        message = f"{self.character}: You are being attacked by {players[player_index].character} using a {card_played.effect2.upper()}; please choose a response (a DEFEND card or do nothing)!"
+                        message=f"{self.character}: You are being attacked by {players[player_index].character} using a {card_played.effect2.upper()}; please choose a response (a DEFEND card or do nothing)!"
 
-                    question = [
+                    question=[
                         {
                             'type': 'list',
                             'name': 'Selected',
@@ -3857,11 +3932,11 @@ class Player(Character):
                                 if (discarded.effect == "Defend") or (discarded.effect2 == "Defend"):
                                     print(
                                         f"  >> Ruler Ability: Escort; {players[defender[1]].character} has played a DEFEND on {self.character}'s behalf!")
-                                    self.used_trigrams = False
+                                    self.used_trigrams=False
                                     required -= 1
 
                     elif options_str[card_index] == " Character Ability >> Dragon Heart":
-                        discarded = (
+                        discarded=(
                             self.activate_dragon_heart("Reaction Defend"))
                         if discarded != None:
                             discarded.effect2 = "Defend"
@@ -5466,7 +5541,7 @@ class Player(Character):
         # "Dashing Hero: Draw an extra card at the start of your turn."
         if (self.character_ability1.startswith("Dashing Hero:") or self.character_ability3.startswith("Dashing Hero:")):
             print(
-                f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of three) in their drawing phase.")
+                f"  >> Character Ability: Dashing Hero; {self.character} draws an extra card from the deck (total of 3) in their drawing phase.")
             return True
 
     def check_decentralization(self):
